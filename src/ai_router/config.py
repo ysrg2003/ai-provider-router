@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
 
 @dataclass(frozen=True)
 class ProviderSpec:
@@ -49,7 +51,9 @@ class RouterConfig:
 
     @classmethod
     def load(cls, root: str | Path | None = None) -> "RouterConfig":
-        config_root = Path(root or os.getenv("AI_ROUTER_CONFIG_DIR", Path(__file__).resolve().parents[2] / "config")).resolve()
+        project_root = Path(__file__).resolve().parents[2]
+        load_dotenv(project_root / ".env", override=False)
+        config_root = Path(root or os.getenv("AI_ROUTER_CONFIG_DIR", project_root / "config")).resolve()
         providers_raw = cls._read_json(config_root / "providers.json")
         models_raw = cls._read_json(config_root / "models.json")
         keys_raw = cls._read_json(config_root / "key_pools.json")

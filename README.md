@@ -1,96 +1,674 @@
 # AI Provider Router
 
-مكوّن مستقل قابل لإعادة الاستخدام لإدارة عدة مزودات ذكاء اصطناعي وعدة نماذج وعدة مفاتيح API من خلال ملفات إعداد منفصلة. لا يحتوي المشروع على أسرار حقيقية، ويمكن استخدامه من تطبيق فيديو أو نظام تحليل أو أي مشروع يحتاج مخرجات JSON منظمة.
+## ما هذا المشروع؟
 
-## المبدأ
+هذا المشروع هو **مدير مستقل لاستدعاء نماذج الذكاء الاصطناعي**. وظيفته أن يستقبل منك طلباً واحداً، ثم يجرّب المزودات والنماذج ومفاتيح API بالترتيب الذي تحدده أنت، ويسجل النتيجة، وينتقل تلقائياً إلى البديل التالي إذا حدث خطأ أو انتهت الحصة أو تعطل أحد المفاتيح.
 
-> غيّر الإعدادات من `config/`، ولا تعاود مراجعة كود المشروع المستهلك عند إضافة مزود أو نموذج أو مفتاح أو تغيير ترتيب الأولوية.
+تخيل أن لديك الخطة التالية:
 
-## ملفات الإعداد
+```text
+1. Gemini 2.5 Flash باستخدام المفتاح الأول
+2. Gemini 2.5 Flash باستخدام المفتاح الثاني
+3. Gemini 2.5 Flash-Lite باستخدام المفتاح الأول
+4. Gemini 2.5 Flash-Lite باستخدام المفتاح الثاني
+5. Hugging Face باستخدام النموذج الاحتياطي الأول
+6. Hugging Face باستخدام النموذج الاحتياطي الثاني
+```
 
-| الملف | الوظيفة |
-| --- | --- |
-| `config/providers.json` | تعريف المزود، نوع المحول، عنوانه، ومجموعة المفاتيح التابعة له |
-| `config/models.json` | سلاسل الأولوية مثل `default`, `creative`, و`cheap` |
-| `config/key_pools.json` | ربط كل مزود بمتغير البيئة الذي يحمل مفاتيحه |
-| `config/policies.json` | الحد الأقصى للمحاولات، timeout، backoff، وتصنيف التبريد |
-| `.env.example` | أسماء الأسرار والمسارات فقط، دون قيم حقيقية |
-| `data/ai_router.db` | سجل الاستدعاءات وحالات التبريد محلياً؛ لا يرفع إلى Git |
+بدلاً من كتابة ستة مسارات داخل كل مشروع، يكتب المشروع المستهلك طلباً واحداً فقط. أما التبديل بين الستة فيحدث هنا داخل **AI Provider Router**.
 
-## التثبيت
+هذا المشروع لا يعرف شيئاً عن Xiangqi أو الفيديو أو يوتيوب. لذلك يمكنك استخدامه مع مشروع تحليل مستندات، أو تطبيق خدمة عملاء، أو مولد مقالات، أو أي برنامج يحتاج إلى مخرجات JSON منظمة.
+
+> الفكرة الأساسية: عدّل الملفات الموجودة داخل `config/` لتغيير المزود أو النموذج أو الترتيب أو مجموعة المفاتيح، ولا تعدّل المشروع الذي يستعمل المدير.
+
+---
+
+## قبل أن تبدأ: ماذا تحتاج؟
+
+تحتاج إلى جهاز عليه Python 3.11 أو أحدث، وحساب لدى مزود واحد على الأقل. التشغيل المحلي لا يحتاج إلى GitHub. أما التشغيل التلقائي فيحتاج إلى مستودع GitHub وإضافة الأسرار داخله.
+
+| الشيء | هل هو مطلوب؟ | لماذا؟ |
+| --- | --- | --- |
+| Python 3.11 أو أحدث | نعم | تشغيل الحزمة والاختبارات |
+| مفتاح Gemini | اختياري | تفعيل `gemini-2.5-flash` و`gemini-2.5-flash-lite` |
+| مفتاح Hugging Face | اختياري | تفعيل خطة الاحتياط |
+| Git | اختياري محلياً | استنساخ المشروع وتحديثه |
+| GitHub | اختياري للتشغيل اليدوي، مطلوب للتشغيل التلقائي | حفظ المشروع وتشغيل workflow |
+
+يمكنك تثبيت المشروع وتشغيل ملخصه **من دون أي مفتاح API**. ما لن يعمل من دون مفتاح هو طلب حقيقي إلى نموذج ذكاء اصطناعي.
+
+---
+
+# القسم الأول: تنزيل المشروع وتشغيل أول فحص
+
+## الخطوة 1: تنزيل المستودع
+
+افتح Terminal في Linux أو macOS، أو PowerShell في Windows، ثم نفّذ:
+
+```bash
+git clone https://github.com/ysrg2003/ai-provider-router.git
+cd ai-provider-router
+```
+
+إذا لم يكن Git مثبتاً لديك، نزّل ملف ZIP من صفحة GitHub ثم فك الضغط، وانتقل داخل المجلد:
+
+```bash
+cd ai-provider-router
+```
+
+تأكد أنك داخل المجلد الصحيح. يجب أن ترى ملفات مثل:
+
+```text
+README.md
+pyproject.toml
+requirements.txt
+config/
+src/
+tests/
+```
+
+يمكنك التحقق بالأمر:
+
+```bash
+ls
+```
+
+في Windows PowerShell استخدم:
+
+```powershell
+Get-ChildItem
+```
+
+## الخطوة 2: إنشاء بيئة Python خاصة
+
+أنشئ بيئة خاصة للمشروع حتى لا تختلط مكتباته مع بقية برامجك:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-pip install -e .
 ```
 
-## الأسرار
+في Windows PowerShell استخدم:
 
-ضع مصفوفة JSON في `AI_ROUTER_GEMINI_KEYS_JSON`:
-
-```json
-[
-  {"id": "project-a-key-1", "key": "AIza...", "project": "project-a"},
-  {"id": "project-b-key-1", "key": "AIza...", "project": "project-b"}
-]
+```powershell
+py -3 -m venv .venv
+.venv\Scripts\Activate.ps1
 ```
 
-ولـ Hugging Face:
+عندما تنجح العملية سترى غالباً اسم البيئة مثل `(.venv)` في بداية سطر الأوامر.
 
-```json
-[
-  {"id": "hf-main", "key": "hf_...", "project": "router"}
-]
+## الخطوة 3: تثبيت المكتبات
+
+نفّذ:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -e .
 ```
 
-يمكن استخدام مفاتيح متعددة داخل كل مجموعة. يسير المدير عليها بالترتيب، ويتجاوز المفتاح الموجود في فترة تبريد، ويسجل السبب دون تسجيل قيمة المفتاح.
+شرح الأوامر:
 
-## الاستدعاء من أي مشروع
+| الأمر | معناه |
+| --- | --- |
+| `python -m pip install --upgrade pip` | تحديث مدير حزم Python |
+| `python -m pip install -r requirements.txt` | تثبيت `requests` و`python-dotenv` |
+| `python -m pip install -e .` | تثبيت المشروع نفسه بحيث يعمل الأمر `ai-router` من أي مكان داخل البيئة |
 
-```python
-from ai_router import AIRouter
+## الخطوة 4: تشغيل الاختبارات قبل إضافة أي مفتاح
 
-router = AIRouter(config_dir="config", state_db="data/ai_router.db")
-result = router.complete_json(
-    chain="default",
-    operation="create_content_plan",
-    system_prompt="Return JSON only. You are a professional editor.",
-    user_prompt="Create an original Xiangqi video idea.",
-)
-print(result)
-router.close()
-```
-
-## إضافة مزود جديد
-
-إذا كان المزود يستخدم واجهة OpenAI-compatible، أضف تعريفاً في `config/providers.json`، ومجموعة مفاتيح في `config/key_pools.json`، ونموذجاً في `config/models.json`. لا تحتاج إلى تعديل `router.py`.
-
-إذا كان المزود يستخدم واجهة مختلفة، أنشئ محولاً جديداً داخل `src/ai_router/providers/` يطبق `ProviderAdapter`، ثم أضف نوعه إلى نقطة بناء المحولات في `router.py`. بعد ذلك تبقى بقية المشاريع مستهلكة لنفس الواجهة ولا تعرف تفاصيل المزود.
-
-## ترتيب التنفيذ
-
-يقرأ المدير chain المطلوبة من `config/models.json`. لكل نموذج يحمّل مزوده ومجموعة مفاتيحه بالترتيب، ثم ينفذ الطلب. عند 401 أو 403 يسجل خطأ مصادقة ويبرد المفتاح طويلاً. عند 429 يسجل quota ويطبّق التبريد المحدد في `config/policies.json`. عند أخطاء الشبكة و5xx يطبق backoff وينتقل إلى المفتاح التالي. عند فشل جميع السلسلة يرمي `AllProvidersFailed` كي يقرر التطبيق المستهلك هل يستخدم fallback خاصاً به.
-
-## الاختبار
+نفّذ:
 
 ```bash
 python -m compileall -q src tests
 python -m unittest discover -s tests -v
+```
+
+النتيجة الصحيحة تشبه:
+
+```text
+Ran 2 tests
+OK
+```
+
+إذا ظهرت النتيجة `OK`، فهذا يعني أن المشروع نفسه سليم، وأن اختبار تدوير المفاتيح التجريبي يعمل من دون اتصال فعلي بمزود خارجي.
+
+## الخطوة 5: قراءة ملخص الإعدادات
+
+نفّذ:
+
+```bash
 ai-router --config-dir config --state-db data/ai_router.db summary
 ```
 
-لا يرسل الاختبار الافتراضي طلباً حقيقياً إذا لم توضع الأسرار. سجل SQLite محلي ومُستبعد من Git.
+سترى شيئاً قريباً من:
 
-## الاستهلاك من Chinese Cheese Video
+```json
+{
+  "config": {
+    "providers": ["google_gemini", "huggingface"],
+    "chains": {
+      "default": [
+        {"provider": "google_gemini", "model": "gemini-2.5-flash"},
+        {"provider": "google_gemini", "model": "gemini-2.5-flash-lite"},
+        {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest"}
+      ]
+    },
+    "secrets_loaded": {
+      "google_gemini": 0,
+      "huggingface": 0
+    }
+  },
+  "state": {
+    "calls": 0,
+    "provider_states": 0
+  }
+}
+```
 
-يستهلك المشروع الأصلي هذا المكوّن عبر `AI_ROUTER_PATH` أو تثبيت الحزمة محلياً، ويترك له مسؤولية prompts والتحقق الخاص بـ Xiangqi. أما المزودات والنماذج والمفاتيح والتدوير فهي مسؤولية هذا المستودع وحده.
+معنى `secrets_loaded: 0` أن المشروع لم يجد مفاتيح بعد. هذا ليس خطأ في التثبيت.
 
-## المراجع
+---
 
-[1] [Google Gemini API models](https://ai.google.dev/gemini-api/docs/models)
+# القسم الثاني: فهم الملفات قبل تعديلها
 
-[2] [Google Gemini API rate limits](https://ai.google.dev/gemini-api/docs/rate-limits)
+جميع الإعدادات التي يحتاجها المبتدئ موجودة داخل `config/`.
 
-[3] [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers/en/index)
+| الملف | متى تعدله؟ | مثال على التعديل |
+| --- | --- | --- |
+| `config/providers.json` | عند إضافة مزود أو حذف مزود أو تغيير عنوان API | إضافة مزود OpenAI-compatible |
+| `config/models.json` | عند إضافة نموذج أو حذف نموذج أو تغيير الترتيب | جعل Flash-Lite قبل Flash |
+| `config/key_pools.json` | عند تغيير اسم متغير الأسرار | تغيير `AI_ROUTER_GEMINI_KEYS_JSON` إلى اسم آخر |
+| `config/policies.json` | عند تغيير عدد المحاولات أو زمن التبريد | زيادة تبريد خطأ 429 |
+| `.env` | عند التشغيل المحلي وإضافة المفاتيح | وضع JSON للمفاتيح محلياً |
+| `src/` | عند كتابة محول لمزود لا يستخدم واجهة معروفة | إضافة محول API خاص |
+
+لا تضع قيمة API key في ملفات JSON الموجودة في `config/`. هذه الملفات تصف **كيف يقرأ البرنامج السر**، لكنها لا تحتوي السر نفسه.
+
+---
+
+# القسم الثالث: إضافة مفاتيح Gemini محلياً
+
+## الخطوة 6: إنشاء ملف `.env`
+
+انسخ نموذج البيئة:
+
+```bash
+cp .env.example .env
+```
+
+في Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+افتح `.env`. ابدأ بهذا الشكل:
+
+```dotenv
+AI_ROUTER_GEMINI_KEYS_JSON=[]
+AI_ROUTER_HF_KEYS_JSON=[]
+AI_ROUTER_CONFIG_DIR=config
+AI_ROUTER_STATE_DB=data/ai_router.db
+```
+
+## الخطوة 7: وضع مفتاح Gemini واحد
+
+إذا كان لديك مفتاح Gemini واحد، اجعل قيمة `AI_ROUTER_GEMINI_KEYS_JSON` مصفوفة تحتوي عنصراً واحداً:
+
+```dotenv
+AI_ROUTER_GEMINI_KEYS_JSON=[{"id":"gemini-main","key":"ضع_المفتاح_الحقيقي_هنا","project":"my-gemini-project"}]
+```
+
+استبدل فقط `ضع_المفتاح_الحقيقي_هنا` بالقيمة التي حصلت عليها من Google AI Studio أو Google Cloud. لا تضع مسافات أو تعليقات داخل قيمة JSON.
+
+## الخطوة 8: وضع عدة مفاتيح بالترتيب
+
+إذا كان لديك ثلاثة مفاتيح، اكتبها بهذا الشكل:
+
+```dotenv
+AI_ROUTER_GEMINI_KEYS_JSON=[
+  {"id":"gemini-1","key":"المفتاح_الأول","project":"project-a"},
+  {"id":"gemini-2","key":"المفتاح_الثاني","project":"project-a"},
+  {"id":"gemini-3","key":"المفتاح_الثالث","project":"project-b"}
+]
+```
+
+ترتيب العناصر مهم جداً. سيستخدم المدير `gemini-1` أولاً، ثم `gemini-2`، ثم `gemini-3` عند الحاجة.
+
+لكل عنصر:
+
+| الحقل | وظيفته |
+| --- | --- |
+| `id` | اسم داخلي يظهر في سجل الحالة، مثل `gemini-1` |
+| `key` | قيمة API key الحقيقية |
+| `project` | اسم المشروع الذي ينتمي إليه المفتاح، للتشخيص فقط |
+
+## الخطوة 9: فهم ترتيب نماذج Gemini
+
+افتح `config/models.json`. الجزء الأساسي هو:
+
+```json
+{
+  "model_chains": {
+    "default": [
+      {"provider": "google_gemini", "model": "gemini-2.5-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": true},
+      {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "enabled": true}
+    ]
+  }
+}
+```
+
+مع وجود مفتاحين، الترتيب الفعلي يكون:
+
+```text
+Flash + gemini-1
+Flash + gemini-2
+Flash-Lite + gemini-1
+Flash-Lite + gemini-2
+Hugging Face + كل مفاتيح Hugging Face
+```
+
+إذا أردت إيقاف نموذج مؤقتاً، غيّر `enabled` إلى `false`:
+
+```json
+{"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": false}
+```
+
+لا تحذف الفاصلة السابقة أو التالية بالخطأ. JSON حساس للصياغة.
+
+---
+
+# القسم الرابع: إضافة Hugging Face كخطة احتياطية
+
+## الخطوة 10: إضافة مفتاح Hugging Face
+
+في `.env` ضع:
+
+```dotenv
+AI_ROUTER_HF_KEYS_JSON=[{"id":"hf-main","key":"ضع_مفتاح_Hugging_Face_هنا","project":"hf-router"}]
+```
+
+يمكنك وضع عدة مفاتيح بالطريقة نفسها:
+
+```dotenv
+AI_ROUTER_HF_KEYS_JSON=[
+  {"id":"hf-1","key":"المفتاح_الأول","project":"hf-router"},
+  {"id":"hf-2","key":"المفتاح_الثاني","project":"hf-router"}
+]
+```
+
+سيصل النظام إلى Hugging Face فقط بعد فشل أو تبريد كل عناصر Gemini الموجودة قبله في `config/models.json`.
+
+## الخطوة 11: تغيير نموذج Hugging Face
+
+عدّل نموذج Hugging Face في `config/models.json` فقط:
+
+```json
+{
+  "provider": "huggingface",
+  "model": "اسم-النموذج-الذي-يدعمه-router.huggingface.co",
+  "enabled": true
+}
+```
+
+لا تعدّل `src/ai_router/router.py` لمجرد تغيير اسم النموذج.
+
+---
+
+# القسم الخامس: تنفيذ أول طلب حقيقي
+
+## الخطوة 12: تشغيل ملخص جديد للتأكد من قراءة المفاتيح
+
+بعد حفظ `.env`، نفّذ:
+
+```bash
+ai-router --config-dir config --state-db data/ai_router.db summary
+```
+
+ابحث عن:
+
+```json
+"secrets_loaded": {
+  "google_gemini": 1,
+  "huggingface": 0
+}
+```
+
+إذا وضعت مفتاحين لـ Gemini يجب أن ترى `google_gemini: 2`.
+
+> لا يطبع البرنامج قيمة المفتاح نفسه. سيطبع العدد فقط.
+
+## الخطوة 13: تنفيذ طلب JSON من سطر الأوامر
+
+نفّذ هذا المثال:
+
+```bash
+ai-router \
+  --config-dir config \
+  --state-db data/ai_router.db \
+  call-json \
+  --chain default \
+  --operation first_test \
+  --system "Return JSON only. You are a helpful assistant." \
+  --user "Create one short idea for a beginner lesson about Xiangqi. Return title and hook."
+```
+
+في Windows PowerShell اكتب الأمر في سطر واحد:
+
+```powershell
+ai-router --config-dir config --state-db data/ai_router.db call-json --chain default --operation first_test --system "Return JSON only. You are a helpful assistant." --user "Create one short idea for a beginner lesson about Xiangqi. Return title and hook."
+```
+
+إذا نجح الاستدعاء، ستصل استجابة JSON مثل:
+
+```json
+{
+  "title": "The First Xiangqi Trap",
+  "hook": "This simple-looking move hides a cannon attack."
+}
+```
+
+قد تختلف الكلمات؛ المهم أن تكون النتيجة JSON وأن يظهر الطلب لاحقاً في قاعدة SQLite.
+
+## الخطوة 14: التحقق من تسجيل الاستدعاء
+
+شغّل الملخص مرة أخرى:
+
+```bash
+ai-router --config-dir config --state-db data/ai_router.db summary
+```
+
+يجب أن يصبح:
+
+```json
+"state": {
+  "calls": 1,
+  "provider_states": 1
+}
+```
+
+إذا فشل المفتاح ثم نجح البديل، ستكون قيمة `calls` أكبر من واحد، لأن النظام يسجل كل محاولة، وليس النجاح فقط.
+
+---
+
+# القسم السادس: كيف يعمل التبديل فعلياً؟
+
+افترض أن لديك مفتاحين ونموذجين:
+
+| الترتيب | المحاولة |
+| ---: | --- |
+| 1 | Gemini Flash بالمفتاح `gemini-1` |
+| 2 | Gemini Flash بالمفتاح `gemini-2` |
+| 3 | Gemini Flash-Lite بالمفتاح `gemini-1` |
+| 4 | Gemini Flash-Lite بالمفتاح `gemini-2` |
+| 5 | Hugging Face بالنموذج الأول والمفتاح الأول |
+| 6 | Hugging Face بالنموذج الأول والمفتاح الثاني |
+
+إذا أعاد المزود **401 أو 403**، يسجل النظام خطأ مصادقة ويضع المفتاح في تبريد طويل. إذا أعاد **429**، يسجل أن الحصة أو المعدل انتهى ويضع المفتاح في تبريد المدة الموجودة في `config/policies.json`. إذا حدث خطأ شبكة أو 5xx، يستخدم backoff ثم ينتقل إلى المحاولة التالية. إذا أعاد النموذج نصاً ليس JSON صحيحاً، يعتبر الاستجابة غير صالحة وينتقل إلى البديل.
+
+لا تحتاج إلى كتابة هذا المنطق داخل مشروعك. مشروعك يستدعي:
+
+```python
+result = router.complete_json(
+    chain="default",
+    operation="my_operation",
+    system_prompt="Return JSON only.",
+    user_prompt="Do the requested work.",
+)
+```
+
+ثم يتولى AI Router بقية العمل.
+
+---
+
+# القسم السابع: استخدامه داخل Python Project آخر
+
+## الخطوة 15: تثبيت AI Router داخل مشروع جديد
+
+لنفترض أن لديك مشروعاً آخر في مجلد اسمه `my-project`. نفّذ:
+
+```bash
+cd my-project
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e /path/to/ai-provider-router
+```
+
+أو إذا أردت تثبيته من GitHub مباشرة:
+
+```bash
+python -m pip install "git+https://github.com/ysrg2003/ai-provider-router.git"
+```
+
+بما أن المستودع خاص، ستحتاج إلى صلاحية Git مناسبة أو نسخة محلية من المشروع.
+
+## الخطوة 16: استدعاؤه من كود المشروع الجديد
+
+أنشئ ملفاً اسمه `example_app.py`:
+
+```python
+from ai_router import AIRouter, AllProvidersFailed
+
+router = AIRouter(
+    config_dir="/path/to/ai-provider-router/config",
+    state_db="data/my_project_ai_router.db",
+)
+
+try:
+    result = router.complete_json(
+        chain="creative",
+        operation="article_outline",
+        system_prompt=(
+            "Return JSON only. "
+            "You are a professional article editor."
+        ),
+        user_prompt=(
+            "Create an outline for a beginner article about Chinese chess. "
+            "Return title and sections."
+        ),
+    )
+    print(result)
+except AllProvidersFailed as error:
+    print("All AI providers failed:", error)
+finally:
+    router.close()
+```
+
+شغّل:
+
+```bash
+python example_app.py
+```
+
+المشروع الجديد لا يعرف أسماء مفاتيح Gemini أو تفاصيل Hugging Face. هذه المعرفة تبقى داخل `config/` في AI Router.
+
+---
+
+# القسم الثامن: ربطه مع Chinese Cheese Video
+
+يوجد في مشروع الفيديو ملف جسر اسمه `python/ai_router_bridge.py`. هذا الملف يبحث عن AI Router في المسار الموجود داخل `AI_ROUTER_PATH`، ثم يستعمل واجهة `AIRouter`.
+
+## التشغيل المحلي للمشروعين
+
+إذا كان المجلدان بجانب بعضهما:
+
+```text
+projects/
+├── ai-provider-router/
+└── chinese-cheese-video/
+```
+
+انتقل إلى مشروع الفيديو، ثم اضبط:
+
+```bash
+cd projects/chinese-cheese-video
+export AI_ROUTER_PATH=../ai-provider-router
+export AI_ROUTER_CONFIG_DIR=../ai-provider-router/config
+export AI_ROUTER_STATE_DB=data/ai_router.db
+export AI_ROUTER_GEMINI_KEYS_JSON='[{"id":"gemini-1","key":"ضع_المفتاح","project":"project-a"}]'
+```
+
+بعدها شغّل:
+
+```bash
+python3 python/run_pipeline.py --storage local --language en
+```
+
+لتشغيل الصينية:
+
+```bash
+python3 python/run_pipeline.py --storage local --language zh
+```
+
+إذا لم تضع مفاتيح أو تعطل AI Router، سيعود مشروع الفيديو إلى fallback المحلي بدلاً من التوقف.
+
+---
+
+# القسم التاسع: إعداد GitHub Actions للمشروع الخاص
+
+## الخطوة 17: أسرار مستودع AI Router
+
+مستودع AI Router نفسه يحتوي workflow للاختبارات فقط، ولا يحتاج إلى مفاتيح حتى ينجح اختبار CI. لا تضع المفاتيح داخل ملفات GitHub أو داخل `config/`.
+
+## الخطوة 18: أسرار مستودع Chinese Cheese Video
+
+إذا كان مشروع الفيديو في مستودع GitHub خاص، افتح:
+
+```text
+Repository → Settings → Secrets and variables → Actions → New repository secret
+```
+
+أضف الأسرار التالية:
+
+| الاسم | القيمة |
+| --- | --- |
+| `AI_ROUTER_REPO_TOKEN` | Personal Access Token بصلاحية قراءة مستودع AI Router الخاص |
+| `AI_ROUTER_GEMINI_KEYS_JSON` | مصفوفة مفاتيح Gemini المرتبة |
+| `AI_ROUTER_HF_KEYS_JSON` | مصفوفة مفاتيح Hugging Face المرتبة |
+| `YOUTUBE_API_KEY` | اختياري لاكتشاف فيديوهات Xiangqi الحديثة |
+
+مثال قيمة `AI_ROUTER_GEMINI_KEYS_JSON` داخل GitHub Secret:
+
+```json
+[
+  {"id":"gemini-1","key":"AIza...","project":"project-a"},
+  {"id":"gemini-2","key":"AIza...","project":"project-b"}
+]
+```
+
+لا تضف علامات اقتباس إضافية حول JSON كله. ألصق المصفوفة كما هي.
+
+## الخطوة 19: تشغيل workflow يدوياً
+
+افتح تبويب **Actions** في مستودع الفيديو، واختر workflow المسمى **Chinese Cheese Video — autonomous production**، ثم اضغط **Run workflow**.
+
+القيم المقترحة لأول تجربة:
+
+| الحقل | القيمة |
+| --- | --- |
+| `daily_count` | `1` |
+| `languages` | `en,zh` |
+| `discovery_limit` | `5` |
+
+بعد التشغيل راقب الخطوات بهذا الترتيب:
+
+1. Checkout repository.
+2. Checkout reusable AI Router.
+3. Install Python dependencies.
+4. Run autonomous discovery and production.
+5. Upload videos, logs, and SQLite snapshot.
+6. Commit SQLite catalog and workflow state.
+
+إذا فشل checkout في خطوة **Checkout reusable AI Router**، فالمشكلة غالباً في `AI_ROUTER_REPO_TOKEN`. إذا فشل توليد AI لكن استمر الفيديو باستخدام fallback، فالمشكلة في مفاتيح Gemini أو Hugging Face، ويجب قراءة سجل الخطأ دون نشر قيمة المفتاح.
+
+---
+
+# القسم العاشر: ماذا أعدل إذا أردت تغييراً معيناً؟
+
+| المطلوب | الملف | التعديل |
+| --- | --- | --- |
+| جعل Flash-Lite قبل Flash | `config/models.json` | بدّل ترتيب العنصرين داخل chain |
+| تعطيل Hugging Face | `config/models.json` | ضع `enabled: false` على نموذج Hugging Face |
+| إضافة مفتاح Gemini | `.env` محلياً أو GitHub Secret | أضف عنصراً جديداً إلى JSON مع `id` و`key` و`project` |
+| تغيير اسم secret | `config/key_pools.json` | غيّر قيمة `env` ثم استخدم الاسم الجديد في البيئة |
+| زيادة مدة تبريد 429 | `config/policies.json` | عدّل `cooldowns_seconds.quota` |
+| إضافة chain جديدة | `config/models.json` | أضف اسماً جديداً مثل `fast` أو `long_form` |
+| استخدام chain جديدة في Python | كود المشروع المستهلك | غيّر `chain="default"` إلى اسم chain الجديدة |
+| تغيير عنوان API | `config/providers.json` | عدّل `base_url` فقط إذا كان المزود نفسه |
+| إضافة مزود OpenAI-compatible | `providers.json`, `key_pools.json`, `models.json` | أضف المزود ومفتاحه ونموذجه |
+| إضافة مزود API خاص | `src/ai_router/providers/` ثم `router.py` | أنشئ adapter يطبق الواجهة الموحدة |
+| تغيير مكان قاعدة الحالة | متغير `AI_ROUTER_STATE_DB` | ضع مسار SQLite آخر |
+
+---
+
+# القسم الحادي عشر: مشكلات شائعة وحلولها
+
+| الرسالة أو المشكلة | السبب المحتمل | الحل خطوة بخطوة |
+| --- | --- | --- |
+| `ModuleNotFoundError: ai_router` | لم تثبت الحزمة أو البيئة غير مفعلة | فعّل `.venv` ثم نفّذ `python -m pip install -e .` |
+| `No such file or directory: config/providers.json` | شغلت الأمر من مجلد آخر أو مررت مساراً خاطئاً | انتقل إلى جذر المشروع أو استخدم `--config-dir /المسار/الكامل/config` |
+| `AI_ROUTER_GEMINI_KEYS_JSON must contain a JSON array` | قيمة المتغير ليست JSON صالحاً | استخدم مصفوفة تبدأ بـ `[` وتنتهي بـ `]`، وتأكد من علامات الاقتباس |
+| `secrets_loaded` تساوي صفر | `.env` غير موجود أو اسم المتغير خاطئ | انسخ `.env.example` إلى `.env` وتأكد من الاسم exact |
+| `AllProvidersFailed` | كل المفاتيح أو النماذج فشلت | افحص `data/ai_router.db`، اختبر المفتاح، ثم جرّب fallback |
+| خطأ 401 أو 403 | مفتاح غير صحيح أو لا يملك الصلاحية | أنشئ مفتاحاً جديداً أو أصلح صلاحية الحساب، ولا تكرر المفتاح الفاشل بلا تغيير |
+| خطأ 429 | انتهى المعدل أو الحصة المؤقتة | انتظر التبريد، أضف مزوداً احتياطياً، أو عدّل chain وفق حصتك |
+| JSON غير صالح من النموذج | النموذج لم يلتزم بصيغة JSON | اترك `response_format` كما هو، وشدد system prompt على `Return JSON only` |
+| GitHub Actions لا يستطيع checkout | المستودع المستقل خاص وtoken غير موجود | أضف `AI_ROUTER_REPO_TOKEN` في مستودع الفيديو بصلاحية قراءة |
+| ظهرت المفاتيح في Git | تم وضعها في ملف أو commit | ألغِ المفتاح فوراً من مزوده، نظّف commit إن لزم، واستخدم GitHub Secrets |
+
+---
+
+# القسم الثاني عشر: فحص أمان بسيط قبل الرفع
+
+قبل `git push` نفّذ:
+
+```bash
+git status
+git diff -- .env config/
+git grep -nE 'AIza[A-Za-z0-9_-]{20,}|hf_[A-Za-z0-9]{20,}' || true
+```
+
+يجب ألا ترى مفتاحاً حقيقياً. وجود النصوص الشكلية مثل `AIza...` داخل التوثيق ليس مفتاحاً حقيقياً، لكن لا تستبدلها بقيمك داخل README.
+
+تأكد أيضاً من أن `.env` ليس ضمن الملفات المتعقبة:
+
+```bash
+git ls-files .env
+```
+
+يجب ألا يطبع شيئاً.
+
+---
+
+# القسم الثالث عشر: كيف تعرف أن النظام يعمل؟
+
+النظام يعمل بالشكل الصحيح إذا تحققت الشروط التالية:
+
+1. تنجح اختبارات `unittest` وتظهر `OK`.
+2. يعرض أمر `summary` المزودات والنماذج وعدد الأسرار، دون عرض القيم السرية.
+3. ينفذ `call-json` ويرجع JSON.
+4. يزيد عدد `calls` في SQLite بعد الطلب.
+5. عند تعمد تعطيل المفتاح الأول، ينتقل الطلب إلى المفتاح التالي بدلاً من التوقف مباشرة.
+6. عند حذف كل المفاتيح، يظهر `AllProvidersFailed` بصورة واضحة، ويستطيع المشروع المستهلك استخدام fallback الخاص به.
+
+أعد تشغيل الاختبار الكامل في أي وقت عبر:
+
+```bash
+python -m compileall -q src tests
+python -m unittest discover -s tests -v
+ai-router --config-dir config --state-db /tmp/ai-router-check.db summary
+```
+
+---
+
+# مراجع رسمية
+
+[1] [Google Gemini API — Models](https://ai.google.dev/gemini-api/docs/models)
+
+[2] [Google Gemini API — Rate limits](https://ai.google.dev/gemini-api/docs/rate-limits)
+
+[3] [Hugging Face — Inference Providers](https://huggingface.co/docs/inference-providers/en/index)
+
+[4] [GitHub Actions — Secrets](https://docs.github.com/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)
