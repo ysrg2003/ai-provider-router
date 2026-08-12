@@ -3,15 +3,30 @@
     "default": [
       {"provider": "google_gemini", "model": "gemini-2.5-flash", "enabled": true},
       {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": true},
-      {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "enabled": true}
+      {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "zai-org/GLM-5.2:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-R1:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "Qwen/Qwen3-4B-Thinking-2507:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "Qwen/Qwen2.5-7B-Instruct-1M:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "Qwen/Qwen2.5-Coder-32B-Instruct:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "meta-llama/Llama-3.1-8B-Instruct:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "openai/gpt-oss-20b:fastest", "enabled": true}
     ],
     "creative": [
       {"provider": "google_gemini", "model": "gemini-2.5-flash", "enabled": true},
+      {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "zai-org/GLM-5.2:fastest", "enabled": true},
       {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-R1:fastest", "enabled": true}
     ],
     "cheap": [
       {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": true},
-      {"provider": "huggingface", "model": "openai/gpt-oss-20b:cheapest", "enabled": true}
+      {"provider": "huggingface", "model": "openai/gpt-oss-20b:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "Qwen/Qwen3-4B-Thinking-2507:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "Qwen/Qwen2.5-7B-Instruct-1M:fastest", "enabled": true},
+      {"provider": "huggingface", "model": "meta-llama/Llama-3.1-8B-Instruct:fastest", "enabled": true}
     ]
   }
 }

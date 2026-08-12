@@ -21,6 +21,17 @@ class RouterTests(unittest.TestCase):
             self.assertNotIn("SECRET_VALUE", json.dumps(summary))
             router.close()
 
+    def test_single_hf_token_is_loaded_as_fallback_key(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ.pop("AI_ROUTER_HF_KEYS_JSON", None)
+            os.environ["HF_TOKEN"] = "hf_single_test_token"
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            keys = router.config.keys_for("huggingface")
+            self.assertEqual(len(keys), 1)
+            self.assertEqual(keys[0].secret, "hf_single_test_token")
+            router.close()
+            os.environ.pop("HF_TOKEN", None)
+
     def test_rotation_moves_to_next_key_and_records_state(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([

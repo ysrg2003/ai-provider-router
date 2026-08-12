@@ -8,7 +8,8 @@
     },
     "huggingface_default": {
       "env": "AI_ROUTER_HF_KEYS_JSON",
-      "format": "json_array",
+      "fallback_env": "HF_TOKEN",
+      "format": "json_array_or_single_token",
       "rotation": "ordered",
       "cooldown_state": "sqlite"
     }

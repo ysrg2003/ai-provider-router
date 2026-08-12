@@ -42,11 +42,12 @@ class RouterPolicy:
 
 
 class RouterConfig:
-    def __init__(self, root: Path, providers: dict[str, ProviderSpec], chains: dict[str, list[ModelSpec]], key_pools: dict[str, str], policy: RouterPolicy) -> None:
+    def __init__(self, root: Path, providers: dict[str, ProviderSpec], chains: dict[str, list[ModelSpec]], key_pools: dict[str, str], fallback_envs: dict[str, str], policy: RouterPolicy) -> None:
         self.root = root
         self.providers = providers
         self.chains = chains
         self.key_pools = key_pools
+        self.fallback_envs = fallback_envs
         self.policy = policy
 
     @classmethod
@@ -80,6 +81,11 @@ class RouterConfig:
             pool_id: str(pool.get("env", ""))
             for pool_id, pool in keys_raw.get("key_pools", {}).items()
         }
+        fallback_envs = {
+            pool_id: str(pool.get("fallback_env"))
+            for pool_id, pool in keys_raw.get("key_pools", {}).items()
+            if pool.get("fallback_env")
+        }
         defaults = policy_raw.get("defaults", {})
         policy = RouterPolicy(
             max_attempts=max(1, int(defaults.get("max_attempts", 24))),
@@ -87,7 +93,7 @@ class RouterConfig:
             cooldowns_seconds={key: int(value) for key, value in defaults.get("cooldowns_seconds", {}).items()},
             backoff_seconds=[int(value) for value in defaults.get("backoff_seconds", [1, 2, 4, 8])],
         )
-        config = cls(config_root, providers, chains, key_pools, policy)
+        config = cls(config_root, providers, chains, key_pools, fallback_envs, policy)
         config.validate()
         return config
 
@@ -115,14 +121,19 @@ class RouterConfig:
         provider = self.providers[provider_id]
         env_name = self.key_pools[provider.key_pool]
         raw = os.getenv(env_name, "").strip()
+        fallback_env = self.fallback_envs.get(provider.key_pool)
+        if not raw or raw == "[]":
+            raw = os.getenv(fallback_env, "").strip() if fallback_env else ""
         if not raw:
             return []
         try:
             values = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"{env_name} must contain a JSON array") from exc
+        except json.JSONDecodeError:
+            values = [{"id": f"{provider_id}-fallback-1", "key": raw, "project": "default"}]
+        if isinstance(values, str) and values.strip():
+            values = [{"id": f"{provider_id}-fallback-1", "key": values.strip(), "project": "default"}]
         if not isinstance(values, list):
-            raise ValueError(f"{env_name} must contain a JSON array")
+            raise ValueError(f"{env_name} or fallback token must be a JSON array or a single token")
         result: list[KeySpec] = []
         for index, value in enumerate(values):
             if isinstance(value, str) and value.strip():

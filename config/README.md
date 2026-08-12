@@ -20,7 +20,17 @@
 {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": false}
 ```
 
-## أريد إضافة مفتاح
+## أريد تفعيل Hugging Face بأبسط طريقة
+
+لا تحتاج إلى تعديل `providers.json` أو `models.json`. أنشئ fine-grained Hugging Face Access Token بصلاحية Make calls to Inference Providers، ثم ضع في `.env`:
+
+```dotenv
+HF_TOKEN=hf_التوكن_الحقيقي
+```
+
+سيحوّل النظام هذا المتغير المفرد تلقائياً إلى مفتاح واحد لمجموعة Hugging Face، ثم يجرب النماذج العشرة الموجودة في `models.json` بالترتيب. في GitHub Actions ضع القيمة نفسها في Secret باسم `HF_TOKEN`.
+
+## أريد إضافة مفتاح Gemini أو تدوير عدة مفاتيح
 
 لا تعدّل `providers.json` ولا `models.json`. افتح `.env` وأضف عنصراً إلى المجموعة المناسبة:
 
@@ -46,7 +56,7 @@ AI_ROUTER_GEMINI_KEYS_JSON=[
 }
 ```
 
-إذا غيّرت `env` إلى `MY_GEMINI_KEYS`، يجب أن تستخدم الاسم نفسه في `.env` أو GitHub Secrets:
+إذا غيّرت `env` إلى `MY_GEMINI_KEYS`، يجب أن تستخدم الاسم نفسه في `.env` أو GitHub Secrets. يبقى `fallback_env` مفيداً عندما تريد قبول متغير مفرد مثل `HF_TOKEN` إلى جانب مصفوفة المفاتيح:
 
 ```dotenv
 MY_GEMINI_KEYS=[{"id":"gemini-1","key":"المفتاح","project":"project-a"}]

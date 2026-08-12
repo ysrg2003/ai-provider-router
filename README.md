@@ -151,7 +151,10 @@ ai-router --config-dir config --state-db data/ai_router.db summary
       "default": [
         {"provider": "google_gemini", "model": "gemini-2.5-flash"},
         {"provider": "google_gemini", "model": "gemini-2.5-flash-lite"},
-        {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest"}
+        {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest"},
+        {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest"},
+        {"provider": "huggingface", "model": "zai-org/GLM-5.2:fastest"},
+        "... eight additional Hugging Face fallback entries ..."
       ]
     },
     "secrets_loaded": {
@@ -166,7 +169,7 @@ ai-router --config-dir config --state-db data/ai_router.db summary
 }
 ```
 
-معنى `secrets_loaded: 0` أن المشروع لم يجد مفاتيح بعد. هذا ليس خطأ في التثبيت.
+معنى `secrets_loaded: 0` أن المشروع لم يجد مفاتيح بعد. إذا أضفت `HF_TOKEN` فقط فستظهر `huggingface: 1`، وسيعمل مسار Hugging Face بالنماذج العشرة الافتراضية. هذا ليس خطأ في التثبيت.
 
 ---
 
@@ -282,38 +285,101 @@ Hugging Face + كل مفاتيح Hugging Face
 
 # القسم الرابع: إضافة Hugging Face كخطة احتياطية
 
-## الخطوة 10: إضافة مفتاح Hugging Face
+### الفكرة المهمة للمبتدئ
 
-في `.env` ضع:
+القائمة الافتراضية تحتوي على **عشرة نماذج Hugging Face**. لا تحتاج إلى إضافة أسماء النماذج يدوياً، ولا تحتاج إلى إنشاء مفتاح لكل نموذج. أضف Access Token واحداً فقط باسم `HF_TOKEN`، وسيجرب النظام النماذج العشرة بالترتيب الموجود في `config/models.json`.
+
+> التوفر والسرعة والحصة تختلف حسب الحساب والنموذج والمزود الذي يختاره Hugging Face. القائمة الافتراضية عملية ومرتبة، لكنها ليست ضماناً أن كل نموذج سيظل متاحاً أو مجانياً في كل وقت.
+
+## الخطوة 10: إضافة Access Token واحد فقط
+
+أنشئ Hugging Face fine-grained Access Token مع صلاحية **Make calls to Inference Providers** من [صفحة إنشاء الرموز](https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained). بعد الحصول على القيمة، افتح `.env` وضع:
 
 ```dotenv
-AI_ROUTER_HF_KEYS_JSON=[{"id":"hf-main","key":"ضع_مفتاح_Hugging_Face_هنا","project":"hf-router"}]
+HF_TOKEN=hf_ضع_التوكن_الحقيقي_هنا
 ```
 
-يمكنك وضع عدة مفاتيح بالطريقة نفسها:
+لا تحتاج في أبسط حالة إلى كتابة `AI_ROUTER_HF_KEYS_JSON`. الإعداد الموجود في `config/key_pools.json` يقول للنظام إن `HF_TOKEN` هو fallback لمجموعة Hugging Face.
 
-```dotenv
-AI_ROUTER_HF_KEYS_JSON=[
-  {"id":"hf-1","key":"المفتاح_الأول","project":"hf-router"},
-  {"id":"hf-2","key":"المفتاح_الثاني","project":"hf-router"}
-]
+شغّل الملخص:
+
+```bash
+ai-router --config-dir config --state-db data/ai_router.db summary
 ```
 
-سيصل النظام إلى Hugging Face فقط بعد فشل أو تبريد كل عناصر Gemini الموجودة قبله في `config/models.json`.
-
-## الخطوة 11: تغيير نموذج Hugging Face
-
-عدّل نموذج Hugging Face في `config/models.json` فقط:
+ابحث عن:
 
 ```json
-{
-  "provider": "huggingface",
-  "model": "اسم-النموذج-الذي-يدعمه-router.huggingface.co",
-  "enabled": true
+"secrets_loaded": {
+  "google_gemini": 0,
+  "huggingface": 1
 }
 ```
 
-لا تعدّل `src/ai_router/router.py` لمجرد تغيير اسم النموذج.
+إذا ظهرت `huggingface: 1`، فالمشروع قرأ التوكن بنجاح دون عرض قيمته.
+
+## الخطوة 11: النماذج العشرة الافتراضية
+
+يستخدم `model_chains.default` النماذج التالية بعد انتهاء Gemini أو عدم وجود مفاتيحه:
+
+| الترتيب في مسار Hugging Face | النموذج | الاستخدام المقصود |
+| ---: | --- | --- |
+| 1 | `openai/gpt-oss-120b:fastest` | النموذج العام الأول، والمهام المنظمة واستدعاء الأدوات |
+| 2 | `deepseek-ai/DeepSeek-V4-Flash-0731:fastest` | إجابات عامة سريعة عالية القدرة |
+| 3 | `zai-org/GLM-5.2:fastest` | التخطيط والتحليل العام |
+| 4 | `Qwen/Qwen3-Coder-480B-A35B-Instruct:fastest` | البرمجة والتعليمات التقنية |
+| 5 | `deepseek-ai/DeepSeek-R1:fastest` | التفكير والتحليل متعدد الخطوات |
+| 6 | `Qwen/Qwen3-4B-Thinking-2507:fastest` | تفكير أخف عندما لا تحتاج إلى نموذج ضخم |
+| 7 | `Qwen/Qwen2.5-7B-Instruct-1M:fastest` | تعليمات طويلة وسياقات ممتدة |
+| 8 | `Qwen/Qwen2.5-Coder-32B-Instruct:fastest` | كود ومخرجات تقنية منظمة |
+| 9 | `meta-llama/Llama-3.1-8B-Instruct:fastest` | fallback عام أصغر وأكثر خفة |
+| 10 | `openai/gpt-oss-20b:fastest` | fallback عام أخف من نموذج 120B |
+
+تم اختيار القائمة بناءً على نماذج توصي بها وثائق Hugging Face لمهام Chat Completion، ونماذج ظاهرة في قائمة Text Generation المتاحة لـ Inference Providers، مع تنويع الأحجام والاستخدامات [1] [2].
+
+## الخطوة 12: فهم ترتيب التجربة الكامل
+
+إذا كان لديك Gemini Token واحد وHF Token واحد، يحاول النظام بهذا الترتيب:
+
+```text
+1. Gemini 2.5 Flash
+2. Gemini 2.5 Flash-Lite
+3. Hugging Face: openai/gpt-oss-120b
+4. Hugging Face: deepseek-ai/DeepSeek-V4-Flash-0731
+5. Hugging Face: zai-org/GLM-5.2
+6. Hugging Face: Qwen/Qwen3-Coder-480B-A35B-Instruct
+7. Hugging Face: deepseek-ai/DeepSeek-R1
+8. Hugging Face: Qwen/Qwen3-4B-Thinking-2507
+9. Hugging Face: Qwen/Qwen2.5-7B-Instruct-1M
+10. Hugging Face: Qwen/Qwen2.5-Coder-32B-Instruct
+11. Hugging Face: meta-llama/Llama-3.1-8B-Instruct
+12. Hugging Face: openai/gpt-oss-20b
+```
+
+إذا لم تضف Gemini، يبدأ النظام مباشرة من النموذج الأول في Hugging Face. وإذا فشل نموذج بسبب 404 أو 403 أو 429 أو timeout أو JSON غير صالح، ينتقل إلى النموذج التالي ويسجل الحالة في SQLite.
+
+## الخطوة 13: استخدام عدة HF Tokens اختيارياً
+
+إذا أردت تدوير عدة Hugging Face tokens بدلاً من Token واحد، استخدم:
+
+```dotenv
+AI_ROUTER_HF_KEYS_JSON=[
+  {"id":"hf-1","key":"التوكن_الأول","project":"hf-router"},
+  {"id":"hf-2","key":"التوكن_الثاني","project":"hf-router"}
+]
+```
+
+عند وجود `AI_ROUTER_HF_KEYS_JSON`، يفضله النظام على `HF_TOKEN` ويجرب العناصر بالترتيب. أما المبتدئ فلا يحتاج إلى ذلك؛ `HF_TOKEN` الواحد كافٍ لتفعيل النماذج العشرة.
+
+## الخطوة 14: تغيير نموذج أو تعطيله
+
+عدّل `config/models.json` فقط. لتعطيل نموذج:
+
+```json
+{"provider": "huggingface", "model": "openai/gpt-oss-20b:fastest", "enabled": false}
+```
+
+لتغيير الترتيب، انقل الكائن إلى موضع آخر داخل `default`. لا تعدّل `src/ai_router/router.py` لمجرد تغيير اسم نموذج.
 
 ---
 
