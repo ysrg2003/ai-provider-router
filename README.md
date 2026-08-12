@@ -182,7 +182,7 @@ ai-router --config-dir config --state-db data/ai_router.db summary
 | `config/providers.json` | عند إضافة مزود أو حذف مزود أو تغيير عنوان API | إضافة مزود OpenAI-compatible |
 | `config/models.json` | عند إضافة نموذج أو حذف نموذج أو تغيير الترتيب | جعل Flash-Lite قبل Flash |
 | `config/key_pools.json` | عند تغيير اسم متغير الأسرار | تغيير `AI_ROUTER_GEMINI_KEYS_JSON` إلى اسم آخر |
-| `config/policies.json` | عند تغيير عدد المحاولات أو زمن التبريد | زيادة تبريد خطأ 429 |
+| `config/policies.json` | عند تغيير عدد المحاولات أو زمن التبريد | زيادة تبريد خطأ 429 أو استيعاب كل مسارات fallback |
 | `.env` | عند التشغيل المحلي وإضافة المفاتيح | وضع JSON للمفاتيح محلياً |
 | `src/` | عند كتابة محول لمزود لا يستخدم واجهة معروفة | إضافة محول API خاص |
 
@@ -461,7 +461,7 @@ ai-router --config-dir config --state-db data/ai_router.db summary
 
 # القسم السادس: كيف يعمل التبديل فعلياً؟
 
-افترض أن لديك مفتاحين ونموذجين:
+افترض أن لديك مفتاحين ونموذجين. يضبط المشروع الافتراضي `max_attempts` على 64 حتى يستوعب تسع مفاتيح Gemini بنموذجين ثم عشرة نماذج Hugging Face، مع هامش لإضافة مفاتيح أو مزودات لاحقاً:
 
 | الترتيب | المحاولة |
 | ---: | --- |

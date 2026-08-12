@@ -1,6 +1,6 @@
 {
   "defaults": {
-    "max_attempts": 24,
+    "max_attempts": 64,
     "request_timeout_seconds": 90,
     "cooldowns_seconds": {
       "auth": 86400,
