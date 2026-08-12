@@ -1,0 +1,26 @@
+{
+  "defaults": {
+    "max_attempts": 24,
+    "request_timeout_seconds": 90,
+    "cooldowns_seconds": {
+      "auth": 86400,
+      "quota": 900,
+      "transient": 120,
+      "invalid_or_unknown": 300
+    },
+    "backoff_seconds": [1, 2, 4, 8],
+    "stop_after_all_models": true
+  },
+  "http_classes": {
+    "401": "auth",
+    "403": "auth",
+    "408": "transient",
+    "409": "transient",
+    "425": "transient",
+    "429": "quota",
+    "500": "transient",
+    "502": "transient",
+    "503": "transient",
+    "504": "transient"
+  }
+}

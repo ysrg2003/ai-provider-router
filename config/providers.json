@@ -1,0 +1,20 @@
+{
+  "providers": [
+    {
+      "id": "google_gemini",
+      "kind": "gemini_rest",
+      "enabled": true,
+      "base_url": "https://generativelanguage.googleapis.com/v1beta",
+      "key_pool": "gemini_default",
+      "default_timeout_seconds": 90
+    },
+    {
+      "id": "huggingface",
+      "kind": "openai_compatible",
+      "enabled": true,
+      "base_url": "https://router.huggingface.co/v1",
+      "key_pool": "huggingface_default",
+      "default_timeout_seconds": 90
+    }
+  ]
+}

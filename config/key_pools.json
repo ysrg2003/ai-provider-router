@@ -1,0 +1,16 @@
+{
+  "key_pools": {
+    "gemini_default": {
+      "env": "AI_ROUTER_GEMINI_KEYS_JSON",
+      "format": "json_array",
+      "rotation": "ordered",
+      "cooldown_state": "sqlite"
+    },
+    "huggingface_default": {
+      "env": "AI_ROUTER_HF_KEYS_JSON",
+      "format": "json_array",
+      "rotation": "ordered",
+      "cooldown_state": "sqlite"
+    }
+  }
+}
