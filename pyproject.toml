@@ -7,7 +7,7 @@ name = "ai-provider-router"
 version = "0.1.0"
 description = "Config-driven multi-provider JSON AI router with ordered key rotation and SQLite state"
 requires-python = ">=3.11"
-dependencies = ["requests>=2.31,<3"]
+dependencies = ["requests>=2.31,<3", "python-dotenv>=1.0,<2"]
 
 [project.scripts]
 ai-router = "ai_router.cli.main:main"
