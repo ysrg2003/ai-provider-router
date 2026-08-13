@@ -32,6 +32,18 @@ class RouterTests(unittest.TestCase):
             router.close()
             os.environ.pop("HF_TOKEN", None)
 
+    def test_key_pool_accepts_wrapper_and_api_key_aliases(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps({"keys": [
+                {"id": "wrapped-1", "api_key": "one", "project": "p1"},
+                {"id": "wrapped-2", "token": "two", "project": "p2"},
+            ]})
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            keys = router.config.keys_for("google_gemini")
+            self.assertEqual([key.key_id for key in keys], ["wrapped-1", "wrapped-2"])
+            self.assertEqual([key.secret for key in keys], ["one", "two"])
+            router.close()
+
     def test_rotation_moves_to_next_key_and_records_state(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([

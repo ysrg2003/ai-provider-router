@@ -132,14 +132,21 @@ class RouterConfig:
             values = [{"id": f"{provider_id}-fallback-1", "key": raw, "project": "default"}]
         if isinstance(values, str) and values.strip():
             values = [{"id": f"{provider_id}-fallback-1", "key": values.strip(), "project": "default"}]
+        if isinstance(values, dict):
+            # Accept the documented array and common secret-wrapper forms without
+            # changing the ordered rotation semantics.
+            values = values.get("keys") or values.get("items") or values.get("entries") or [values]
         if not isinstance(values, list):
             raise ValueError(f"{env_name} or fallback token must be a JSON array or a single token")
         result: list[KeySpec] = []
+        aliases = ("key", "api_key", "token", "secret", "value")
         for index, value in enumerate(values):
             if isinstance(value, str) and value.strip():
                 result.append(KeySpec(f"{provider_id}-{index + 1}", value.strip()))
-            elif isinstance(value, dict) and value.get("key"):
-                result.append(KeySpec(str(value.get("id") or f"{provider_id}-{index + 1}"), str(value["key"]).strip(), str(value.get("project") or "default")))
+            elif isinstance(value, dict):
+                secret = next((value.get(alias) for alias in aliases if value.get(alias)), None)
+                if secret:
+                    result.append(KeySpec(str(value.get("id") or value.get("name") or f"{provider_id}-{index + 1}"), str(secret).strip(), str(value.get("project") or "default")))
         return result
 
     def public_summary(self) -> dict[str, Any]:
