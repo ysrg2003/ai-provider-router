@@ -37,7 +37,14 @@ def summarize(name: str, result: dict[str, Any]) -> dict[str, Any]:
         values = first.get("values") if isinstance(first, dict) else first
         summary.update({"embedding_count": len(embeddings), "dimensions": len(values or [])})
     elif output_type == "text":
-        summary.update({"text_chars": len(str(result.get("text", result.get("response", "")))), "annotations": len(result.get("annotations", []))})
+        text = result.get("text", result.get("response", ""))
+        summary.update(
+            {
+                "text_chars": len(str(text)) if text else 0,
+                "json_fields": sorted(key for key in result if key not in {"route", "intent", "text", "response", "annotations"}) if not text else [],
+                "annotations": len(result.get("annotations", [])),
+            }
+        )
     return summary
 
 
