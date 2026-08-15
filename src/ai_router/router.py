@@ -48,12 +48,12 @@ class AIRouter:
         for model_spec in self.config.model_chain(chain):
             provider_spec = self.config.providers[model_spec.provider_id]
             adapter = self.adapters[model_spec.provider_id]
-            keys = self.config.keys_for(model_spec.provider_id)
+            keys = self._ordered_keys(model_spec.provider_id, model_spec.model)
             for key in keys:
                 if attempts >= self.config.policy.max_attempts:
                     break
                 attempts += 1
-                if self.store.is_cooling(model_spec.provider_id, model_spec.model, key.key_id):
+                if self.store.is_cooling(model_spec.provider_id, model_spec.model, key.key_id, key.project):
                     continue
                 try:
                     response = adapter.complete_json(
@@ -111,12 +111,12 @@ class AIRouter:
             complete_video = getattr(adapter, "complete_video_json", None)
             if complete_video is None:
                 continue
-            keys = self.config.keys_for(model_spec.provider_id)
+            keys = self._ordered_keys(model_spec.provider_id, model_spec.model)
             for key in keys:
                 if attempts >= self.config.policy.max_attempts:
                     break
                 attempts += 1
-                if self.store.is_cooling(model_spec.provider_id, model_spec.model, key.key_id):
+                if self.store.is_cooling(model_spec.provider_id, model_spec.model, key.key_id, key.project):
                     continue
                 try:
                     response = complete_video(
@@ -156,6 +156,16 @@ class AIRouter:
                 break
         self.store.checkpoint()
         raise AllProvidersFailed("All video-capable provider/model/key attempts failed: " + " | ".join(errors[-12:]))
+
+    def _ordered_keys(self, provider: str, model: str) -> list[Any]:
+        keys = self.config.keys_for(provider)
+        if not keys:
+            return []
+        grouped: dict[str, list[Any]] = {}
+        for key in keys:
+            grouped.setdefault(key.project or "default", []).append(key)
+        project_order = self.store.reserve_project_order(provider, model, list(grouped))
+        return [key for project in project_order for key in grouped[project]]
 
     def summary(self) -> dict[str, Any]:
         return {"config": self.config.public_summary(), "state": self.store.stats()}

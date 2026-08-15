@@ -99,5 +99,31 @@ class RouterTests(unittest.TestCase):
             os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
 
 
+    def test_project_rotation_round_robin_and_project_scoped_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([
+                {"id": "same-key-id", "key": "project-one-secret", "project": "project-one"},
+                {"id": "same-key-id", "key": "project-two-secret", "project": "project-two"},
+            ])
+            try:
+                router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+                calls: list[str] = []
+
+                def fake(*, model, secret, system_prompt, user_prompt, timeout_seconds):
+                    calls.append(secret)
+                    return ProviderResponse({"ok": secret}, {})
+
+                with patch.object(router.adapters["google_gemini"], "complete_json", side_effect=fake):
+                    router.complete_json(system_prompt="system", user_prompt="first", operation="test")
+                    router.complete_json(system_prompt="system", user_prompt="second", operation="test")
+                self.assertEqual(calls, ["project-one-secret", "project-two-secret"])
+                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-2.5-flash", "same-key-id", "project-one"))
+                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-2.5-flash", "same-key-id", "project-two"))
+                self.assertEqual(router.store.stats()["projects"], 2)
+                router.close()
+            finally:
+                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+
+
 if __name__ == "__main__":
     unittest.main()
