@@ -106,3 +106,54 @@ PYTHONPATH=src python -m ai_router.cli.main \
 ```
 
 النجاح المتوقع هو suite ناجحة، وroute plan يعرض `image_grounded_search` دون أي طلب خارجي. استخدم هذا المسار قبل أي smoke test حي.
+
+## نتائج التشغيل الحي الفعلية
+
+تم تشغيل workflow [Live smoke tests](https://github.com/ysrg2003/ai-provider-router/actions/runs/31911509398) على commit `195ae9f` باستخدام Secret `AI_ROUTER_GEMINI_KEYS_JSON`. أثبت التقرير أن GitHub Actions حمّل **6 مفاتيح Gemini** بنجاح؛ لذلك أصبحت صيغة الـkey pool الصحيحة هي JSON array الصالحة، وليست قيمة نصية متعددة الأسطر. يتوافق وضع الإعداد هذا مع طريقة GitHub الرسمية لإضافة repository secret عبر `gh secret set NAME < file` [1].
+
+| الفئة | النتيجة الفعلية | الملاحظة التشغيلية |
+|---|---|---|
+| تحميل المفاتيح | `google_gemini: 6`، و`huggingface: 0` | تم تحميل المفاتيح الستة دون تسجيل قيمها |
+| `live` | `route_plan_only` | تم التحقق من اختيار `gemini-3.1-flash-live-preview` فقط؛ لم يُفتح WebSocket |
+| `video_generation` | `route_plan_only` | تم التحقق من اختيار `veo-3.1-generate-preview` فقط؛ لم تُنشأ مهمة Veo |
+| `video_analysis` | `route_plan_only` | تم التحقق من route؛ لم يُرسل فيديو فعلي في هذا smoke المحدود |
+| `text` | `passed` | route `text` أعاد JSON يحوي الحقل `ok`؛ لذلك `text_chars: 0` متوقع وليس فشلًا |
+| `search` | `passed` | route `text_grounded_search`، ونتج نص مع تعليقين للمصادر |
+| `maps` | `passed` | route `text_grounded_maps`، ونتج نصًا من طلب Maps grounding |
+| `embedding` | `passed` | `1` embedding بأبعاد `3072` عبر `gemini-embedding-2` |
+| `image` | `failed` | جميع محاولات المفاتيح أعادت `quota/429` للنموذج الأول في route |
+| `audio` | `failed` | جميع محاولات المفاتيح أعادت `quota/429` لنموذج TTS الأول في route |
+
+كانت المحصلة `7/9` حالات ناجحة أو مخططة، بينما أدت حالتا Image وTTS إلى exit code غير ناجح للـjob. يظل artifact متاحًا لأن خطوة رفع التقرير تستخدم `if: always()`. نتيجة `429` تعني أن الطلب رُفض بسبب الحصة أو حد الاستخدام في وقت التجربة؛ ولا تكفي وحدها لإثبات أن النموذج مدفوع دائمًا أو غير قابل للاستخدام بعد تجدد الحصة. تتبع وثائق Gemini الرسمية نموذج TTS عبر Interactions مع `response_format: {"type":"audio"}` و`generation_config.speech_config` [2]، كما توثق Image Generation عبر `interaction.output_image` [3].
+
+## الإصلاحات التي تحققت أثناء التجربة
+
+كان سبب ظهور `google_gemini: 0` في التشغيل الأول هو أن ملف المفاتيح المرفق استخدم نهايات أسطر CRLF، فدخل محرف `CR` داخل JSON عند بناء الـSecret بواسطة `awk` وأصبح JSON غير صالح. أُعيد إنشاء القيمة مع إزالة `CR` من كل سطر، والتحقق منها محليًا بواسطة `python3 -m json.tool`، ثم رُفعت إلى GitHub كـJSON array تحتوي ستة عناصر. لا تُطبع القيمة أو أجزاء منها في التقرير.
+
+كما عولجت استجابة `embedContent` التي تعيد كائنًا مفردًا تحت الحقل `embedding` بدل قائمة `embeddings`؛ أصبح الراوتر يطبع الكائن المفرد إلى قائمة موحدة، وهو ما أثبته التشغيل الحي بنتيجة `embedding_count: 1` و`dimensions: 3072`. هذا متوافق مع توثيق Gemini الذي يعرض `embedContent` لإنتاج embeddings، ويذكر أن `gemini-embedding-2` نموذج متعدد الوسائط وأن البعد الافتراضي هو `3072` [4].
+
+أضيف أيضًا إلى رسائل `AllProvidersFailed` تصنيف الخطأ ورقم HTTP، مثل `quota/429`، مع إبقاء body الخام خارج التقرير. وأضيفت تغطية اختبارية لهذا الإصلاح، فأصبحت مجموعة الاختبارات تحتوي **22 اختبارًا ناجحًا**.
+
+## بوابة الجودة المحلية
+
+نُفذت الأوامر التالية من جذر المستودع بعد الإصلاحات:
+
+```bash
+cd /path/to/ai-provider-router
+ruff check src scripts tests
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+python3 -m compileall -q src scripts tests
+```
+
+النتيجة الفعلية: `ruff` نجح، ونجحت الاختبارات الـ22، ونجح `compileall`. هذه الاختبارات لا تستهلك حصة Gemini لأنها تستخدم mocks؛ أما workflow الحي فهو منفصل ومحدود زمنيًا إلى 15 دقيقة، ويحتفظ بالartifact سبعة أيام.
+
+## ملاحظات أمنية بعد التجربة
+
+لا يحتوي هذا المستودع أو artifact على قيم مفاتيح Gemini. يجب تدوير مفاتيح Gemini الستة إذا ظهرت في سجل أو ملف غير موثوق، وتحديث Secret بعد التدوير. كما يجب إبطال **رمز GitHub الذي استُخدم لتنفيذ المهمة وظهر في المحادثة** من صفحة [GitHub Personal access tokens](https://github.com/settings/tokens) فور انتهاء التشغيل، ثم إنشاء رمز قصير العمر وبأقل صلاحيات عند الحاجة. لا تضع رمز GitHub داخل `AI_ROUTER_GEMINI_KEYS_JSON`؛ فهذا الـSecret مخصص لمفاتيح Gemini فقط.
+
+## References
+
+[1]: https://docs.github.com/actions/security-guides/using-secrets-in-github-actions "Using secrets in GitHub Actions — GitHub Docs"
+[2]: https://ai.google.dev/gemini-api/docs/speech-generation "Text-to-speech generation (TTS) — Gemini API"
+[3]: https://ai.google.dev/gemini-api/docs/image-generation "Image generation — Gemini API"
+[4]: https://ai.google.dev/gemini-api/docs/embeddings "Embeddings — Gemini API"
