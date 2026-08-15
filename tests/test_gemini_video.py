@@ -1,8 +1,8 @@
 import unittest
 from unittest.mock import patch
 
-from ai_router.providers.gemini import GeminiAdapter
 from ai_router.providers.base import ProviderError
+from ai_router.providers.gemini import GeminiAdapter
 
 
 class FakeResponse:

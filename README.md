@@ -249,29 +249,22 @@ AI_ROUTER_GEMINI_KEYS_JSON=[
 
 ## الخطوة 9: فهم ترتيب نماذج Gemini
 
-افتح `config/models.json`. الجزء الأساسي هو:
-
-```json
-{
-  "model_chains": {
-    "default": [
-      {"provider": "google_gemini", "model": "gemini-2.5-flash", "enabled": true},
-      {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": true},
-      {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "enabled": true}
-    ]
-  }
-}
-```
-
-مع وجود مفتاحين، الترتيب الفعلي يكون:
+افتح `config/models.json`. السلاسل الحالية تضع نماذج Gemini النصية القابلة للتشغيل في adapter بترتيب تنازلي حسب الإصدار:
 
 ```text
-Flash + gemini-1
-Flash + gemini-2
-Flash-Lite + gemini-1
-Flash-Lite + gemini-2
-Hugging Face + كل مفاتيح Hugging Face
+Gemini 3.7 Flash
+Gemini 3.6 Flash
+Gemini 3.5 Flash
+Gemini 3.5 Flash-Lite
+Gemini 3.1 Flash-Lite
+Gemini 3 Flash
+Gemini 2.5 Flash
+Gemini 2.5 Flash-Lite
 ```
+
+بعد انتهاء مسار Gemini ينتقل الراوتر إلى نماذج Hugging Face الموجودة في السلسلة نفسها. لا تُضاف نماذج TTS أو Image أو Embedding إلى `default` تلقائيًا لأن adapter الحالي يضمن JSON text completion، بينما هذه النماذج تحتاج واجهات وعمليات مختلفة.
+
+مع وجود مفتاحين، يبدأ كل مفتاح من النموذج الأول. إذا فشل النموذج الأول للمفتاح، يحفظ الراوتر أن هذا المفتاح وصل إلى النموذج التالي. عند الطلب اللاحق، يستأنف هذا المفتاح من موضعه المحفوظ، بينما يبدأ مفتاح جديد من أول نموذج.
 
 إذا أردت إيقاف نموذج مؤقتاً، غيّر `enabled` إلى `false`:
 
@@ -339,21 +332,27 @@ ai-router --config-dir config --state-db data/ai_router.db summary
 
 ## الخطوة 12: فهم ترتيب التجربة الكامل
 
-إذا كان لديك Gemini Token واحد وHF Token واحد، يحاول النظام بهذا الترتيب:
+إذا كان لديك Gemini Token واحد وHF Token واحد، يحاول النظام Gemini بهذا الترتيب، ثم ينتقل إلى Hugging Face:
 
 ```text
-1. Gemini 2.5 Flash
-2. Gemini 2.5 Flash-Lite
-3. Hugging Face: openai/gpt-oss-120b
-4. Hugging Face: deepseek-ai/DeepSeek-V4-Flash-0731
-5. Hugging Face: zai-org/GLM-5.2
-6. Hugging Face: Qwen/Qwen3-Coder-480B-A35B-Instruct
-7. Hugging Face: deepseek-ai/DeepSeek-R1
-8. Hugging Face: Qwen/Qwen3-4B-Thinking-2507
-9. Hugging Face: Qwen/Qwen2.5-7B-Instruct-1M
-10. Hugging Face: Qwen/Qwen2.5-Coder-32B-Instruct
-11. Hugging Face: meta-llama/Llama-3.1-8B-Instruct
-12. Hugging Face: openai/gpt-oss-20b
+1. Gemini 3.7 Flash
+2. Gemini 3.6 Flash
+3. Gemini 3.5 Flash
+4. Gemini 3.5 Flash-Lite
+5. Gemini 3.1 Flash-Lite
+6. Gemini 3 Flash
+7. Gemini 2.5 Flash
+8. Gemini 2.5 Flash-Lite
+9. Hugging Face: openai/gpt-oss-120b
+10. Hugging Face: deepseek-ai/DeepSeek-V4-Flash-0731
+11. Hugging Face: zai-org/GLM-5.2
+12. Hugging Face: Qwen/Qwen3-Coder-480B-A35B-Instruct
+13. Hugging Face: deepseek-ai/DeepSeek-R1
+14. Hugging Face: Qwen/Qwen3-4B-Thinking-2507
+15. Hugging Face: Qwen/Qwen2.5-7B-Instruct-1M
+16. Hugging Face: Qwen/Qwen2.5-Coder-32B-Instruct
+17. Hugging Face: meta-llama/Llama-3.1-8B-Instruct
+18. Hugging Face: openai/gpt-oss-20b
 ```
 
 إذا لم تضف Gemini، يبدأ النظام مباشرة من النموذج الأول في Hugging Face. وإذا فشل نموذج بسبب 404 أو 403 أو 429 أو timeout أو JSON غير صالح، ينتقل إلى النموذج التالي ويسجل الحالة في SQLite.
@@ -461,16 +460,18 @@ ai-router --config-dir config --state-db data/ai_router.db summary
 
 # القسم السادس: كيف يعمل التبديل فعلياً؟
 
-افترض أن لديك مفتاحين ونموذجين. يضبط المشروع الافتراضي `max_attempts` على 64 حتى يستوعب تسع مفاتيح Gemini بنموذجين ثم عشرة نماذج Hugging Face، مع هامش لإضافة مفاتيح أو مزودات لاحقاً:
+افترض أن لديك مفتاحين ونموذجين. يضبط المشروع الافتراضي `max_attempts` على 64. التسلسل الأولي يكون:
 
 | الترتيب | المحاولة |
 | ---: | --- |
-| 1 | Gemini Flash بالمفتاح `gemini-1` |
-| 2 | Gemini Flash بالمفتاح `gemini-2` |
-| 3 | Gemini Flash-Lite بالمفتاح `gemini-1` |
-| 4 | Gemini Flash-Lite بالمفتاح `gemini-2` |
-| 5 | Hugging Face بالنموذج الأول والمفتاح الأول |
-| 6 | Hugging Face بالنموذج الأول والمفتاح الثاني |
+| 1 | النموذج الأول بالمفتاح `gemini-1` |
+| 2 | النموذج الأول بالمفتاح `gemini-2` |
+| 3 | النموذج الثاني بالمفتاح `gemini-1` إذا كان الأول قد فشل لهذا المفتاح |
+| 4 | النموذج الثاني بالمفتاح `gemini-2` إذا كان الأول قد فشل لهذا المفتاح |
+| 5 | أول نموذج Hugging Face بالمفتاح الأول |
+| 6 | أول نموذج Hugging Face بالمفتاح الثاني |
+
+يحفظ SQLite جدول `key_model_cursor` بمفتاح مركب من المزود والـchain والمفتاح والمشروع. هذا يعني أن فشل `gemini-1` في النموذج الأول لا يجعل المفتاح الثاني يقفز إلى النموذج الثاني، ولا يعيد المفتاح الأول إلى البداية في الطلب التالي. نجاح الطلب لا يزيل cursor؛ فالهدف هو الاستئناف من الموضع التالي الذي وصل إليه المفتاح.
 
 إذا أعاد المزود **401 أو 403**، يسجل النظام خطأ مصادقة ويضع المفتاح في تبريد طويل. إذا أعاد **429**، يسجل أن الحصة أو المعدل انتهى ويضع المفتاح في تبريد المدة الموجودة في `config/policies.json`. إذا حدث خطأ شبكة أو 5xx، يستخدم backoff ثم ينتقل إلى المحاولة التالية. إذا أعاد النموذج نصاً ليس JSON صحيحاً، يعتبر الاستجابة غير صالحة وينتقل إلى البديل.
 

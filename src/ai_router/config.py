@@ -42,12 +42,13 @@ class RouterPolicy:
 
 
 class RouterConfig:
-    def __init__(self, root: Path, providers: dict[str, ProviderSpec], chains: dict[str, list[ModelSpec]], key_pools: dict[str, str], fallback_envs: dict[str, str], policy: RouterPolicy) -> None:
+    def __init__(self, root: Path, providers: dict[str, ProviderSpec], chains: dict[str, list[ModelSpec]], key_pools: dict[str, str], fallback_envs: dict[str, str], key_pool_rotations: dict[str, str], policy: RouterPolicy) -> None:
         self.root = root
         self.providers = providers
         self.chains = chains
         self.key_pools = key_pools
         self.fallback_envs = fallback_envs
+        self.key_pool_rotations = key_pool_rotations
         self.policy = policy
 
     @classmethod
@@ -86,6 +87,10 @@ class RouterConfig:
             for pool_id, pool in keys_raw.get("key_pools", {}).items()
             if pool.get("fallback_env")
         }
+        key_pool_rotations = {
+            pool_id: str(pool.get("rotation", "ordered"))
+            for pool_id, pool in keys_raw.get("key_pools", {}).items()
+        }
         defaults = policy_raw.get("defaults", {})
         policy = RouterPolicy(
             max_attempts=max(1, int(defaults.get("max_attempts", 24))),
@@ -93,7 +98,7 @@ class RouterConfig:
             cooldowns_seconds={key: int(value) for key, value in defaults.get("cooldowns_seconds", {}).items()},
             backoff_seconds=[int(value) for value in defaults.get("backoff_seconds", [1, 2, 4, 8])],
         )
-        config = cls(config_root, providers, chains, key_pools, fallback_envs, policy)
+        config = cls(config_root, providers, chains, key_pools, fallback_envs, key_pool_rotations, policy)
         config.validate()
         return config
 
@@ -155,5 +160,6 @@ class RouterConfig:
             "providers": [provider.provider_id for provider in self.providers.values() if provider.enabled],
             "chains": {name: [{"provider": item.provider_id, "model": item.model} for item in chain if item.enabled] for name, chain in self.chains.items()},
             "key_pools": list(self.key_pools),
+            "key_pool_rotations": dict(self.key_pool_rotations),
             "secrets_loaded": {provider_id: len(self.keys_for(provider_id)) for provider_id in self.providers},
         }

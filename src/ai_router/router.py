@@ -19,8 +19,8 @@ class AIRouter:
     """Reusable ordered multi-provider JSON router.
 
     Provider definitions, model chains, key pools, and retry policies are loaded
-    from independent JSON files. Adding or removing a provider normally requires
-    only configuration plus an adapter when the provider is not OpenAI-compatible.
+    from independent JSON files. Each key also has a persistent cursor per
+    provider and chain, so a key resumes at its next model after a failure.
     """
 
     def __init__(self, *, config_dir: str | Path | None = None, state_db: str | Path = "data/ai_router.db") -> None:
@@ -45,10 +45,19 @@ class AIRouter:
     ) -> dict[str, Any]:
         errors: list[str] = []
         attempts = 0
-        for model_spec in self.config.model_chain(chain):
+        chain_specs = self.config.model_chain(chain)
+        for model_spec in chain_specs:
             provider_spec = self.config.providers[model_spec.provider_id]
             adapter = self.adapters[model_spec.provider_id]
-            keys = self._ordered_keys(model_spec.provider_id, model_spec.model)
+            model_names = [spec.model for spec in chain_specs if spec.provider_id == model_spec.provider_id]
+            model_index = model_names.index(model_spec.model)
+            keys = self._ordered_keys(
+                provider=model_spec.provider_id,
+                chain=chain,
+                model=model_spec.model,
+                model_names=model_names,
+                model_index=model_index,
+            )
             for key in keys:
                 if attempts >= self.config.policy.max_attempts:
                     break
@@ -86,6 +95,15 @@ class AIRouter:
                         status_code=exc.status_code,
                         cooldown_seconds=cooldown,
                     )
+                    self.store.advance_model_cursor(
+                        provider=model_spec.provider_id,
+                        chain=chain,
+                        key_id=key.key_id,
+                        project=key.project,
+                        model_names=model_names,
+                        current_index=model_index,
+                        error_class=exc.error_class,
+                    )
                     if exc.retryable:
                         time.sleep(min(2.0, self._backoff(attempts)))
             if attempts >= self.config.policy.max_attempts:
@@ -105,13 +123,25 @@ class AIRouter:
         """Run one public video through adapters that support video input."""
         errors: list[str] = []
         attempts = 0
-        for model_spec in self.config.model_chain(chain):
+        chain_specs = self.config.model_chain(chain)
+        video_specs = [
+            spec
+            for spec in chain_specs
+            if getattr(self.adapters[spec.provider_id], "complete_video_json", None) is not None
+        ]
+        for model_spec in video_specs:
             provider_spec = self.config.providers[model_spec.provider_id]
             adapter = self.adapters[model_spec.provider_id]
-            complete_video = getattr(adapter, "complete_video_json", None)
-            if complete_video is None:
-                continue
-            keys = self._ordered_keys(model_spec.provider_id, model_spec.model)
+            complete_video = getattr(adapter, "complete_video_json")
+            model_names = [spec.model for spec in video_specs if spec.provider_id == model_spec.provider_id]
+            model_index = model_names.index(model_spec.model)
+            keys = self._ordered_keys(
+                provider=model_spec.provider_id,
+                chain=chain,
+                model=model_spec.model,
+                model_names=model_names,
+                model_index=model_index,
+            )
             for key in keys:
                 if attempts >= self.config.policy.max_attempts:
                     break
@@ -150,6 +180,15 @@ class AIRouter:
                         status_code=exc.status_code,
                         cooldown_seconds=cooldown,
                     )
+                    self.store.advance_model_cursor(
+                        provider=model_spec.provider_id,
+                        chain=chain,
+                        key_id=key.key_id,
+                        project=key.project,
+                        model_names=model_names,
+                        current_index=model_index,
+                        error_class=exc.error_class,
+                    )
                     if exc.retryable:
                         time.sleep(min(2.0, self._backoff(attempts)))
             if attempts >= self.config.policy.max_attempts:
@@ -157,15 +196,39 @@ class AIRouter:
         self.store.checkpoint()
         raise AllProvidersFailed("All video-capable provider/model/key attempts failed: " + " | ".join(errors[-12:]))
 
-    def _ordered_keys(self, provider: str, model: str) -> list[Any]:
+    def _ordered_keys(
+        self,
+        *,
+        provider: str,
+        chain: str,
+        model: str,
+        model_names: list[str],
+        model_index: int,
+    ) -> list[Any]:
         keys = self.config.keys_for(provider)
         if not keys:
             return []
         grouped: dict[str, list[Any]] = {}
         for key in keys:
             grouped.setdefault(key.project or "default", []).append(key)
-        project_order = self.store.reserve_project_order(provider, model, list(grouped))
-        return [key for project in project_order for key in grouped[project]]
+        pool_id = self.config.providers[provider].key_pool
+        rotation = self.config.key_pool_rotations.get(pool_id, "ordered")
+        if rotation == "round_robin":
+            project_order = self.store.reserve_project_order(provider, model, list(grouped))
+            ordered = [key for project in project_order for key in grouped[project]]
+        else:
+            ordered = keys
+        return [
+            key
+            for key in ordered
+            if self.store.get_model_cursor(
+                provider=provider,
+                chain=chain,
+                key_id=key.key_id,
+                project=key.project or "default",
+                model_names=model_names,
+            ) <= model_index
+        ]
 
     def summary(self) -> dict[str, Any]:
         return {"config": self.config.public_summary(), "state": self.store.stats()}

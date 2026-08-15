@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from ai_router import AIRouter
+from ai_router.config import ModelSpec
 from ai_router.providers.base import ProviderError, ProviderResponse
 
 
@@ -17,8 +18,24 @@ class RouterTests(unittest.TestCase):
             os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([{"id": "first", "key": "SECRET_VALUE", "project": "p1"}])
             router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
             summary = router.summary()
-            self.assertEqual(summary["config"]["chains"]["default"][0]["model"], "gemini-2.5-flash")
+            self.assertEqual(summary["config"]["chains"]["default"][0]["model"], "gemini-3.7-flash")
             self.assertNotIn("SECRET_VALUE", json.dumps(summary))
+            router.close()
+
+    def test_gemini_models_are_ordered_descending(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            models = [item.model for item in router.config.model_chain("default") if item.provider_id == "google_gemini"]
+            self.assertEqual(models, [
+                "gemini-3.7-flash",
+                "gemini-3.6-flash",
+                "gemini-3.5-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.1-flash-lite",
+                "gemini-3-flash",
+                "gemini-2.5-flash",
+                "gemini-2.5-flash-lite",
+            ])
             router.close()
 
     def test_single_hf_token_is_loaded_as_fallback_key(self) -> None:
@@ -62,10 +79,95 @@ class RouterTests(unittest.TestCase):
             with patch.object(router.adapters["google_gemini"], "complete_json", side_effect=fake):
                 result = router.complete_json(system_prompt="system", user_prompt="user", operation="test")
             self.assertEqual(result, {"ok": True})
-            self.assertEqual(calls[:2], ["gemini-2.5-flash:one", "gemini-2.5-flash:two"])
+            self.assertEqual(calls[:2], ["gemini-3.7-flash:one", "gemini-3.7-flash:two"])
             self.assertEqual(router.store.stats()["calls"], 2)
             router.close()
 
+
+    def test_each_key_resumes_its_own_model_cursor(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([
+                {"id": "first", "key": "one", "project": "p1"},
+                {"id": "second", "key": "two", "project": "p2"},
+            ])
+            try:
+                router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+                router.config.chains["cursor_test"] = [
+                    ModelSpec("google_gemini", "gemini-3.7-flash", True),
+                    ModelSpec("google_gemini", "gemini-3.6-flash", True),
+                ]
+                calls: list[str] = []
+
+                def fake(*, model, secret, system_prompt, user_prompt, timeout_seconds):
+                    calls.append(f"{model}:{secret}")
+                    if model == "gemini-3.7-flash":
+                        raise ProviderError("quota", error_class="quota", status_code=429, retryable=False)
+                    if secret == "one":
+                        raise ProviderError("quota", error_class="quota", status_code=429, retryable=False)
+                    return ProviderResponse({"ok": secret}, {})
+
+                with patch.object(router.adapters["google_gemini"], "complete_json", side_effect=fake):
+                    result = router.complete_json(chain="cursor_test", system_prompt="system", user_prompt="first", operation="cursor-1")
+                    self.assertEqual(result, {"ok": "two"})
+                    result = router.complete_json(chain="cursor_test", system_prompt="system", user_prompt="second", operation="cursor-2")
+                self.assertEqual(result, {"ok": "two"})
+                self.assertEqual(calls, [
+                    "gemini-3.7-flash:one",
+                    "gemini-3.7-flash:two",
+                    "gemini-3.6-flash:one",
+                    "gemini-3.6-flash:two",
+                    "gemini-3.6-flash:two",
+                ])
+                self.assertEqual(router.store.get_model_cursor(
+                    provider="google_gemini", chain="cursor_test", key_id="first", project="p1",
+                    model_names=["gemini-3.7-flash", "gemini-3.6-flash"],
+                ), 0)
+                router.close()
+            finally:
+                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+
+    def test_model_cursor_survives_router_restart(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([
+                {"id": "restart-first", "key": "one", "project": "p1"},
+                {"id": "restart-second", "key": "two", "project": "p2"},
+            ])
+            try:
+                state_db = Path(temp) / "router.db"
+                first_router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=state_db)
+                first_router.config.chains["restart_test"] = [
+                    ModelSpec("google_gemini", "gemini-3.7-flash", True),
+                    ModelSpec("google_gemini", "gemini-3.6-flash", True),
+                ]
+                first_calls: list[str] = []
+
+                def first_fake(*, model, secret, system_prompt, user_prompt, timeout_seconds):
+                    first_calls.append(f"{model}:{secret}")
+                    if model == "gemini-3.7-flash":
+                        raise ProviderError("quota", error_class="quota", retryable=False)
+                    return ProviderResponse({"ok": secret}, {})
+
+                with patch.object(first_router.adapters["google_gemini"], "complete_json", side_effect=first_fake):
+                    self.assertEqual(first_router.complete_json(chain="restart_test", system_prompt="s", user_prompt="u"), {"ok": "one"})
+                first_router.close()
+
+                second_router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=state_db)
+                second_router.config.chains["restart_test"] = [
+                    ModelSpec("google_gemini", "gemini-3.7-flash", True),
+                    ModelSpec("google_gemini", "gemini-3.6-flash", True),
+                ]
+                second_calls: list[str] = []
+
+                def second_fake(*, model, secret, system_prompt, user_prompt, timeout_seconds):
+                    second_calls.append(f"{model}:{secret}")
+                    return ProviderResponse({"ok": secret}, {})
+
+                with patch.object(second_router.adapters["google_gemini"], "complete_json", side_effect=second_fake):
+                    self.assertEqual(second_router.complete_json(chain="restart_test", system_prompt="s", user_prompt="u"), {"ok": "one"})
+                self.assertEqual(second_calls, ["gemini-3.6-flash:one"])
+                second_router.close()
+            finally:
+                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
 
     def test_video_rotation_uses_same_key_pool_and_state(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -91,8 +193,8 @@ class RouterTests(unittest.TestCase):
                 )
             self.assertEqual(result, {"summary": "ok"})
             self.assertEqual(calls[:2], [
-                "gemini-2.5-flash:one:https://www.youtube.com/watch?v=example",
-                "gemini-2.5-flash:two:https://www.youtube.com/watch?v=example",
+                "gemini-3.7-flash:one:https://www.youtube.com/watch?v=example",
+                "gemini-3.7-flash:two:https://www.youtube.com/watch?v=example",
             ])
             self.assertEqual(router.store.stats()["calls"], 2)
             router.close()
@@ -107,6 +209,7 @@ class RouterTests(unittest.TestCase):
             ])
             try:
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+                router.config.key_pool_rotations["gemini_default"] = "round_robin"
                 calls: list[str] = []
 
                 def fake(*, model, secret, system_prompt, user_prompt, timeout_seconds):
@@ -117,8 +220,10 @@ class RouterTests(unittest.TestCase):
                     router.complete_json(system_prompt="system", user_prompt="first", operation="test")
                     router.complete_json(system_prompt="system", user_prompt="second", operation="test")
                 self.assertEqual(calls, ["project-one-secret", "project-two-secret"])
-                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-2.5-flash", "same-key-id", "project-one"))
-                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-2.5-flash", "same-key-id", "project-two"))
+                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-3.7-flash", "same-key-id", "project-one")
+)
+                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-3.7-flash", "same-key-id", "project-two")
+)
                 self.assertEqual(router.store.stats()["projects"], 2)
                 router.close()
             finally:

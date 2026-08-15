@@ -66,6 +66,24 @@ class RouterStore:
         )
         connection.execute("DROP TABLE provider_state_legacy")
 
+    @staticmethod
+    def _create_key_model_cursor(connection: sqlite3.Connection) -> None:
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS key_model_cursor (
+                provider TEXT NOT NULL,
+                chain TEXT NOT NULL,
+                key_id TEXT NOT NULL,
+                project TEXT NOT NULL,
+                next_model_index INTEGER NOT NULL DEFAULT 0,
+                next_model TEXT,
+                last_error_class TEXT,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (provider, chain, key_id, project)
+            )
+            """
+        )
+
     def _init_schema(self) -> None:
         with self._connect() as connection:
             connection.executescript(
@@ -95,6 +113,7 @@ class RouterStore:
                 """
             )
             self._migrate_provider_state_if_needed(connection)
+            self._create_key_model_cursor(connection)
 
     def get_state(self, provider: str, model: str, key_id: str, project: str) -> dict[str, Any] | None:
         with self._connect() as connection:
@@ -183,12 +202,69 @@ class RouterStore:
                 (provider, model, key_id, project, cooldown_until, message[:2000], now.isoformat()),
             )
 
+    def get_model_cursor(
+        self,
+        *,
+        provider: str,
+        chain: str,
+        key_id: str,
+        project: str,
+        model_names: Sequence[str],
+    ) -> int:
+        if not model_names:
+            return 0
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT next_model_index, next_model FROM key_model_cursor WHERE provider = ? AND chain = ? AND key_id = ? AND project = ?",
+                (provider, chain, key_id, project or "default"),
+            ).fetchone()
+        if not row:
+            return 0
+        next_model = row[1]
+        if next_model in model_names:
+            return model_names.index(next_model)
+        return min(max(int(row[0]), 0), len(model_names))
+
+    def advance_model_cursor(
+        self,
+        *,
+        provider: str,
+        chain: str,
+        key_id: str,
+        project: str,
+        model_names: Sequence[str],
+        current_index: int,
+        error_class: str,
+    ) -> None:
+        if not model_names:
+            return
+        next_index = current_index + 1
+        if next_index >= len(model_names):
+            next_index = 0
+        next_model = model_names[next_index]
+        now = datetime.now(timezone.utc).isoformat()
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO key_model_cursor
+                    (provider, chain, key_id, project, next_model_index, next_model, last_error_class, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(provider, chain, key_id, project) DO UPDATE SET
+                    next_model_index = excluded.next_model_index,
+                    next_model = excluded.next_model,
+                    last_error_class = excluded.last_error_class,
+                    updated_at = excluded.updated_at
+                """,
+                (provider, chain, key_id, project or "default", next_index, next_model, error_class, now),
+            )
+
     def stats(self) -> dict[str, int]:
         with self._connect() as connection:
             calls = connection.execute("SELECT COUNT(*) FROM provider_calls").fetchone()[0]
             states = connection.execute("SELECT COUNT(*) FROM provider_state").fetchone()[0]
             projects = connection.execute("SELECT COUNT(DISTINCT project) FROM provider_state").fetchone()[0]
-        return {"calls": calls, "provider_states": states, "projects": projects}
+            cursors = connection.execute("SELECT COUNT(*) FROM key_model_cursor").fetchone()[0]
+        return {"calls": calls, "provider_states": states, "projects": projects, "model_cursors": cursors}
 
     def checkpoint(self) -> None:
         with self._connect() as connection:

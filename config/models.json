@@ -1,11 +1,24 @@
 {
   "model_chains": {
     "video": [
+      {"provider": "google_gemini", "model": "gemini-3.7-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.6-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash-lite", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.1-flash-lite", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash", "enabled": true},
       {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": true},
       {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "enabled": true},
       {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest", "enabled": true}
     ],
     "default": [
+      {"provider": "google_gemini", "model": "gemini-3.7-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.6-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash-lite", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.1-flash-lite", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3-flash", "enabled": true},
       {"provider": "google_gemini", "model": "gemini-2.5-flash", "enabled": true},
       {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": true},
       {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "enabled": true},
@@ -20,13 +33,22 @@
       {"provider": "huggingface", "model": "openai/gpt-oss-20b:fastest", "enabled": true}
     ],
     "creative": [
+      {"provider": "google_gemini", "model": "gemini-3.7-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.6-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.1-flash-lite", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3-flash", "enabled": true},
       {"provider": "google_gemini", "model": "gemini-2.5-flash", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": true},
       {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "enabled": true},
       {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest", "enabled": true},
       {"provider": "huggingface", "model": "zai-org/GLM-5.2:fastest", "enabled": true},
       {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-R1:fastest", "enabled": true}
     ],
     "cheap": [
+      {"provider": "google_gemini", "model": "gemini-3.5-flash-lite", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.1-flash-lite", "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3-flash", "enabled": true},
       {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": true},
       {"provider": "huggingface", "model": "openai/gpt-oss-20b:fastest", "enabled": true},
       {"provider": "huggingface", "model": "Qwen/Qwen3-4B-Thinking-2507:fastest", "enabled": true},

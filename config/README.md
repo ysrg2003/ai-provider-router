@@ -4,21 +4,15 @@
 
 ## أريد تغيير ترتيب النماذج
 
-افتح `models.json`. إذا كان لديك:
+افتح `models.json`. السلسلة الافتراضية تبدأ بنماذج Gemini النصية بترتيب تنازلي حسب الإصدار:
 
-```json
-"default": [
-  {"provider": "google_gemini", "model": "gemini-2.5-flash", "enabled": true},
-  {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": true},
-  {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "enabled": true}
-]
+```text
+Gemini 3.7 Flash → 3.6 → 3.5 → 3.1 → 3 → 2.5
 ```
 
-فإن النظام يبدأ بـ Flash ثم Flash-Lite ثم Hugging Face. لتعطيل Flash-Lite مؤقتاً، لا تحذف الكائن؛ غيّر فقط:
+ثم تنتقل إلى نماذج Hugging Face. لا تُضاف نماذج TTS أو Image أو Embedding إلى السلسلة الافتراضية لأن adapter الحالي مخصص لطلب JSON نصي. لتعطيل أي نموذج مؤقتًا، لا تحذف الكائن؛ غيّر `enabled` إلى `false`.
 
-```json
-{"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "enabled": false}
-```
+يملك كل مفتاح cursor مستقلًا داخل SQLite. يبدأ المفتاح الجديد من Gemini 3.7، أما المفتاح الذي فشل في نموذج سابق فيستأنف من النموذج التالي في الطلب اللاحق.
 
 ## أريد تفعيل Hugging Face بأبسط طريقة
 
