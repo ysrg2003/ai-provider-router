@@ -69,7 +69,15 @@ def main() -> int:
             except (AllProvidersFailed, UnsupportedOutputType, ValueError) as exc:
                 results.append({"scenario": name, "status": "failed", "error_type": type(exc).__name__, "message": str(exc)[:240]})
         passed = sum(item["status"] in {"passed", "route_plan_only"} for item in results)
-        payload = {"status": "completed", "scenario_filter": selected, "passed_or_planned": passed, "total": len(results), "results": results}
+        config_summary = router.summary().get("config", {})
+        payload = {
+            "status": "completed",
+            "scenario_filter": selected,
+            "loaded_key_counts": config_summary.get("secrets_loaded", {}),
+            "passed_or_planned": passed,
+            "total": len(results),
+            "results": results,
+        }
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return 0 if all(item["status"] in {"passed", "route_plan_only"} for item in results) else 1
     finally:
