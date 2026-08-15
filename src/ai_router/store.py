@@ -1,8 +1,9 @@
 import json
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from collections.abc import Sequence
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 
 class RouterStore:
@@ -128,7 +129,7 @@ class RouterStore:
         if not state or not state.get("cooldown_until"):
             return False
         try:
-            return datetime.fromisoformat(state["cooldown_until"]) > datetime.now(timezone.utc)
+            return datetime.fromisoformat(state["cooldown_until"]) > datetime.now(UTC)
         except ValueError:
             return False
 
@@ -137,7 +138,7 @@ class RouterStore:
         unique_projects = list(dict.fromkeys(str(project or "default") for project in projects))
         if not unique_projects:
             return []
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._connect() as connection:
             row = connection.execute(
                 "SELECT next_project_index FROM rotation_state WHERE provider = ? AND model = ?",
@@ -159,7 +160,7 @@ class RouterStore:
         return ordered
 
     def record_success(self, *, provider: str, model: str, key_id: str, project: str, operation: str, usage: dict[str, Any]) -> None:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._connect() as connection:
             connection.execute(
                 "INSERT INTO provider_calls (provider, model, key_id, project, operation, status, usage_json, created_at) VALUES (?, ?, ?, ?, ?, 'success', ?, ?)",
@@ -181,7 +182,7 @@ class RouterStore:
             )
 
     def record_failure(self, *, provider: str, model: str, key_id: str, project: str, operation: str, error_class: str, message: str, status_code: int | None, cooldown_seconds: int) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cooldown_until = (now + timedelta(seconds=max(0, cooldown_seconds))).isoformat() if cooldown_seconds else None
         with self._connect() as connection:
             connection.execute(
@@ -242,7 +243,7 @@ class RouterStore:
         if next_index >= len(model_names):
             next_index = 0
         next_model = model_names[next_index]
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         with self._connect() as connection:
             connection.execute(
                 """

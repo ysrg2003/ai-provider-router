@@ -9,8 +9,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from ai_router import AIRouter  # noqa: E402
-from ai_router.router import AllProvidersFailed, UnsupportedOutputType  # noqa: E402
+from ai_router import AIRouter
+from ai_router.router import AllProvidersFailed, UnsupportedOutputType
 
 SCENARIOS = {
     "text": {"user_prompt": "Return JSON with exactly one field ok set to true.", "output_type": "text"},

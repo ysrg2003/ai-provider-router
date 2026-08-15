@@ -138,7 +138,7 @@ class AIRouter:
         for model_spec in video_specs:
             provider_spec = self.config.providers[model_spec.provider_id]
             adapter = self.adapters[model_spec.provider_id]
-            complete_video = getattr(adapter, "complete_video_json")
+            complete_video = adapter.complete_video_json
             model_names = [spec.model for spec in video_specs if spec.provider_id == model_spec.provider_id]
             model_index = model_names.index(model_spec.model)
             keys = self._ordered_keys(
@@ -372,7 +372,7 @@ class AIRouter:
                     response.payload["intent"] = intent.output_type
                     return response.payload
                 except ProviderError as exc:
-                    errors.append(f"{spec.provider_id}/{spec.model}/{key.key_id}: {exc}")
+                    errors.append(f"{spec.provider_id}/{spec.model}/{key.key_id}: {exc.error_class}/{exc.status_code or '-'}: {exc}")
                     cooldown = self.config.policy.cooldowns_seconds.get(exc.error_class, 300)
                     self.store.record_failure(
                         provider=spec.provider_id,

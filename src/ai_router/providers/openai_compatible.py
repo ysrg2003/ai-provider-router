@@ -40,7 +40,7 @@ class OpenAICompatibleAdapter:
             text = body["choices"][0]["message"]["content"]
             parsed = json.loads(self._strip_fences(text))
             if not isinstance(parsed, dict):
-                raise ValueError("response is not an object")
+                raise TypeError("response is not an object")
             return ProviderResponse(parsed, body.get("usage", {}))
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise ProviderError(f"OpenAI-compatible provider returned invalid JSON: {body}", error_class="invalid_or_unknown", retryable=False) from exc
@@ -58,8 +58,7 @@ class OpenAICompatibleAdapter:
         clean = str(text or "").strip()
         if clean.startswith("```"):
             clean = clean.split("\n", 1)[-1]
-        if clean.endswith("```"):
-            clean = clean[:-3]
+        clean = clean.removesuffix("```")
         return clean.strip()
 
     @staticmethod

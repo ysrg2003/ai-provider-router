@@ -57,7 +57,7 @@ class RouterConfig:
         self.policy = policy
 
     @classmethod
-    def load(cls, root: str | Path | None = None) -> "RouterConfig":
+    def load(cls, root: str | Path | None = None) -> RouterConfig:
         project_root = Path(__file__).resolve().parents[2]
         load_dotenv(project_root / ".env", override=False)
         config_root = Path(root or os.getenv("AI_ROUTER_CONFIG_DIR", project_root / "config")).resolve()
@@ -169,7 +169,7 @@ class RouterConfig:
             # changing the ordered rotation semantics.
             values = values.get("keys") or values.get("items") or values.get("entries") or [values]
         if not isinstance(values, list):
-            raise ValueError(f"{env_name} or fallback token must be a JSON array or a single token")
+            raise TypeError(f"{env_name} or fallback token must be a JSON array or a single token")
         result: list[KeySpec] = []
         aliases = ("key", "api_key", "token", "secret", "value")
         for index, value in enumerate(values):

@@ -81,6 +81,18 @@ class GeminiMultimodalAdapterTests(unittest.TestCase):
         self.assertEqual(result.payload["embeddings"][0]["values"], [0.1, 0.2])
         self.assertEqual(post.call_args.kwargs["json"]["output_dimensionality"], 768)
 
+    def test_single_embedding_payload_is_normalized_to_a_list(self):
+        adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
+        response = FakeResponse({"embedding": {"values": [0.3, 0.4]}})
+        with patch("ai_router.providers.gemini.requests.post", return_value=response):
+            result = adapter.embed_content(
+                model="gemini-embedding-2",
+                secret="secret",
+                text="meaning",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["embeddings"], [{"values": [0.3, 0.4]}])
+
 
 class RouterRoutePlanTests(unittest.TestCase):
     def test_route_plan_chooses_image_and_search_routes(self):

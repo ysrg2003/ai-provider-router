@@ -53,16 +53,15 @@ class GeminiVideoAdapterTests(unittest.TestCase):
 
     def test_error_does_not_expose_raw_provider_message(self):
         adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
-        with patch("ai_router.providers.gemini.requests.post", return_value=FakeErrorResponse()):
-            with self.assertRaises(ProviderError) as context:
-                adapter.complete_video_json(
-                    model="gemini-3.6-flash",
-                    secret="placeholder-secret",
-                    video_uri="https://www.youtube.com/watch?v=example",
-                    system_prompt="system",
-                    user_prompt="return JSON",
-                    timeout_seconds=90,
-                )
+        with patch("ai_router.providers.gemini.requests.post", return_value=FakeErrorResponse()), self.assertRaises(ProviderError) as context:
+            adapter.complete_video_json(
+                model="gemini-3.6-flash",
+                secret="placeholder-secret",
+                video_uri="https://www.youtube.com/watch?v=example",
+                system_prompt="system",
+                user_prompt="return JSON",
+                timeout_seconds=90,
+            )
         self.assertNotIn("secret must not leak", str(context.exception))
         self.assertEqual(context.exception.error_class, "auth")
 

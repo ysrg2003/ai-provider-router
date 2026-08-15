@@ -32,7 +32,7 @@ class GeminiAdapter:
             text = body["candidates"][0]["content"]["parts"][0]["text"]
             parsed = json.loads(self._strip_fences(text))
             if not isinstance(parsed, dict):
-                raise ValueError("response is not an object")
+                raise TypeError("response is not an object")
             return ProviderResponse(parsed, body.get("usageMetadata", {}))
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise ProviderError("Gemini returned invalid JSON", error_class="invalid_or_unknown", retryable=False) from exc
@@ -152,6 +152,8 @@ class GeminiAdapter:
         if response.status_code >= 400:
             raise self._http_error(response.status_code, body)
         embeddings = body.get("embeddings") or body.get("embedding")
+        if isinstance(embeddings, dict):
+            embeddings = [embeddings]
         if not isinstance(embeddings, list):
             raise ProviderError("Gemini did not return embeddings", error_class="invalid_or_unknown", retryable=False)
         return ProviderResponse({"output_type": "embedding", "embeddings": embeddings}, body.get("usageMetadata", {}))
@@ -183,7 +185,7 @@ class GeminiAdapter:
             text = self._interaction_text(body)
             parsed = json.loads(self._strip_fences(text))
             if not isinstance(parsed, dict):
-                raise ValueError("response is not an object")
+                raise TypeError("response is not an object")
             usage = body.get("usage", body.get("usageMetadata", {}))
             return ProviderResponse(parsed, usage if isinstance(usage, dict) else {})
         except (KeyError, IndexError, TypeError, ValueError) as exc:
