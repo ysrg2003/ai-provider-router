@@ -24,6 +24,10 @@ class ModelSpec:
     provider_id: str
     model: str
     enabled: bool
+    method: str = "json"
+    input_types: tuple[str, ...] = ("text",)
+    output_types: tuple[str, ...] = ("text",)
+    tools: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -42,10 +46,11 @@ class RouterPolicy:
 
 
 class RouterConfig:
-    def __init__(self, root: Path, providers: dict[str, ProviderSpec], chains: dict[str, list[ModelSpec]], key_pools: dict[str, str], fallback_envs: dict[str, str], key_pool_rotations: dict[str, str], policy: RouterPolicy) -> None:
+    def __init__(self, root: Path, providers: dict[str, ProviderSpec], chains: dict[str, list[ModelSpec]], output_routes: dict[str, list[ModelSpec]], key_pools: dict[str, str], fallback_envs: dict[str, str], key_pool_rotations: dict[str, str], policy: RouterPolicy) -> None:
         self.root = root
         self.providers = providers
         self.chains = chains
+        self.output_routes = output_routes
         self.key_pools = key_pools
         self.fallback_envs = fallback_envs
         self.key_pool_rotations = key_pool_rotations
@@ -72,12 +77,28 @@ class RouterConfig:
             )
             for item in providers_raw.get("providers", [])
         }
-        chains: dict[str, list[ModelSpec]] = {}
-        for chain_name, items in models_raw.get("model_chains", {}).items():
-            chains[chain_name] = [
-                ModelSpec(str(item["provider"]), str(item["model"]), bool(item.get("enabled", True)))
+        def parse_specs(items: list[dict[str, Any]]) -> list[ModelSpec]:
+            return [
+                ModelSpec(
+                    provider_id=str(item["provider"]),
+                    model=str(item["model"]),
+                    enabled=bool(item.get("enabled", True)),
+                    method=str(item.get("method", "json")),
+                    input_types=tuple(str(value) for value in item.get("input_types", ["text"])),
+                    output_types=tuple(str(value) for value in item.get("output_types", ["text"])),
+                    tools=tuple(str(value) for value in item.get("tools", [])),
+                )
                 for item in items
             ]
+
+        chains: dict[str, list[ModelSpec]] = {
+            chain_name: parse_specs(items)
+            for chain_name, items in models_raw.get("model_chains", {}).items()
+        }
+        output_routes: dict[str, list[ModelSpec]] = {
+            route_name: parse_specs(items)
+            for route_name, items in models_raw.get("output_routes", {}).items()
+        }
         key_pools = {
             pool_id: str(pool.get("env", ""))
             for pool_id, pool in keys_raw.get("key_pools", {}).items()
@@ -98,7 +119,7 @@ class RouterConfig:
             cooldowns_seconds={key: int(value) for key, value in defaults.get("cooldowns_seconds", {}).items()},
             backoff_seconds=[int(value) for value in defaults.get("backoff_seconds", [1, 2, 4, 8])],
         )
-        config = cls(config_root, providers, chains, key_pools, fallback_envs, key_pool_rotations, policy)
+        config = cls(config_root, providers, chains, output_routes, key_pools, fallback_envs, key_pool_rotations, policy)
         config.validate()
         return config
 
@@ -112,15 +133,21 @@ class RouterConfig:
         for provider in self.providers.values():
             if provider.key_pool not in self.key_pools:
                 raise ValueError(f"Provider {provider.provider_id} references unknown key pool {provider.key_pool}")
-        for chain_name, chain in self.chains.items():
-            for item in chain:
+        for collection_name, collection in {**self.chains, **self.output_routes}.items():
+            for item in collection:
                 if item.provider_id not in self.providers:
-                    raise ValueError(f"Model chain {chain_name} references unknown provider {item.provider_id}")
+                    raise ValueError(f"Model route {collection_name} references unknown provider {item.provider_id}")
 
     def model_chain(self, name: str = "default") -> list[ModelSpec]:
         if name not in self.chains:
             raise KeyError(f"Unknown model chain: {name}")
         return [item for item in self.chains[name] if item.enabled and self.providers[item.provider_id].enabled]
+
+    def output_route(self, output_type: str, *, grounding: str | None = None) -> list[ModelSpec]:
+        route_name = f"{output_type}_grounded_{grounding}" if grounding else output_type
+        if route_name not in self.output_routes:
+            raise KeyError(f"Unknown output route: {route_name}")
+        return [item for item in self.output_routes[route_name] if item.enabled and self.providers[item.provider_id].enabled]
 
     def keys_for(self, provider_id: str) -> list[KeySpec]:
         provider = self.providers[provider_id]
@@ -159,6 +186,7 @@ class RouterConfig:
             "config_dir": str(self.root),
             "providers": [provider.provider_id for provider in self.providers.values() if provider.enabled],
             "chains": {name: [{"provider": item.provider_id, "model": item.model} for item in chain if item.enabled] for name, chain in self.chains.items()},
+            "output_routes": {name: [{"provider": item.provider_id, "model": item.model, "method": item.method} for item in route if item.enabled] for name, route in self.output_routes.items()},
             "key_pools": list(self.key_pools),
             "key_pool_rotations": dict(self.key_pool_rotations),
             "secrets_loaded": {provider_id: len(self.keys_for(provider_id)) for provider_id in self.providers},

@@ -114,3 +114,29 @@ AI_ROUTER_MY_PROVIDER_KEYS_JSON=[{"id":"my-key-1","key":"المفتاح","projec
 ## أريد إضافة مزود API مختلف تماماً
 
 إذا لم يكن المزود يستخدم Gemini REST أو OpenAI-compatible، لا تحاول تغيير `models.json` فقط. يجب إنشاء adapter جديد داخل `src/ai_router/providers/`، ثم تسجيل نوعه في `src/ai_router/router.py`. اقرأ قسم **إضافة مزود جديد** في README الرئيسي قبل تنفيذ ذلك.
+
+## أريد استخدام نوع مخرج مختلف
+
+يحتوي `models.json` على `output_routes` مستقلة. لا تضف نموذج صورة إلى `default` النصي؛ أضفه إلى route المناسبة:
+
+| route | الاستخدام |
+|---|---|
+| `text` | نص وJSON |
+| `image` | توليد وتحرير الصور |
+| `audio` | تحويل النص إلى صوت |
+| `embedding` | المتجهات والبحث الدلالي |
+| `video_analysis` | تحليل فيديو وإخراج نص |
+| `live` | خطة جلسة Live عبر WebSocket |
+| `video_generation` | خطة job لتوليد فيديو عبر Veo |
+
+يمكن فحص الاختيار دون إرسال طلب إلى المزود:
+
+```bash
+PYTHONPATH=src python -m ai_router.cli.main \
+  --config-dir config --state-db /tmp/router.db \
+  route-plan --user "أنشئ صورة مع معلومات حديثة"
+```
+
+## أريد Grounding
+
+استخدم `--grounding search` أو `--grounding maps` مع `call-auto`، أو اذكر كلمات مثل «مصادر حديثة» أو «خرائط Google» في الطلب. سيختار الراوتر نماذج Gemini التي تعلن دعم الأداة فقط. لا تُرسل أدوات Google تلقائيًا إلى Hugging Face؛ ذلك يحتاج مزودًا خارجيًا مستقلًا للبحث أو الخرائط.

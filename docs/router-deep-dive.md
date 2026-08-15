@@ -23,3 +23,11 @@
 ## ملاحظات التحقق الأساسي
 
 بعد تثبيت الاعتماديات، نجحت اختبارات الراوتر وعددها 9، بما فيها اختبار cursor المستقل لكل مفتاح. فحص `ruff --select F,I` يمر، بينما يحتوي الفحص الشامل على مخالفات تنسيق E501 وقواعد TRY/FURB قديمة خارج نطاق هذا التحديث.
+
+## التوسعة متعددة المسارات
+
+أضيف قسم `output_routes` إلى `config/models.json`. كل عنصر يحمل `method` و`input_types` و`output_types` و`tools`، لذلك لا تختلط نماذج الصور أو TTS أو Embeddings مع chain النصية. `detect_intent` يفسر النص عند غياب `output_type` صريح، لكن المعامل الصريح يتغلب على التخمين.
+
+`route_plan` عملية محلية تعرض المسار والنماذج دون طلب خارجي. `complete_auto` يستخدم الخطة نفسها ثم يمرر الاستدعاء إلى adapter المناسب. مسارات `image` و`audio` و`embedding` و`video_analysis` قابلة للتنفيذ في GeminiAdapter. مسار `live` يعرض session plan لأن Live WebSocket stateful، ومسار `video_generation` يعرض الخطة فقط لأن Veo يحتاج job async وpolling.
+
+Grounding ليس fallback عامًا إلى Hugging Face. عند طلب Search أو Maps يختار الراوتر route يحتوي نماذج Gemini التي تعلن دعم الأداة، ويمرر payload الأداة إلى Interactions. إذا لم يملك النموذج الأول الأداة، لا تُرسل إليه أداة غير مدعومة؛ ينتقل الاختيار إلى route مخصصة. ولإضافة Search/Maps لمزود آخر يلزم adapter أو خدمة أدوات مستقلة.

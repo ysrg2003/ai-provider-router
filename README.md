@@ -739,3 +739,47 @@ ai-router --config-dir config --state-db /tmp/ai-router-check.db summary
 [3] [Hugging Face — Inference Providers](https://huggingface.co/docs/inference-providers/en/index)
 
 [4] [GitHub Actions — Secrets](https://docs.github.com/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)
+
+## مسارات المخرجات والاكتشاف التلقائي
+
+لم يعد `default` هو المسار الوحيد. يعرّف `config/models.json` قسم `output_routes` سلاسل مستقلة حسب المخرج المطلوب، ويختار `complete_auto()` المسار تلقائيًا من كلمات الطلب أو من `output_type` الصريح.
+
+| نوع الطلب | المسار | المخرجات | التنفيذ الحالي |
+|---|---|---|---|
+| نص أو JSON | `text` | نص | Gemini ثم Hugging Face |
+| صورة | `image` | Base64 image block | Gemini Image عبر Interactions |
+| صوت من نص | `audio` | PCM audio | Gemini TTS |
+| متجهات | `embedding` | embedding vectors | Gemini Embeddings |
+| تحليل فيديو | `video_analysis` | نص/JSON | Gemini Interactions |
+| محادثة مباشرة | `live` | Audio/Text stream | route plan فقط؛ يحتاج WebSocket session adapter |
+| توليد فيديو | `video_generation` | Video/Audio job | route plan فقط؛ يحتاج Veo async adapter |
+
+مثال لاكتشاف المسار دون إرسال طلب خارجي:
+
+```bash
+PYTHONPATH=src python -m ai_router.cli.main \
+  --config-dir config --state-db data/ai_router.db \
+  route-plan --user "أنشئ صورة لمدينة مستقبلية مع مصادر حديثة"
+```
+
+وللتنفيذ الفعلي بعد إعداد الأسرار:
+
+```bash
+PYTHONPATH=src python -m ai_router.cli.main \
+  --config-dir config --state-db data/ai_router.db \
+  call-auto --user "حوّل هذا النص إلى صوت: مرحبًا بك" \
+  --output-type audio --voice Kore
+```
+
+## Grounding كقدرة مستقلة
+
+عند طلب `google_search` أو `google_maps`، يختار الراوتر مسارًا يحتوي فقط على نماذج معلن دعمها للأداة. إذا كان النموذج الأساسي لا يملك Grounding، لا يرسل الراوتر إليه tool غير مدعوم؛ بل ينتقل إلى نموذج Gemini في مسار `text_grounded_search` أو `text_grounded_maps` الذي يدعم الأداة. هذا يحافظ على صحة الإسناد بدل إنتاج إجابة تبدو grounded وهي ليست كذلك.
+
+نتيجة Grounding تعيد `annotations` و`steps` حتى يستطيع التطبيق إظهار citations. في Google Maps يجب عرض إسناد Google Maps للمستخدم، وفي Google Search يمكن عرض روابط `url_citation` التي يعيدها API [5] [6]. لا يتم تمرير Google Search أو Google Maps تلقائيًا إلى Hugging Face، لأن adapter OpenAI-compatible لا يملك هذه الأدوات من تلقاء نفسه؛ لإضافة fallback خارجي لـ Hugging Face نحتاج مزود Search/Maps مستقلًا ومفاتيحه.
+
+المسارات `live` و`video_generation` تعرض خطة اختيار النموذج فقط في هذه المرحلة. Live يحتاج WebSocket stateful، وVeo يحتاج job creation/polling؛ لذلك لا تُعامل هذه العمليات كطلب JSON قصير.
+
+### المراجع
+
+[5]: https://ai.google.dev/gemini-api/docs/google-search "Grounding with Google Search — Google AI for Developers"
+[6]: https://ai.google.dev/gemini-api/docs/maps-grounding "Grounding with Google Maps — Google AI for Developers"

@@ -55,5 +55,72 @@
       {"provider": "huggingface", "model": "Qwen/Qwen2.5-7B-Instruct-1M:fastest", "enabled": true},
       {"provider": "huggingface", "model": "meta-llama/Llama-3.1-8B-Instruct:fastest", "enabled": true}
     ]
+  },
+  "output_routes": {
+    "text": [
+      {"provider": "google_gemini", "model": "gemini-3.7-flash", "method": "json", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.6-flash", "method": "json", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash", "method": "json", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash-lite", "method": "json", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3-flash", "method": "json", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash", "method": "json", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "method": "json", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "enabled": true},
+      {"provider": "huggingface", "model": "openai/gpt-oss-120b:fastest", "method": "json", "input_types": ["text"], "output_types": ["text"], "enabled": true},
+      {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest", "method": "json", "input_types": ["text"], "output_types": ["text"], "enabled": true},
+      {"provider": "huggingface", "model": "zai-org/GLM-5.2:fastest", "method": "json", "input_types": ["text"], "output_types": ["text"], "enabled": true},
+      {"provider": "huggingface", "model": "deepseek-ai/DeepSeek-R1:fastest", "method": "json", "input_types": ["text"], "output_types": ["text"], "enabled": true}
+    ],
+    "text_grounded_search": [
+      {"provider": "google_gemini", "model": "gemini-3.6-flash", "method": "interaction_text", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "tools": ["search"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash", "method": "interaction_text", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "tools": ["search"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash-lite", "method": "interaction_text", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "tools": ["search"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3-flash", "method": "interaction_text", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "tools": ["search"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash", "method": "interaction_text", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "tools": ["search"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "method": "interaction_text", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["text"], "tools": ["search"], "enabled": true}
+    ],
+    "text_grounded_maps": [
+      {"provider": "google_gemini", "model": "gemini-3.5-flash", "method": "interaction_text", "input_types": ["text"], "output_types": ["text"], "tools": ["maps"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash-lite", "method": "interaction_text", "input_types": ["text"], "output_types": ["text"], "tools": ["maps"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3-flash", "method": "interaction_text", "input_types": ["text"], "output_types": ["text"], "tools": ["maps"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash", "method": "interaction_text", "input_types": ["text"], "output_types": ["text"], "tools": ["maps"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash-lite", "method": "interaction_text", "input_types": ["text"], "output_types": ["text"], "tools": ["maps"], "enabled": true}
+    ],
+    "image": [
+      {"provider": "google_gemini", "model": "gemini-3-pro-image", "method": "image", "input_types": ["text", "image"], "output_types": ["image"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.1-flash-image", "method": "image", "input_types": ["text", "image"], "output_types": ["image"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.1-flash-lite-image", "method": "image", "input_types": ["text", "image"], "output_types": ["image"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash-image", "method": "image", "input_types": ["text", "image"], "output_types": ["image"], "enabled": true}
+    ],
+    "image_grounded_search": [
+      {"provider": "google_gemini", "model": "gemini-3-pro-image", "method": "image", "input_types": ["text", "image"], "output_types": ["image"], "tools": ["search"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.1-flash-image", "method": "image", "input_types": ["text", "image"], "output_types": ["image"], "tools": ["search"], "enabled": true}
+    ],
+    "audio": [
+      {"provider": "google_gemini", "model": "gemini-3.1-flash-tts-preview", "method": "tts", "input_types": ["text"], "output_types": ["audio"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-pro-preview-tts", "method": "tts", "input_types": ["text"], "output_types": ["audio"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash-preview-tts", "method": "tts", "input_types": ["text"], "output_types": ["audio"], "enabled": true}
+    ],
+    "embedding": [
+      {"provider": "google_gemini", "model": "gemini-embedding-2", "method": "embedding", "input_types": ["text", "image", "video", "audio", "pdf"], "output_types": ["embedding"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-embedding-001", "method": "embedding", "input_types": ["text"], "output_types": ["embedding"], "enabled": true}
+    ],
+    "video_analysis": [
+      {"provider": "google_gemini", "model": "gemini-3.7-flash", "method": "video_analysis", "input_types": ["video", "text"], "output_types": ["text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.6-flash", "method": "video_analysis", "input_types": ["video", "text"], "output_types": ["text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash", "method": "video_analysis", "input_types": ["video", "text"], "output_types": ["text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash", "method": "video_analysis", "input_types": ["video", "text"], "output_types": ["text"], "enabled": true}
+    ],
+    "video_analysis_grounded_search": [
+      {"provider": "google_gemini", "model": "gemini-3.6-flash", "method": "video_analysis", "input_types": ["video", "text"], "output_types": ["text"], "tools": ["search"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-3.5-flash", "method": "video_analysis", "input_types": ["video", "text"], "output_types": ["text"], "tools": ["search"], "enabled": true}
+    ],
+    "live": [
+      {"provider": "google_gemini", "model": "gemini-3.1-flash-live-preview", "method": "live", "input_types": ["audio", "image", "text"], "output_types": ["audio", "text"], "enabled": true},
+      {"provider": "google_gemini", "model": "gemini-2.5-flash-native-audio-preview-12-2025", "method": "live", "input_types": ["audio", "image", "text"], "output_types": ["audio", "text"], "enabled": true}
+    ],
+    "video_generation": [
+      {"provider": "google_gemini", "model": "veo-3.1-generate-preview", "method": "video_generation", "input_types": ["text", "image"], "output_types": ["video", "audio"], "enabled": true},
+      {"provider": "google_gemini", "model": "veo-3.1-lite-generate-preview", "method": "video_generation", "input_types": ["text", "image"], "output_types": ["video", "audio"], "enabled": true}
+    ]
   }
 }
