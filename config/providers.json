@@ -6,7 +6,7 @@
       "enabled": true,
       "base_url": "https://generativelanguage.googleapis.com/v1beta",
       "key_pool": "gemini_default",
-      "default_timeout_seconds": 90
+      "default_timeout_seconds": 180
     },
     {
       "id": "huggingface",
