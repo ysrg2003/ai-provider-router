@@ -93,6 +93,70 @@ class AIRouter:
         self.store.checkpoint()
         raise AllProvidersFailed("All configured provider/model/key attempts failed: " + " | ".join(errors[-12:]))
 
+    def complete_video_json(
+        self,
+        *,
+        video_uri: str,
+        system_prompt: str,
+        user_prompt: str,
+        operation: str = "video_completion",
+        chain: str = "default",
+    ) -> dict[str, Any]:
+        """Run one public video through adapters that support video input."""
+        errors: list[str] = []
+        attempts = 0
+        for model_spec in self.config.model_chain(chain):
+            provider_spec = self.config.providers[model_spec.provider_id]
+            adapter = self.adapters[model_spec.provider_id]
+            complete_video = getattr(adapter, "complete_video_json", None)
+            if complete_video is None:
+                continue
+            keys = self.config.keys_for(model_spec.provider_id)
+            for key in keys:
+                if attempts >= self.config.policy.max_attempts:
+                    break
+                attempts += 1
+                if self.store.is_cooling(model_spec.provider_id, model_spec.model, key.key_id):
+                    continue
+                try:
+                    response = complete_video(
+                        model=model_spec.model,
+                        secret=key.secret,
+                        video_uri=video_uri,
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        timeout_seconds=provider_spec.timeout_seconds or self.config.policy.request_timeout_seconds,
+                    )
+                    self.store.record_success(
+                        provider=model_spec.provider_id,
+                        model=model_spec.model,
+                        key_id=key.key_id,
+                        project=key.project,
+                        operation=operation,
+                        usage=response.usage,
+                    )
+                    return response.payload
+                except ProviderError as exc:
+                    errors.append(f"{model_spec.provider_id}/{model_spec.model}/{key.key_id}: {exc}")
+                    cooldown = self.config.policy.cooldowns_seconds.get(exc.error_class, 300)
+                    self.store.record_failure(
+                        provider=model_spec.provider_id,
+                        model=model_spec.model,
+                        key_id=key.key_id,
+                        project=key.project,
+                        operation=operation,
+                        error_class=exc.error_class,
+                        message=str(exc),
+                        status_code=exc.status_code,
+                        cooldown_seconds=cooldown,
+                    )
+                    if exc.retryable:
+                        time.sleep(min(2.0, self._backoff(attempts)))
+            if attempts >= self.config.policy.max_attempts:
+                break
+        self.store.checkpoint()
+        raise AllProvidersFailed("All video-capable provider/model/key attempts failed: " + " | ".join(errors[-12:]))
+
     def summary(self) -> dict[str, Any]:
         return {"config": self.config.public_summary(), "state": self.store.stats()}
 

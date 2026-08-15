@@ -23,3 +23,6 @@ class ProviderAdapter(Protocol):
 
     def complete_json(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int) -> ProviderResponse:
         ...
+
+    def complete_video_json(self, *, model: str, secret: str, video_uri: str, system_prompt: str, user_prompt: str, timeout_seconds: int) -> ProviderResponse:
+        ...

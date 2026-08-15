@@ -67,5 +67,37 @@ class RouterTests(unittest.TestCase):
             router.close()
 
 
+    def test_video_rotation_uses_same_key_pool_and_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([
+                {"id": "video-first", "key": "one", "project": "p1"},
+                {"id": "video-second", "key": "two", "project": "p2"},
+            ])
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            calls: list[str] = []
+
+            def fake_video(*, model, secret, video_uri, system_prompt, user_prompt, timeout_seconds):
+                calls.append(f"{model}:{secret}:{video_uri}")
+                if secret == "one":
+                    raise ProviderError("quota", error_class="quota", status_code=429)
+                return ProviderResponse({"summary": "ok"}, {"totalTokenCount": 7})
+
+            with patch.object(router.adapters["google_gemini"], "complete_video_json", side_effect=fake_video):
+                result = router.complete_video_json(
+                    video_uri="https://www.youtube.com/watch?v=example",
+                    system_prompt="system",
+                    user_prompt="user",
+                    operation="video-test",
+                )
+            self.assertEqual(result, {"summary": "ok"})
+            self.assertEqual(calls[:2], [
+                "gemini-2.5-flash:one:https://www.youtube.com/watch?v=example",
+                "gemini-2.5-flash:two:https://www.youtube.com/watch?v=example",
+            ])
+            self.assertEqual(router.store.stats()["calls"], 2)
+            router.close()
+            os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+
+
 if __name__ == "__main__":
     unittest.main()
