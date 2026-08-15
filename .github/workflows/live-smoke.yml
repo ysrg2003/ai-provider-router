@@ -1,0 +1,62 @@
+name: Live smoke tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Bounded scenario to run"
+        required: true
+        default: "routing"
+        type: choice
+        options:
+          - routing
+          - text
+          - search
+          - maps
+          - image
+          - audio
+          - embedding
+          - all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-smoke-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run bounded live smoke test
+        env:
+          AI_ROUTER_GEMINI_KEYS_JSON: ${{ secrets.AI_ROUTER_GEMINI_KEYS_JSON }}
+          SMOKE_SCENARIO: ${{ inputs.scenario }}
+          SMOKE_STATE_DB: /tmp/ai-router-live-smoke.db
+        run: |
+          set -euo pipefail
+          test -n "$AI_ROUTER_GEMINI_KEYS_JSON"
+          mkdir -p artifacts
+          PYTHONPATH=src python scripts/live_smoke.py > artifacts/live-smoke.json
+          grep -q '"status": "completed"' artifacts/live-smoke.json
+
+      - name: Upload redacted smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-smoke-${{ github.run_id }}
+          path: artifacts/live-smoke.json
+          retention-days: 7

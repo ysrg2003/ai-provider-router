@@ -783,3 +783,8 @@ PYTHONPATH=src python -m ai_router.cli.main \
 
 [5]: https://ai.google.dev/gemini-api/docs/google-search "Grounding with Google Search — Google AI for Developers"
 [6]: https://ai.google.dev/gemini-api/docs/maps-grounding "Grounding with Google Maps — Google AI for Developers"
+
+
+## التشغيل الحي والأسرار
+
+لإعداد `AI_ROUTER_GEMINI_KEYS_JSON` وتشغيل السيناريوهات الحية بأمان، راجع [دليل التشغيل والأسرار](docs/operations.md). يبدأ الدليل بفحص `routing` المحلي الذي لا يستهلك حصة، ثم يشرح تشغيل `text` و`search` و`maps` و`image` و`audio` و`embedding` كلًّا على حدة، مع تفسير `403` و`429` وتدوير المفاتيح.
