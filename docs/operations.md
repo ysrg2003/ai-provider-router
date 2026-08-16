@@ -111,7 +111,7 @@ PYTHONPATH=src python -m ai_router.cli.main \
 
 جدول النماذج والحدود المعتمد لهذا المشروع موجود في [docs/model-catalog.md](model-catalog.md)، وهو نسخة من `available-limits.md` المرفق. يجب أن يطابق كل route تنفيذي صفًا من ذلك الجدول؛ راجع قسم **سياسة اعتماد الجدول داخل ai-provider-router** لمعرفة mapping بين الاسم الظاهر وmodel ID.
 
-> **تصحيح مهم:** تقارير smoke السابقة قبل commit التصحيح اختبرت أسماء Gemini Image قديمة مثل `gemini-3-pro-image` و`gemini-3.1-flash-image`. هذه الأسماء أزيلت من `models.json`. مسار Image الحالي يستخدم Imagen 4 عبر REST `predict`، ومسار TTS الحالي يقتصر على `gemini-3.1-flash-tts-preview` و`gemini-2.5-flash-preview-tts` وفق الجدول المرفق.
+> **تصحيح مهم:** كان الخطأ السابق هو اعتبار Imagen 4 المسار التشغيلي الوحيد. التحقيق الرسمي أظهر أن Imagen 4 مُعلن لإيقافه في 2026-08-17، بينما نماذج Nano Banana الحالية (`gemini-3-pro-image` و`gemini-3.1-flash-image` و`gemini-3.1-flash-lite-image` و`gemini-2.5-flash-image`) تعلن `generateContent` في metadata. لذلك يستخدم Image الحالي `generateContent`، وتُحفظ Imagen في `image_legacy` معطلة. مسار TTS يظل `gemini-3.1-flash-tts-preview` و`gemini-2.5-flash-preview-tts` وفق الجدول المرفق.
 
 ## نتائج التشغيل الحي الفعلية
 
@@ -163,10 +163,10 @@ python3 -m compileall -q src scripts tests
 
 | التشغيل | المدخل | المخرج | النموذج/المسار | النتيجة |
 |---|---|---|---|---|
-| [Image run 31926901906](https://github.com/ysrg2003/ai-provider-router/actions/runs/31926901906) | نص | صورة | Imagen 4 عبر REST `predict` | `404 NOT_FOUND` من endpoint؛ لم تُنتج صورة، وهذا يختلف عن `429` ويشير إلى أن النموذج/endpoint غير متاح بهذه الصيغة الحالية |
+| [Image run 31926901906](https://github.com/ysrg2003/ai-provider-router/actions/runs/31926901906) | نص | صورة | Imagen 4 عبر REST `predict` | `404 NOT_FOUND`؛ أثبت أن Imagen legacy غير صالح كمسار تشغيلي حالي |
 | [TTS run 31927011803](https://github.com/ysrg2003/ai-provider-router/actions/runs/31927011803) | نص وتعليمات صوت | صوت | `gemini-3.1-flash-tts-preview` عبر Interactions | **نجح**؛ `output_type: audio`، وحجم Base64 منزوع الحساسية `166400`، وMIME `audio/l16; rate=24000; channels=1` |
 
-نتيجة TTS تؤكد أن صفّي TTS في الجدول مرتبطان بالمسار الصحيح، وأن parser أصبح يتعامل مع كتلة الصوت داخل `steps` عندما لا يظهر الحقل convenience `output_audio` مباشرة. أما Image فالتعريف أصبح مطابقًا للجدول (`Imagen 4` الثلاثة) والطلب يرسل نصًا ويطلب صورة، لكن اختبار API الحالي أعاد `404`; لذلك لا يجوز وصف Image بأنه يعمل مع هذه المفاتيح قبل توفر endpoint/model فعلي يعيد صورة.
+نتيجة TTS تؤكد أن صفّي TTS في الجدول مرتبطان بالمسار الصحيح، وأن parser يتعامل مع كتلة الصوت داخل `steps`. أما تشخيص Image المباشر فأظهر أن metadata لكل نماذج Nano Banana الأربعة يعيد `200` و`generateContent`، بينما استدعاء `generateContent` عبر `v1` و`v1beta` أعاد `429 RESOURCE_EXHAUSTED` مع المفاتيح الستة. هذا يعني أن مسار Image الصحيح أصبح معروفًا، لكن الحصة الحالية تمنع الإخراج؛ أما Imagen فأعاد `404` لأنه legacy مُعلن للإيقاف.
 
 ## References
 

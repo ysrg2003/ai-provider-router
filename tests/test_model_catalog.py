@@ -19,18 +19,25 @@ class ModelCatalogTests(unittest.TestCase):
         self.assertIn("`Imagen 4 Fast Generate`", self.catalog)
         self.assertIn("`Gemini 3.1 Flash TTS`", self.catalog)
 
-    def test_image_route_uses_only_attached_imagen_rows(self):
+    def test_image_route_uses_current_native_models_and_legacy_imagen_is_disabled(self):
         self.assertEqual(
             [item["model"] for item in self.models["output_routes"]["image"]],
+            [
+                "gemini-3-pro-image",
+                "gemini-3.1-flash-image",
+                "gemini-3.1-flash-lite-image",
+                "gemini-2.5-flash-image",
+            ],
+        )
+        self.assertEqual(
+            [item["model"] for item in self.models["output_routes"]["image_legacy"]],
             [
                 "imagen-4.0-ultra-generate-001",
                 "imagen-4.0-generate-001",
                 "imagen-4.0-fast-generate-001",
             ],
         )
-        forbidden = {"gemini-3-pro-image", "gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-2.5-flash-image"}
-        configured = {item["model"] for item in self.models["output_routes"]["image"]}
-        self.assertTrue(forbidden.isdisjoint(configured))
+        self.assertTrue(all(not item["enabled"] for item in self.models["output_routes"]["image_legacy"]))
 
     def test_tts_route_uses_only_attached_tts_rows(self):
         self.assertEqual(

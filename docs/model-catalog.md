@@ -64,7 +64,8 @@
 | route تنفيذي | صفوف الجدول المسموح بها | model IDs المستخدمة في config | نوع المدخل | نوع المخرج | ملاحظات |
 |---|---|---|---|---|---|
 | `text` | Text-out models | `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-3-flash`, `gemini-2.5-flash`, `gemini-2.5-flash-lite` | نص، صورة، فيديو، صوت، PDF | نص | مرتبة تنازليًا كما في الجدول |
-| `image` | `Imagen 4 Ultra Generate`, `Imagen 4 Generate`, `Imagen 4 Fast Generate` | `imagen-4.0-ultra-generate-001`, `imagen-4.0-generate-001`, `imagen-4.0-fast-generate-001` | نص | صورة | تستخدم REST `predict`، وليست Interactions؛ لا توجد أسماء Gemini Image قديمة في route |
+| `image` | current official Gemini image catalog: Nano Banana Pro, Nano Banana 2, Nano Banana 2 Lite, Nano Banana | `gemini-3-pro-image`, `gemini-3.1-flash-image`, `gemini-3.1-flash-lite-image`, `gemini-2.5-flash-image` | نص، صورة | صورة، نص | تستخدم `generateContent`؛ metadata لكل نموذج يعلن `generateContent` |
+| `image_legacy` | `Imagen 4 Ultra Generate`, `Imagen 4 Generate`, `Imagen 4 Fast Generate` من الجدول المرفق | `imagen-4.0-ultra-generate-001`, `imagen-4.0-generate-001`, `imagen-4.0-fast-generate-001` | نص | صورة | REST `predict`، لكن route معطل؛ صفحة deprecations الرسمية تحدد الإيقاف في 2026-08-17 |
 | `audio` | `Gemini 3.1 Flash TTS`, `Gemini 2.5 Flash TTS` | `gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-preview-tts` | نص وتعليمات نبرة/صوت | صوت | لا يُستخدم `gemini-2.5-pro-preview-tts` لأنه ليس صف TTS الموجود في المرفق |
 | `embedding` | `Gemini Embedding 2`, `Gemini Embedding 1` | `gemini-embedding-2`, `gemini-embedding-001` | نص | متجه embedding | هذه هي الصيغة المدعومة في adapter الحالي |
 | `live` | `Gemini 3.5 Live Translate`, `Gemini 3 Flash Live`, `Gemini 2.5 Flash Native Audio Dialog` | `gemini-3.5-live-translate-preview`, `gemini-3-flash-live-preview`, `gemini-2.5-flash-native-audio-preview-12-2025` | نص، صورة، صوت، فيديو | نص وصوت | route plan فقط حاليًا؛ يحتاج WebSocket session adapter |
@@ -74,14 +75,15 @@
 
 ### صفوف موثقة وليست مسارات HTTP مفعلة
 
-صفوف `Antigravity` و`Gemini Robotics ER 1.5/1.6/2` و`Gemma 4 26B/31B` موجودة في الجدول المرجعي، لكنها لا تُفعّل في `output_routes` الحالية؛ فالراوتر لا يملك adapter أو عقدة response مخصصة لهذه الفئات. وبالمثل، لم تعد `video_generation` تحتوي نماذج Veo لأن Veo غير موجود في ملف Models المرفق. ستظل هذه الصفوف موثقة هنا حتى يُضاف adapter متوافق معها بدل إرسال payload غير صحيح.
+صفوف `Antigravity` و`Gemini Robotics ER 1.5/1.6/2` و`Gemma 4 26B/31B` موجودة في الجدول المرجعي، لكنها لا تُفعّل في `output_routes` الحالية؛ فالراوتر لا يملك adapter أو عقدة response مخصصة لهذه الفئات. صفوف Imagen 4 موجودة في الجدول، لكنها محفوظة في `image_legacy` مع `enabled: false` لأن Google أعلنت إيقافها في 2026-08-17. أما Native Gemini Image فظهر في catalog الرسمي الحي وmetadata للمفتاح، لذلك هو المسار التشغيلي الحالي حتى لو لم يكن ضمن snapshot المرفق. وبالمثل، لا تحتوي `video_generation` نماذج Veo في المسار التنفيذي لهذا snapshot.
 
 ### مصدر mapping
 
-أسماء model IDs الخاصة بـImagen 4 مأخوذة من REST الرسمي الذي يستخدم `models/{model}:predict`، بينما أسماء TTS وLive مأخوذة من واجهات Gemini الرسمية. جدول الحصص والحالة المرجعية نفسه مأخوذ من الملف المرفق ولا يُعاد تخمينه من صفحة أخرى. راجع [دليل Imagen الرسمي][1] و[دليل TTS الرسمي][2] و[دليل Live API][3] عند إضافة adapter جديد.
+أسماء model IDs الخاصة بـImagen 4 مأخوذة من REST الرسمي الذي يستخدم `models/{model}:predict`، بينما أسماء Nano Banana الحالية وواجهة `generateContent` مأخوذة من catalog وguide الرسميين الحيين. جدول الحصص والحالة المرجعية نفسه مأخوذ من الملف المرفق؛ وهو snapshot لا يضمن بقاء endpoint متاحًا بعد تاريخ الإيقاف. راجع [دليل Imagen الرسمي][1] و[دليل TTS الرسمي][2] و[دليل Live API][3] و[دليل Image generation الحالي][4] عند إضافة adapter أو تغيير route.
 
 ## References
 
 [1]: https://ai.google.dev/gemini-api/docs/imagen "Imagen — Gemini API"
 [2]: https://ai.google.dev/gemini-api/docs/speech-generation "Text-to-speech generation — Gemini API"
 [3]: https://ai.google.dev/gemini-api/docs/live-api "Gemini Live API"
+[4]: https://ai.google.dev/gemini-api/docs/generate-content/image-generation "Nano Banana image generation via generateContent"

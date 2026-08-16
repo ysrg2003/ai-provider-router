@@ -79,25 +79,73 @@ class GeminiAdapter:
                 prompt=prompt,
                 timeout_seconds=timeout_seconds,
             )
-        input_blocks: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
+        return self._generate_native_image(
+            model=model,
+            secret=secret,
+            prompt=prompt,
+            timeout_seconds=timeout_seconds,
+            image_data=image_data,
+            image_mime_type=image_mime_type,
+            tools=tools,
+        )
+
+    def _generate_native_image(
+        self,
+        *,
+        model: str,
+        secret: str,
+        prompt: str,
+        timeout_seconds: int,
+        image_data: str | None,
+        image_mime_type: str,
+        tools: list[dict[str, Any]] | None,
+    ) -> ProviderResponse:
+        parts: list[dict[str, Any]] = [{"text": prompt}]
         if image_data:
-            input_blocks.append({"type": "image", "mime_type": image_mime_type, "data": image_data})
-        payload: dict[str, Any] = {"model": model, "input": input_blocks}
+            parts.append({"inline_data": {"mime_type": image_mime_type, "data": image_data}})
+        payload: dict[str, Any] = {
+            "contents": [{"parts": parts}],
+            "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
+        }
         if tools:
             payload["tools"] = tools
-        body = self._post_interactions(secret=secret, payload=payload, timeout_seconds=timeout_seconds)
-        image = body.get("output_image")
-        if not isinstance(image, dict) or not image.get("data"):
-            raise ProviderError("Gemini did not return an image block", error_class="invalid_or_unknown", retryable=False)
+        endpoint = f"{self.base_url}/models/{model}:generateContent"
+        try:
+            response = requests.post(
+                endpoint,
+                headers={"x-goog-api-key": secret, "Content-Type": "application/json"},
+                json=payload,
+                timeout=timeout_seconds,
+            )
+        except requests.RequestException as exc:
+            raise ProviderError(str(exc), error_class="transient") from exc
+        body = self._body(response)
+        if response.status_code >= 400:
+            raise self._http_error(response.status_code, body)
+        image: dict[str, Any] | None = None
+        text_parts: list[str] = []
+        for candidate in body.get("candidates", []) or []:
+            if not isinstance(candidate, dict):
+                continue
+            content = candidate.get("content") if isinstance(candidate.get("content"), dict) else {}
+            for part in content.get("parts", []) or []:
+                if not isinstance(part, dict):
+                    continue
+                if isinstance(part.get("text"), str) and part["text"].strip():
+                    text_parts.append(part["text"])
+                inline = part.get("inlineData") or part.get("inline_data")
+                if isinstance(inline, dict) and inline.get("data"):
+                    image = inline
+        if not image:
+            raise ProviderError("Gemini did not return an inline image", error_class="invalid_or_unknown", retryable=False)
         return ProviderResponse(
             {
                 "output_type": "image",
-                "mime_type": str(image.get("mime_type") or "image/png"),
+                "mime_type": str(image.get("mimeType") or image.get("mime_type") or "image/png"),
                 "data_base64": str(image["data"]),
-                "text": self._interaction_text_optional(body),
-                "steps": body.get("steps", []),
+                "text": "\\n".join(text_parts).strip(),
             },
-            body.get("usage", body.get("usageMetadata", {})),
+            body.get("usageMetadata", body.get("usage", {})),
         )
 
     def _generate_imagen(self, *, model: str, secret: str, prompt: str, timeout_seconds: int) -> ProviderResponse:

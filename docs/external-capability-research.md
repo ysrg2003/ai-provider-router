@@ -12,17 +12,17 @@
 
 توضح الوثائق أن `google_maps` يحتاج عادةً إلى latitude وlongitude عند توفر موقع المستخدم، ويعيد نصًا مع place citations. الأداة مخصصة للأسئلة الجغرافية والمحلية، وهي مغلقة افتراضيًا ويجب تفعيلها صراحة. حدود الدعم الحالية تشمل نماذج مثل Gemini 3.5 Flash-Lite و3.5 Flash و3.1 Flash-Lite و3 Flash Preview و2.5 Flash و2.5 Flash-Lite. يجب عرض إسناد Google Maps للمستخدم عند استخدام النتائج.
 
-## Native image generation — superseded
+## Native image generation — current
 
-المصدر التاريخي: https://ai.google.dev/gemini-api/docs/image-generation
+المصدر: https://ai.google.dev/gemini-api/docs/generate-content/image-generation
 
-كانت هذه الفقرة تسجل أسماء Gemini Image تجريبية، لكنها لم تكن متوافقة مع جدول `available-limits.md` المرفق. لذلك لا تُستخدم الأسماء القديمة `gemini-3-pro-image` أو `gemini-3.1-flash-image` أو `gemini-3.1-flash-lite-image` أو `gemini-2.5-flash-image` في `models.json`.
+تسجل الوثائق الرسمية الحالية نماذج Nano Banana `gemini-3-pro-image` و`gemini-3.1-flash-image` و`gemini-3.1-flash-lite-image` و`gemini-2.5-flash-image`. metadata الفعلي للمفتاح أعاد `200` لهذه النماذج وأعلن `generateContent` كطريقة مدعومة. لذلك يستخدم الراوتر endpoint `models/{model}:generateContent`، ويدخل النص داخل `contents[].parts[]`، ويقرأ الصورة من `candidates[].content.parts[].inlineData`.
 
-## Imagen 4 — المرجع الحالي للمشروع
+## Imagen 4 — legacy فقط
 
 المصدر: https://ai.google.dev/gemini-api/docs/imagen
 
-يعتمد المشروع الآن على صفوف Imagen 4 الثلاثة الموجودة في الجدول المرفق: `Imagen 4 Ultra Generate` و`Imagen 4 Generate` و`Imagen 4 Fast Generate`. يستخدم adapter الخاص بها REST `predict` مع model IDs `imagen-4.0-ultra-generate-001` و`imagen-4.0-generate-001` و`imagen-4.0-fast-generate-001`، ولا يرسلها إلى Interactions. يجب مراجعة صفحة Imagen الرسمية قبل الاستخدام الإنتاجي لأن حالة هذه النماذج أو تاريخ الإيقاف قد يتغير، ويُحدَّث mapping في `docs/model-catalog.md` أولًا.
+جدول `available-limits.md` المرفق يحتوي صفوف Imagen 4 الثلاثة، لذلك بقيت موثقة في `docs/model-catalog.md`، لكن Google أعلنت إيقاف `imagen-4.0-generate-001` و`imagen-4.0-ultra-generate-001` و`imagen-4.0-fast-generate-001` في 2026-08-17. الاختبار المباشر أعاد `404 NOT_FOUND`، ولذلك لا تُستخدم في route Image التلقائي، بل في `image_legacy` المعطل فقط.
 
 ## قرار التصميم
 
@@ -52,7 +52,7 @@ Live API واجهة WebSocket stateful لتدفق audio وimage وtext وإخر�
 
 المصادر: https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-live-preview وhttps://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash-native-audio-preview-12-2025 وhttps://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-tts-preview
 
-الأسماء الحالية التي ظهرت في الوثائق الرسمية هي `gemini-3.1-flash-live-preview` و`gemini-2.5-flash-native-audio-preview-12-2025` لمسار Live، و`gemini-3.1-flash-tts-preview` لمسار TTS. Live يعتمد WebSocket stateful، لذلك سيسجل في metadata كمسار يحتاج session adapter ولا يمر عبر complete_json.
+الأسماء الحالية التي ظهرت في الوثائق الرسمية هي `gemini-3.1-flash-live-preview` و`gemini-2.5-flash-native-audio-preview-12-2025` لمسار Live، و`gemini-3.1-flash-tts-preview` لمسار TTS. Live يعتمد WebSocket stateful، بينما Image يستخدم `generateContent`؛ كلاهما لا يمر عبر complete_json.
 
 ## Video generation
 

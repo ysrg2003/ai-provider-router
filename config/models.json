@@ -514,37 +514,57 @@
     "image": [
       {
         "provider": "google_gemini",
-        "model": "imagen-4.0-ultra-generate-001",
+        "model": "gemini-3-pro-image",
         "method": "image",
         "input_types": [
-          "text"
+          "text",
+          "image"
         ],
         "output_types": [
-          "image"
+          "image",
+          "text"
         ],
         "enabled": true
       },
       {
         "provider": "google_gemini",
-        "model": "imagen-4.0-generate-001",
+        "model": "gemini-3.1-flash-image",
         "method": "image",
         "input_types": [
-          "text"
+          "text",
+          "image"
         ],
         "output_types": [
-          "image"
+          "image",
+          "text"
         ],
         "enabled": true
       },
       {
         "provider": "google_gemini",
-        "model": "imagen-4.0-fast-generate-001",
+        "model": "gemini-3.1-flash-lite-image",
         "method": "image",
         "input_types": [
-          "text"
+          "text",
+          "image"
         ],
         "output_types": [
+          "image",
+          "text"
+        ],
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-2.5-flash-image",
+        "method": "image",
+        "input_types": [
+          "text",
           "image"
+        ],
+        "output_types": [
+          "image",
+          "text"
         ],
         "enabled": true
       }
@@ -775,13 +795,93 @@
         "enabled": true
       }
     ],
-    "video_generation": []
+    "video_generation": [],
+    "image_grounded_search": [
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3-pro-image",
+        "method": "image",
+        "input_types": [
+          "text",
+          "image"
+        ],
+        "output_types": [
+          "image",
+          "text"
+        ],
+        "enabled": true,
+        "tools": [
+          "search"
+        ]
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.1-flash-image",
+        "method": "image",
+        "input_types": [
+          "text",
+          "image"
+        ],
+        "output_types": [
+          "image",
+          "text"
+        ],
+        "enabled": true,
+        "tools": [
+          "search"
+        ]
+      }
+    ],
+    "image_legacy": [
+      {
+        "provider": "google_gemini",
+        "model": "imagen-4.0-ultra-generate-001",
+        "method": "imagen_predict",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "image"
+        ],
+        "enabled": false,
+        "legacy": true,
+        "reason": "Imagen 4 is scheduled for shutdown; retained only because it is in available-limits.md."
+      },
+      {
+        "provider": "google_gemini",
+        "model": "imagen-4.0-generate-001",
+        "method": "imagen_predict",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "image"
+        ],
+        "enabled": false,
+        "legacy": true,
+        "reason": "Imagen 4 is scheduled for shutdown; retained only because it is in available-limits.md."
+      },
+      {
+        "provider": "google_gemini",
+        "model": "imagen-4.0-fast-generate-001",
+        "method": "imagen_predict",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "image"
+        ],
+        "enabled": false,
+        "legacy": true,
+        "reason": "Imagen 4 is scheduled for shutdown; retained only because it is in available-limits.md."
+      }
+    ]
   },
   "reference_catalog": {
     "source_file": "docs/model-catalog.md",
     "source_attachment": "available-limits.md",
     "model_rows": 24,
     "tool_rows": 13,
-    "policy": "Only rows in the attached table may be enabled in Gemini output routes; unsupported families remain documentation-only."
+    "policy": "available-limits.md is a quota snapshot. The current executable image route follows the live Gemini model catalog; the three Imagen rows from the attachment remain in image_legacy disabled because the official deprecation schedule sets their shutdown date to 2026-08-17."
   }
 }
