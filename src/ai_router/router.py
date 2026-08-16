@@ -264,11 +264,21 @@ class AIRouter:
         voice: str = "Kore",
         output_dimensionality: int | None = None,
         input_parts: list[dict[str, Any]] | None = None,
+        chain: str | None = None,
         latitude: float | None = None,
         longitude: float | None = None,
     ) -> dict[str, Any]:
         intent = detect_intent(user_prompt, output_type=output_type, grounding=grounding)
-        route_name, specs = self._resolve_route(intent)
+        if chain:
+            if grounding:
+                raise ValueError("grounding cannot be combined with an explicit chain")
+            try:
+                specs = self.config.model_chain(chain)
+            except KeyError as exc:
+                raise UnsupportedOutputType(f"Unknown model chain: {chain}") from exc
+            route_name = chain
+        else:
+            route_name, specs = self._resolve_route(intent)
         if intent.output_type == "live":
             raise UnsupportedOutputType("Live is a WebSocket session; call prepare_live_session()")
         if intent.output_type == "video_generation":

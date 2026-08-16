@@ -41,6 +41,21 @@ class OpenRouterAdapterTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs['headers']['Authorization'], 'Bearer placeholder-openrouter-key')
         self.assertEqual(post.call_args.kwargs['json']['response_format'], {'type': 'json_object'})
 
+    def test_complete_auto_accepts_explicit_openrouter_chain(self):
+        with tempfile.TemporaryDirectory() as temp:
+            router = AIRouter(config_dir=ROOT / "config", state_db=Path(temp) / "router.db")
+            with patch.object(router, "_complete_route", return_value={"ok": True}) as complete_route:
+                result = router.complete_auto(
+                    chain="openrouter_free",
+                    output_type="text",
+                    user_prompt="Return JSON.",
+                    operation="openrouter_chain_test",
+                )
+            self.assertEqual(result, {"ok": True})
+            self.assertEqual(complete_route.call_args.kwargs["route_name"], "openrouter_free")
+            self.assertEqual(len(complete_route.call_args.kwargs["specs"]), 16)
+            router.close()
+
     def test_openrouter_single_token_fallback_is_loaded(self):
         previous = os.environ.get("OPENROUTER_API_KEY")
         os.environ["OPENROUTER_API_KEY"] = "placeholder-openrouter-key"
