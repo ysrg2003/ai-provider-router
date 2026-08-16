@@ -119,9 +119,10 @@ class RouterRoutePlanTests(unittest.TestCase):
             video_plan = router.route_plan(user_prompt="توليد فيديو سينمائي")
             self.assertEqual(image_plan["output_type"], "image")
             self.assertEqual(image_plan["route"], "image")
-            self.assertEqual(image_plan["models"][0]["model"], "gemini-3-pro-image")
-            self.assertEqual(image_plan["models"][0]["input_types"], ["text", "image"])
-            self.assertEqual(image_plan["models"][0]["output_types"], ["image", "text"])
+            self.assertEqual(image_plan["models"][0]["provider"], "chatgpt_image")
+            self.assertEqual(image_plan["models"][0]["model"], "chatgpt-api")
+            self.assertEqual(image_plan["models"][0]["input_types"], ["text"])
+            self.assertEqual(image_plan["models"][0]["output_types"], ["image"])
             self.assertEqual(audio_plan["models"][0]["model"], "gemini-3.1-flash-tts-preview")
             self.assertEqual(audio_plan["models"][0]["input_types"], ["text"])
             self.assertEqual(audio_plan["models"][0]["output_types"], ["audio"])
@@ -135,22 +136,22 @@ class RouterRoutePlanTests(unittest.TestCase):
         import os
 
         with tempfile.TemporaryDirectory() as temp:
-            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = '[{"id":"image-key","key":"secret","project":"p1"}]'
+            os.environ["CHATGPT_API_KEY"] = "secret"
             try:
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
                 with patch.object(
-                    router.adapters["google_gemini"],
+                    router.adapters["chatgpt_image"],
                     "generate_image",
                     return_value=ProviderResponse({"output_type": "image", "data_base64": "aW1hZ2U="}, {}),
                 ) as generate:
                     result = router.complete_auto(user_prompt="أنشئ صورة لقطة")
                 self.assertEqual(result["route"], "image")
                 self.assertEqual(result["intent"], "image")
-                self.assertEqual(generate.call_args.kwargs["model"], "gemini-3-pro-image")
+                self.assertEqual(generate.call_args.kwargs["model"], "chatgpt-api")
 
                 router.close()
             finally:
-                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+                os.environ.pop("CHATGPT_API_KEY", None)
 
     def test_complete_auto_passes_grounding_tool(self):
         import os

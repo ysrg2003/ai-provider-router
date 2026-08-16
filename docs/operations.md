@@ -248,3 +248,12 @@ python3 -m compileall -q src scripts tests
 كان التشغيل الأول بعد إضافة المفاتيح يتوقف قبل إنتاج التقرير بسبب أن `scripts/live_smoke.py` مرّر `chain` إلى `complete_auto()` بينما لم تكن الدالة تقبله. أُصلح ذلك في commit `dc65957` بإضافة `chain` اختياري، وإضافة اختبار يمنع عودة الخطأ. بعد الإصلاح أعاد workflow التقرير الكامل بنجاح. هذه الحادثة موثقة لتسهيل التشخيص إذا عاد `TypeError: ... unexpected keyword argument 'chain'` في نسخة قديمة.
 
 لا تُعامل `route_plan_only` كنجاح طلب حي؛ هي تحقق من config فقط. ولا تُعامل `429` في Image كإثبات أن النموذج غير موجود؛ فهي تعني أن الحصة أو rate limit منعت الطلب وقت التشغيل.
+
+
+## ChatGPT API Space كخيار Image الأول
+
+أصبح مزود `chatgpt_image` هو الخيار الأول في `output_routes.image`. يستخدم الراوتر Space الخاص بالمشروع على `https://yousefsg-chatgpt-api.hf.space` عبر العقد الموثق في مستودع [chatgpt-api](https://github.com/ysrg2003/chatgpt-api): يرسل `POST /v1/visual-assets/jobs` مع `{ "prompt": "..." }`، ثم يستطلع `GET /v1/visual-assets/jobs/{job_id}` حتى تصبح الحالة `done`، وأخيرًا ينزّل الصورة من `/download`. كل الطلبات تستخدم `Authorization: Bearer <CHATGPT_API_KEY>`.
+
+يجب حفظ قيمة `API_KEY` التي عُيّنت في Hugging Face Space كـSecret في مستودع `ai-provider-router` باسم `CHATGPT_API_KEY`، أو استخدام مصفوفة `AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON` إذا كان هناك أكثر من مفتاح. لا تُحفظ القيمة في Git ولا تُطبع في التقارير. عند غياب المفتاح أو إرجاع `401` أو فشل job، ينتقل الراوتر إلى Gemini Image بالترتيب الحالي. عند إرسال `image_data`، يتجنب adapter الخارجي إرسال الصورة كأنها prompt نصي ويترك مسار التعديل لـGemini؛ وهذا يحافظ على دلالة المدخلات والمخرجات.
+
+الاختبار المحلي يثبت إنشاء job، polling، تنزيل `image/png`، وتصنيف خطأ المصادقة. أما الاختبار الحي للصورة عبر Space فيتطلب إضافة `CHATGPT_API_KEY` إلى Secrets الخاصة بمستودع الراوتر؛ فوجود `API_KEY` داخل Space وحده لا يجعل قيمته قابلة للقراءة من الراوتر. الخدمة نفسها هي browser-backed ChatGPT adapter وليست OpenAI Images API، ولذلك يعتمد نجاحها على بقاء جلسة ChatGPT داخل Space صالحة.

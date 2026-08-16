@@ -874,3 +874,32 @@ PYTHONPATH=src python -m ai_router.cli.main \
 ## التشغيل الحي والأسرار
 
 لإعداد `AI_ROUTER_GEMINI_KEYS_JSON` و`AI_ROUTER_OPENROUTER_KEYS_JSON` وتشغيل السيناريوهات الحية بأمان، راجع [دليل التشغيل والأسرار](docs/operations.md). يبدأ الدليل بفحص `routing` المحلي الذي لا يستهلك حصة، ثم يشرح تشغيل `text` و`search` و`maps` و`image` و`audio` و`embedding` و`openrouter_free` كلًّا على حدة، مع تفسير `403` و`404` و`429` وتدوير المفاتيح. لاحظ أن `429` في Image بعد استخدام `generateContent` يعني نفاد الحصة، بينما `404` التاريخي كان خاصًا بـImagen 4 legacy. OpenRouter له rate limits وحصة مجانية مستقلة.
+
+
+## استخدام chatgpt-api لتوليد الصور كأول خيار
+
+يدعم الراوتر الآن مشروع [chatgpt-api](https://github.com/ysrg2003/chatgpt-api) المستضاف في [Hugging Face Space](https://yousefsg-chatgpt-api.hf.space) كأول خيار في مسار `image`. هذا المسار يرسل prompt نصيًا إلى job queue الخاصة بالـSpace، ينتظر اكتمال المهمة، ثم يعيد الصورة بصيغة Base64 و`mime_type` موحدين مع مخرجات Gemini.
+
+لتمكينه، يجب أن تكون قيمة `API_KEY` الموجودة في إعدادات Space محفوظة أيضًا في Secrets الخاصة بمستودع الراوتر باسم `CHATGPT_API_KEY`. ويمكن استخدام `AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON` عند الحاجة إلى تدوير أكثر من مفتاح. لا تضع المفتاح في `config/` أو `.env` committed أو أي تقرير.
+
+يصبح الترتيب التنفيذي لمسار الصورة:
+
+```text
+1. chatgpt_image / chatgpt-api
+2. Gemini Native Image / gemini-3-pro-image
+3. Gemini Native Image / gemini-3.1-flash-image
+4. Gemini Native Image / gemini-3.1-flash-lite-image
+5. Gemini Native Image / gemini-2.5-flash-image
+```
+
+إذا كان مفتاح `CHATGPT_API_KEY` غائبًا أو أعاد الـSpace خطأ مصادقة أو فشلت المهمة أو انتهت مهلة polling، ينتقل الراوتر تلقائيًا إلى Gemini. يدعم ChatGPT Space في هذا المسار prompt نصيًا إلى صورة؛ أما image-input editing فيبقى مسارًا منفصلًا ولا تُرسل الصورة إلى endpoint النصي كأنها نص.
+
+للتأكد من الترتيب دون طلب خارجي:
+
+```bash
+PYTHONPATH=src python -m ai_router.cli.main \
+  --config-dir config --state-db /tmp/ai-router-image.db \
+  route-plan --user "أنشئ صورة لدائرة زرقاء على خلفية بيضاء"
+```
+
+يجب أن يظهر `chatgpt_image/chatgpt-api` كأول عنصر في route `image`. الاختبار الحي يتطلب إضافة `CHATGPT_API_KEY` إلى مستودع الراوتر، لأن Secret الموجود داخل Space لا يمكن للراوتر قراءته تلقائيًا.
