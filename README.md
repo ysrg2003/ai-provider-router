@@ -819,6 +819,12 @@ ai-router --config-dir config --state-db /tmp/ai-router-check.db summary
 
 [7] [Google Gemini API — Nano Banana image generation via generateContent](https://ai.google.dev/gemini-api/docs/generate-content/image-generation)
 
+## آخر اختبار حي بالمفاتيح الجديدة
+
+بعد إضافة `HF_TOKEN` و`OPENROUTER_API_KEY` إلى GitHub Secrets، شُغّل [workflow الكامل](https://github.com/ysrg2003/ai-provider-router/actions/runs/31931217466) على commit `dc65957`. حُمّل `huggingface: 1` و`openrouter: 1` إلى جانب مفاتيح Gemini الستة، ونجح سيناريو OpenRouter الفعلي عبر `openrouter_free`. نجحت أيضًا مسارات النص وSearch وMaps وTTS وEmbedding؛ أما Image ففشل بسبب `RESOURCE_EXHAUSTED/429` في حصة Gemini الحالية، وليس بسبب خطأ في endpoint أو أسماء النماذج. Live وVideo generation وVideo analysis بقيت `route_plan_only` لأنها تحتاج adapters متخصصة.
+
+المحصلة: **9 حالات ناجحة أو مخططة من أصل 10**. أُصلح أثناء التشغيل خطأ برمجي كان يمنع تمرير `chain` إلى `complete_auto()`، وأضيف اختبار حماية لذلك في commit `dc65957`. راجع [دليل التشغيل](docs/operations.md) للتقرير التفصيلي والـartifact المنزوع الحساسية.
+
 ## مسارات المخرجات والاكتشاف التلقائي
 
 لم يعد `default` هو المسار الوحيد. يعرّف `config/models.json` قسم `output_routes` سلاسل مستقلة حسب المخرج المطلوب، ويختار `complete_auto()` المسار تلقائيًا من كلمات الطلب أو من `output_type` الصريح.

@@ -225,3 +225,26 @@ python3 -m compileall -q src scripts tests
 [6]: https://openrouter.ai/openrouter/free "OpenRouter Free Models Router"
 [7]: https://openrouter.ai/collections/free-models "OpenRouter Free Models collection"
 [8]: https://openrouter.ai/api/v1/models "OpenRouter Models API"
+
+## أحدث تشغيل حي بعد إضافة مفاتيح Hugging Face وOpenRouter
+
+بعد إضافة `HF_TOKEN` و`OPENROUTER_API_KEY` إلى GitHub Secrets، شُغّل workflow الكامل `all` في [run 31931217466](https://github.com/ysrg2003/ai-provider-router/actions/runs/31931217466) على commit `dc65957`. حمّل التشغيل `google_gemini: 6` و`huggingface: 1` و`openrouter: 1`، ولم تُعرض أي قيمة سرية في artifact.
+
+| السيناريو | الحالة | المسار أو المخرج | النتيجة |
+|---|---|---|---|
+| `live` | `route_plan_only` | Live | تم فحص الخطة فقط؛ لا يوجد WebSocket adapter |
+| `video_generation` | `route_plan_only` | Video generation | تم فحص الخطة فقط؛ لا يوجد async Veo adapter |
+| `video_analysis` | `route_plan_only` | `video_analysis` | تم فحص الخطة فقط؛ لم يُرسل فيديو خارجي |
+| `text` | `passed` | `text` | JSON ناجح بحقل `ok` |
+| `openrouter` | `passed` | `openrouter_free` | JSON ناجح بحقل `ok`؛ المفتاح والاتصال وسلسلة OpenRouter يعملون |
+| `search` | `passed` | `text_grounded_search` | نص بطول 48 حرفًا |
+| `maps` | `passed` | `text_grounded_maps` | نص بطول 176 حرفًا |
+| `image` | `failed` | Gemini Image | جميع المحاولات أعادت `quota/429`؛ لم يكن فشلًا في endpoint أو chain |
+| `audio` | `passed` | `audio` | صوت فعلي `audio/l16`, 24 kHz، وحجم Base64 منزوع الحساسية 176640 |
+| `embedding` | `passed` | `embedding` | embedding واحد بأبعاد 3072 |
+
+المحصلة هي **9 حالات ناجحة أو مخططة من أصل 10**. حالة Image وحدها فشلت بسبب `RESOURCE_EXHAUSTED/429` في مفاتيح Gemini الستة. أما OpenRouter وHugging Face فأصبحا محمّلين فعليًا، ونجح سيناريو OpenRouter المنفصل.
+
+كان التشغيل الأول بعد إضافة المفاتيح يتوقف قبل إنتاج التقرير بسبب أن `scripts/live_smoke.py` مرّر `chain` إلى `complete_auto()` بينما لم تكن الدالة تقبله. أُصلح ذلك في commit `dc65957` بإضافة `chain` اختياري، وإضافة اختبار يمنع عودة الخطأ. بعد الإصلاح أعاد workflow التقرير الكامل بنجاح. هذه الحادثة موثقة لتسهيل التشخيص إذا عاد `TypeError: ... unexpected keyword argument 'chain'` في نسخة قديمة.
+
+لا تُعامل `route_plan_only` كنجاح طلب حي؛ هي تحقق من config فقط. ولا تُعامل `429` في Image كإثبات أن النموذج غير موجود؛ فهي تعني أن الحصة أو rate limit منعت الطلب وقت التشغيل.
