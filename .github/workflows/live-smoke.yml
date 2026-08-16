@@ -11,6 +11,7 @@ on:
         options:
           - routing
           - text
+          - normal_search
           - search
           - maps
           - image

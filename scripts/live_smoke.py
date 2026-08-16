@@ -14,6 +14,7 @@ from ai_router.router import AllProvidersFailed, UnsupportedOutputType
 
 SCENARIOS = {
     "text": {"user_prompt": "Return JSON with exactly one field ok set to true.", "output_type": "text"},
+    "normal_search": {"user_prompt": "Find the latest public English YouTube videos relevant to: vibe coding AI-assisted development software engineering. Return up to three exact YouTube URLs, titles, and a brief reason for each. Do not use any external tools; if you cannot verify a URL, say so explicitly.", "output_type": "text"},
     "search": {"user_prompt": "What is the current UTC date? Use Google Search grounding and cite sources.", "output_type": "text", "grounding": "search"},
     "maps": {"user_prompt": "Name one well-known landmark near these coordinates and explain briefly.", "output_type": "text", "grounding": "maps", "latitude": 24.7136, "longitude": 46.6753},
     "image": {"user_prompt": "Create a simple blue circle on a white background.", "output_type": "image"},
