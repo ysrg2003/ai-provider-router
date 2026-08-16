@@ -97,7 +97,9 @@ def run_direct_chatgpt_image_smoke(router: AIRouter) -> dict[str, Any]:
             "status_code": session_response.status_code,
             "status": session_body.get("status"),
             "prompt_selector_visible": session_body.get("prompt_selector_visible"),
+            "prompt_selector": session_body.get("prompt_selector"),
             "login_marker_count": session_body.get("login_marker_count"),
+            "chatgpt_cookie_count": session_body.get("chatgpt_cookie_count"),
             "logged_in": session_body.get("logged_in"),
         }
     except requests.RequestException as exc:
