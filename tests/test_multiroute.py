@@ -66,6 +66,19 @@ class GeminiMultimodalAdapterTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["json"]["response_format"], {"type": "audio"})
         self.assertEqual(post.call_args.kwargs["json"]["generation_config"]["speech_config"], [{"voice": "Kore"}])
 
+    def test_tts_steps_audio_payload_is_normalized(self):
+        adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
+        response = FakeResponse({"steps": [{"type": "model_output", "content": [{"type": "audio", "data": "c29uZw==", "mime_type": "audio/pcm"}]}]})
+        with patch("ai_router.providers.gemini.requests.post", return_value=response):
+            result = adapter.generate_speech(
+                model="gemini-3.1-flash-tts-preview",
+                secret="secret",
+                text="مرحبا",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["output_type"], "audio")
+        self.assertEqual(result.payload["data_base64"], "c29uZw==")
+
     def test_embedding_payload_and_output(self):
         adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
         response = FakeResponse({"embeddings": [{"values": [0.1, 0.2]}], "usageMetadata": {"totalTokenCount": 2}})

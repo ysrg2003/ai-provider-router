@@ -150,7 +150,7 @@ class GeminiAdapter:
             "generation_config": {"speech_config": [{"voice": voice}]},
         }
         body = self._post_interactions(secret=secret, payload=payload, timeout_seconds=timeout_seconds)
-        audio = body.get("output_audio")
+        audio = self._interaction_audio(body)
         if not isinstance(audio, dict) or not audio.get("data"):
             raise ProviderError("Gemini did not return audio", error_class="invalid_or_unknown", retryable=False)
         return ProviderResponse(
@@ -255,6 +255,23 @@ class GeminiAdapter:
             return value if isinstance(value, dict) else {"data": value}
         except ValueError:
             return {"raw": response.text[:2000]}
+
+    @staticmethod
+    def _interaction_audio(body: dict[str, Any]) -> dict[str, Any] | None:
+        direct = body.get("output_audio")
+        if isinstance(direct, dict) and direct.get("data"):
+            return direct
+        for step in body.get("steps", []) or []:
+            if not isinstance(step, dict) or step.get("type") != "model_output":
+                continue
+            for block in step.get("content", []) or []:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "audio" and isinstance(block.get("audio"), dict):
+                    return block["audio"]
+                if block.get("type") == "audio" and block.get("data"):
+                    return block
+        return None
 
     @staticmethod
     def _interaction_text(body: dict[str, Any]) -> str:
