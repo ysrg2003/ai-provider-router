@@ -903,3 +903,12 @@ PYTHONPATH=src python -m ai_router.cli.main \
 ```
 
 يجب أن يظهر `chatgpt_image/chatgpt-api` كأول عنصر في route `image`. الاختبار الحي يتطلب إضافة `CHATGPT_API_KEY` إلى مستودع الراوتر، لأن Secret الموجود داخل Space لا يمكن للراوتر قراءته تلقائيًا.
+
+
+## تكامل YouTube Video Evidence Router
+
+يُستخدم هذا المستودع كطبقة routing في [youtube-video-evidence-router](https://github.com/ysrg2003/youtube-video-evidence-router). لتحليل فيديو عام، يستدعي المشروع المستهلك `AIRouter.complete_video_json()` ويختار افتراضيًا chain باسم `video_fast`، وهي سلسلة محدودة في `config/models.json` لتقليل زمن retry لكل فيديو. يمكن تغييرها صراحة عبر المتغير غير السري `AI_VIDEO_CHAIN`، لكن يجب تشغيل الاختبارات وsmoke test محدود بعد أي تغيير.
+
+لا يثبت مخرج الراوتر صحة claim أو experience في الفيديو. المشروع المستهلك مسؤول عن حفظ `source_url` و`limitations` و`verification_needed`، وعن إبقاء النتيجة evidence للمراجعة لا حقيقة منشورة. عند `AllProvidersFailed` يجب حفظ state ووضع الحالة التحريرية `NEEDS ANALYSIS RETRY OR ALTERNATIVE EVIDENCE` بدل تكرار الطلب بلا نهاية أو استخدام تدوير المفاتيح لتجاوز quota.
+
+في تشغيل corpus موثق بتاريخ 2026-08-16، نجح 31 تحليل فيديو من 50 مقالًا، وفشل 12 رابطًا محفوظًا، وبقيت 7 مقالات بلا رابط. هذه أرقام للمشروع المستهلك وليست ضمانًا أن كل provider أو model في هذا المستودع سينجح في كل فيديو.

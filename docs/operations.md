@@ -279,3 +279,26 @@ python3 -m compileall -q src scripts tests
 لإعادة استخدام Space في مستودع آخر، لا تنسخ Playwright أو `CHATGPT_COOKIES_NETSCAPE`. استخدم HTTP API وضع قيمة `API_KEY` في Secret للمشروع المستدعي باسم مثل `CHATGPT_API_KEY`. الدليل الكامل موجود في [integration-chatgpt-image.md](integration-chatgpt-image.md)، ويشرح أيضًا عقد job وpolling، الاختبارات offline، smoke الحي المحدود، retries، fallback، والتراجع. أما دليل الخدمة نفسها فيشرح المسار العام في [chatgpt-api reuse guide](https://github.com/ysrg2003/chatgpt-api/blob/main/docs/reuse-in-another-project.md).
 
 لا تعتبر route `image` ناجحًا لمجرد أن `route-plan` اختار `chatgpt_image`. النجاح الحي يتطلب مفتاحًا محمّلًا، job مكتملًا، تنزيلًا غير فارغ، ونوع محتوى صوريًا. عند فشل Space أو انتهاء جلسة ChatGPT يجب أن ينتقل الراوتر إلى Gemini أو fallback المشروع المستدعي، وألا يستبدل صورة مرجعية موثوقة بمخرج غير مكتمل.
+
+
+## تكامل YouTube Video Evidence Router — 2026-08-16
+
+يُستهلك هذا المستودع من [youtube-video-evidence-router](https://github.com/ysrg2003/youtube-video-evidence-router) عبر submodule أو مسار Python مثبت. يستخدم المستهلك `AIRouter.complete_video_json()` لتحليل رابط YouTube عام، مع `config_dir=vendor/ai-provider-router/config` و`state_db=data/ai_router.db`.
+
+أضيفت سلسلة `video_fast` في `config/models.json` وتضم نموذجَي Gemini مخصصين لمسار الفيديو. يستخدم المستهلك هذه السلسلة افتراضيًا عبر `AI_VIDEO_CHAIN=video_fast` لتقليل زمن retry؛ يمكن للمستهلك اختيار chain أخرى عبر argument أو متغير البيئة، لكن يجب أن يكون ذلك مقصودًا ومحدودًا.
+
+| عنصر | العقد |
+|---|---|
+| المدخل | `video_uri` عام يبدأ بـ`https://www.youtube.com/` أو `https://youtu.be/` |
+| المخرج | كائن JSON يطبع schema المشروع المستهلك ويحافظ على source URL |
+| state | SQLite يسجل provider/model/key cursor والنجاح والفشل والتبريد |
+| retry | تحكمه `config/policies.json`; لا تستخدمه لتجاوز quota أو تدوير مفاتيح غير مسموح |
+| fallback | يتم داخل chain وفق models/config؛ إذا فشل الجميع تظهر `AllProvidersFailed` |
+| السر | `AI_ROUTER_GEMINI_KEYS_JSON` في GitHub Secret أو `.env` محلي فقط |
+| التحقق | unit tests offline أولًا، ثم live smoke محدود لفيديو واحد |
+
+لا يثبت نجاح `complete_video_json()` صحة الادعاءات الواردة في الفيديو. على المستهلك حفظ `limitations` و`verification_needed` وprovenance، وعدم تقديم المخرج كتحقق مستقل. إذا كانت النتيجة `AllProvidersFailed`، يُحفظ الفشل في state وتُترك للمستهلك حالة `NEEDS ANALYSIS RETRY OR ALTERNATIVE EVIDENCE` بدل إعادة الطلب بلا نهاية.
+
+في تشغيل corpus الأخير استُخدمت سلسلة `video_fast` ونجحت البنية في 31 تحليلًا من 50 مقالًا؛ بقيت 12 حالة برابط محفوظ فشل تحليلها، و7 حالات بلا رابط. هذه الأرقام تخص مشروع YouTube ولا تعني نجاح كل provider أو كل model في هذا المستودع.
+
+للتراجع عن سلسلة الفيديو المحدودة، أعد consumer إلى chain سابقة فقط بعد قراءة state وتشغيل الاختبارات. لا تغيّر `config/policies.json` في مشروع المستهلك لتجاوز حد provider؛ أصلح السبب أو انتظر تجدد الحصة. احتفظ بقاعدة SQLite خارج Git، ولا ترفع secrets أو raw provider bodies إلى artifacts.

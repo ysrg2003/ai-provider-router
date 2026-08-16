@@ -193,3 +193,16 @@ PYTHONPATH=src python -m ai_router.cli.main \
 
 [1]: https://openrouter.ai/docs/quickstart "OpenRouter Quickstart"
 [2]: https://openrouter.ai/docs/api-reference/overview "OpenRouter API Reference"
+
+
+## سلسلة تحليل الفيديو للمشاريع المستهلكة
+
+يحتوي `models.json` على سلسلة `video_fast` مخصصة لتحليل فيديو YouTube عبر `complete_video_json()`. تضم السلسلة نماذج Gemini محدودة بدل المرور بالسلسلة العامة الطويلة. يختار مشروع [youtube-video-evidence-router](https://github.com/ysrg2003/youtube-video-evidence-router) هذه السلسلة افتراضيًا عبر:
+
+```dotenv
+AI_VIDEO_CHAIN=video_fast
+```
+
+لا تضع هذا المتغير في `models.json` أو في GitHub Secret؛ هو متغير تشغيل غير سري، بينما قيمة `AI_ROUTER_GEMINI_KEYS_JSON` سرية. إذا غيّرت `video_fast`، أعد اختبارات `ai-provider-router` ثم smoke test واحدًا لفيديو عام. لا تستخدم سلسلة أوسع لمجرد تجاوز quota، ولا تعتبر فشل كل provider سببًا لإعادة الطلب بلا حد.
+
+المخرج المتوقع من تحليل الفيديو هو JSON يمرره المشروع المستهلك إلى schema الخاصة به. يجب أن يحتفظ المستهلك بـ`source_url` و`limitations` و`verification_needed`، وألا يعامل claims المولدة كتحقق مستقل.
