@@ -40,12 +40,13 @@ class ChatGPTImageAdapter:
             raise ProviderError("image prompt is empty", error_class="invalid_or_unknown", retryable=False)
         # chatgpt-api's documented examples send the raw API key in Authorization.
         # The Space accepts this form as well as the optional Bearer prefix.
-        headers = {"Authorization": secret, "Content-Type": "application/json"}
         endpoint = f"{self.base_url}/v1/visual-assets/jobs"
+        session = requests.Session()
+        session.headers.update({"Authorization": secret})
         try:
-            response = requests.post(
+            response = session.post(
                 endpoint,
-                headers=headers,
+                headers={"Content-Type": "application/json"},
                 json={"prompt": prompt},
                 timeout=min(timeout_seconds, 60),
             )
@@ -63,7 +64,7 @@ class ChatGPTImageAdapter:
         download_endpoint = f"{status_endpoint}/download"
         while time.monotonic() < deadline:
             try:
-                status_response = requests.get(status_endpoint, headers={"Authorization": secret}, timeout=min(timeout_seconds, 30))
+                status_response = session.get(status_endpoint, timeout=min(timeout_seconds, 30))
             except requests.RequestException as exc:
                 raise ProviderError(str(exc), error_class="transient") from exc
             status_body = self._body(status_response)
@@ -73,15 +74,17 @@ class ChatGPTImageAdapter:
             if status == "error":
                 raise ProviderError("chatgpt-api visual job failed", error_class="upstream_error", retryable=False)
             if status == "done":
-                return self._download_image(download_endpoint, secret=secret, timeout_seconds=timeout_seconds)
+                return self._download_image(download_endpoint, secret=secret, timeout_seconds=timeout_seconds, session=session)
             time.sleep(min(self.poll_interval_seconds, max(0.0, deadline - time.monotonic())))
         raise ProviderError("chatgpt-api visual job timed out", error_class="transient")
 
-    def _download_image(self, endpoint: str, *, secret: str, timeout_seconds: int) -> ProviderResponse:
+    def _download_image(self, endpoint: str, *, secret: str, timeout_seconds: int, session: requests.Session | None = None) -> ProviderResponse:
+        client = session or requests.Session()
+        if session is None:
+            client.headers.update({"Authorization": secret})
         try:
-            response = requests.get(
+            response = client.get(
                 endpoint,
-                headers={"Authorization": secret},
                 timeout=min(timeout_seconds, 60),
             )
         except requests.RequestException as exc:
