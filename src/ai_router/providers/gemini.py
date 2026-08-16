@@ -14,7 +14,7 @@ class GeminiAdapter:
     def __init__(self, base_url: str) -> None:
         self.base_url = base_url.rstrip("/")
 
-    def complete_json(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int) -> ProviderResponse:
+    def complete_json(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int, supports_response_format: bool = True) -> ProviderResponse:
         endpoint = f"{self.base_url}/models/{model}:generateContent"
         payload = {
             "systemInstruction": {"parts": [{"text": system_prompt}]},

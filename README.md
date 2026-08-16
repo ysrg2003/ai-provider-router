@@ -34,6 +34,7 @@
 | Python 3.11 أو أحدث | نعم | تشغيل الحزمة والاختبارات |
 | مفتاح Gemini | اختياري | تفعيل مسارات Text وImage وTTS وEmbedding وGrounding بحسب الحصة |
 | مفتاح Hugging Face | اختياري | تفعيل خطة الاحتياط |
+| مفتاح OpenRouter | اختياري | تفعيل 19 نموذجًا مجانيًا موثقًا، منها 16 نموذجًا عامًا نشطًا |
 | Git | اختياري محلياً | استنساخ المشروع وتحديثه |
 | GitHub | اختياري للتشغيل اليدوي، مطلوب للتشغيل التلقائي | حفظ المشروع وتشغيل workflow |
 
@@ -129,7 +130,7 @@ python -m unittest discover -s tests -v
 النتيجة الصحيحة تشبه:
 
 ```text
-Ran 27 tests
+Ran 31 tests
 OK
 ```
 
@@ -384,7 +385,58 @@ AI_ROUTER_HF_KEYS_JSON=[
 
 ---
 
-# القسم الخامس: تنفيذ أول طلب حقيقي
+# القسم الخامس: تفعيل OpenRouter والنماذج المجانية
+
+OpenRouter مزود OpenAI-compatible؛ يستخدم المشروع endpoint `https://openrouter.ai/api/v1/chat/completions`، ولذلك لا يحتاج إلى adapter جديد. أُضيفت النماذج المجانية من [صفحة Free Models][8] و[Free Models Router][9] و[Models API][10]، مع ترتيب المجموعة الرسمية أولًا ثم بقية النماذج المجانية.
+
+## الخطوة 15: إنشاء مفتاح OpenRouter
+
+افتح [صفحة مفاتيح OpenRouter](https://openrouter.ai/keys) وأنشئ API key. لا تضعه في `config/` أو داخل Git. للاستخدام المحلي، انسخ `.env.example` إلى `.env` ثم أضف:
+
+```dotenv
+OPENROUTER_API_KEY=sk-or-v1-ضع_المفتاح_هنا
+```
+
+إذا كنت تحتاج إلى تدوير عدة مفاتيح، استخدم:
+
+```dotenv
+AI_ROUTER_OPENROUTER_KEYS_JSON=[
+  {"id":"openrouter-1","key":"sk-or-v1-المفتاح_الأول","project":"openrouter"},
+  {"id":"openrouter-2","key":"sk-or-v1-المفتاح_الثاني","project":"openrouter"}
+]
+```
+
+يقرأ الراوتر المصفوفة أولًا، ثم يستخدم `OPENROUTER_API_KEY` كـfallback. لكل مفتاح cursor مستقل في SQLite، وينتقل إلى النموذج التالي عند خطأ المصادقة أو الحصة أو timeout أو JSON غير صالح.
+
+## الخطوة 16: التحقق المحلي دون استهلاك الطلب
+
+نفّذ من جذر المشروع:
+
+```bash
+ai-router --config-dir config --state-db /tmp/openrouter-check.db summary
+```
+
+يجب أن يظهر `openrouter` ضمن providers. إذا أضفت المفتاح سيظهر عدد الأسرار فقط، لا القيمة.
+
+## الخطوة 17: تجربة سلسلة OpenRouter المجانية
+
+بعد إضافة المفتاح، شغّل:
+
+```bash
+ai-router --config-dir config --state-db /tmp/openrouter-live.db call-json \\
+  --chain openrouter_free \\
+  --operation openrouter_smoke \\
+  --system "Return JSON only." \\
+  --user "Return a JSON object with ok=true and provider=openrouter."
+```
+
+السلسلة تضم 16 نموذجًا عامًا نشطًا، وتضع `openrouter/free` في النهاية. النموذج `nvidia/nemotron-3.5-content-safety:free` لا يدخل سلسلة التوليد العامة؛ له route moderation معطل. نموذجا Lyria الصوتيان موثقَان لكنهما معطلان حتى يضاف adapter صوت مناسب.
+
+إذا ظهر `429`، فهذا rate limit أو نفاد الحصة المجانية، وسيواصل الراوتر التدوير وفق سياسة cooldown. إذا ظهر `400`، فراجع metadata للنموذج، خصوصًا `supports_response_format`؛ الراوتر يحذف `response_format` تلقائيًا للنماذج التي لا تعلن دعمه.
+
+يراجع [كتالوج OpenRouter التفصيلي](docs/openrouter-free.md) كل model ID ومدخلاته ومخرجاته وسياقه وحالة route الخاصة به.
+
+# القسم السادس: تنفيذ أول طلب حقيقي
 
 ## الخطوة 12: تشغيل ملخص جديد للتأكد من قراءة المفاتيح
 
@@ -759,7 +811,19 @@ ai-router --config-dir config --state-db /tmp/ai-router-check.db summary
 
 [4] [GitHub Actions — Secrets](https://docs.github.com/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)
 
+[8] [OpenRouter Free Models collection](https://openrouter.ai/collections/free-models)
+
+[9] [OpenRouter Free Models Router](https://openrouter.ai/openrouter/free)
+
+[10] [OpenRouter Models API](https://openrouter.ai/api/v1/models)
+
 [7] [Google Gemini API — Nano Banana image generation via generateContent](https://ai.google.dev/gemini-api/docs/generate-content/image-generation)
+
+## آخر اختبار حي بالمفاتيح الجديدة
+
+بعد إضافة `HF_TOKEN` و`OPENROUTER_API_KEY` إلى GitHub Secrets، شُغّل [workflow الكامل](https://github.com/ysrg2003/ai-provider-router/actions/runs/31931217466) على commit `dc65957`. حُمّل `huggingface: 1` و`openrouter: 1` إلى جانب مفاتيح Gemini الستة، ونجح سيناريو OpenRouter الفعلي عبر `openrouter_free`. نجحت أيضًا مسارات النص وSearch وMaps وTTS وEmbedding؛ أما Image ففشل بسبب `RESOURCE_EXHAUSTED/429` في حصة Gemini الحالية، وليس بسبب خطأ في endpoint أو أسماء النماذج. Live وVideo generation وVideo analysis بقيت `route_plan_only` لأنها تحتاج adapters متخصصة.
+
+المحصلة: **9 حالات ناجحة أو مخططة من أصل 10**. أُصلح أثناء التشغيل خطأ برمجي كان يمنع تمرير `chain` إلى `complete_auto()`، وأضيف اختبار حماية لذلك في commit `dc65957`. راجع [دليل التشغيل](docs/operations.md) للتقرير التفصيلي والـartifact المنزوع الحساسية.
 
 ## مسارات المخرجات والاكتشاف التلقائي
 
@@ -769,6 +833,7 @@ ai-router --config-dir config --state-db /tmp/ai-router-check.db summary
 |---|---|---|---|
 | نص أو JSON | `text` | نص | Gemini ثم Hugging Face |
 | صورة | `image` | Base64 image block | Nano Banana عبر `generateContent`؛ Imagen 4 في `image_legacy` فقط |
+| OpenRouter free | `openrouter_free` | نص، وبعض النماذج تستقبل صورة/فيديو/صوت | نص/JSON | OpenRouter chat completions مع تدوير النماذج والمفاتيح |
 | صوت من نص | `audio` | PCM audio | Gemini TTS |
 | متجهات | `embedding` | embedding vectors | Gemini Embeddings |
 | تحليل فيديو | `video_analysis` | نص/JSON | Gemini Interactions |
@@ -808,4 +873,4 @@ PYTHONPATH=src python -m ai_router.cli.main \
 
 ## التشغيل الحي والأسرار
 
-لإعداد `AI_ROUTER_GEMINI_KEYS_JSON` وتشغيل السيناريوهات الحية بأمان، راجع [دليل التشغيل والأسرار](docs/operations.md). يبدأ الدليل بفحص `routing` المحلي الذي لا يستهلك حصة، ثم يشرح تشغيل `text` و`search` و`maps` و`image` و`audio` و`embedding` كلًّا على حدة، مع تفسير `403` و`404` و`429` وتدوير المفاتيح. لاحظ أن `429` في Image بعد استخدام `generateContent` يعني نفاد الحصة، بينما `404` التاريخي كان خاصًا بـImagen 4 legacy.
+لإعداد `AI_ROUTER_GEMINI_KEYS_JSON` و`AI_ROUTER_OPENROUTER_KEYS_JSON` وتشغيل السيناريوهات الحية بأمان، راجع [دليل التشغيل والأسرار](docs/operations.md). يبدأ الدليل بفحص `routing` المحلي الذي لا يستهلك حصة، ثم يشرح تشغيل `text` و`search` و`maps` و`image` و`audio` و`embedding` و`openrouter_free` كلًّا على حدة، مع تفسير `403` و`404` و`429` وتدوير المفاتيح. لاحظ أن `429` في Image بعد استخدام `generateContent` يعني نفاد الحصة، بينما `404` التاريخي كان خاصًا بـImagen 4 legacy. OpenRouter له rate limits وحصة مجانية مستقلة.

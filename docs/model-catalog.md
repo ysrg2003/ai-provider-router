@@ -87,3 +87,22 @@
 [2]: https://ai.google.dev/gemini-api/docs/speech-generation "Text-to-speech generation — Gemini API"
 [3]: https://ai.google.dev/gemini-api/docs/live-api "Gemini Live API"
 [4]: https://ai.google.dev/gemini-api/docs/generate-content/image-generation "Nano Banana image generation via generateContent"
+
+## OpenRouter Free Models — كتالوج مستقل
+
+جدول `available-limits.md` أعلاه خاص بـGemini وAI Studio، ولا يُستخدم لتخمين حالة OpenRouter. أُضيف كتالوج OpenRouter الرسمي في [docs/openrouter-free.md](openrouter-free.md)، ويضم **19 نموذجًا مجانيًا** ظهرت في [OpenRouter Models API][5] بتاريخ 2026-08-16. حُفظ ترتيب [Free Models collection][6] أولًا، ثم أُضيفت النماذج المجانية التي ظهرت في API ولم تظهر في ترتيب المجموعة، ووُضع `openrouter/free` أخيرًا لأنه router meta.
+
+من بين النماذج الـ19، توجد **16 نماذج نصية/متعددة الوسائط نشطة** في `model_chains.openrouter_free` و`output_routes.text`، ونموذجا Lyria الصوتيان في catalog معطلان لغياب adapter صوت، ونموذج Content Safety في `output_routes.openrouter_moderation` معطل لأنه guardrail وليس fallback توليديًا عامًا. لا تُخلط هذه الفئات في سلسلة النص العامة بلا سياسة مخصصة.
+
+| route | OpenRouter models | input | output | الحالة |
+|---|---|---|---|---|
+| `openrouter_free` | 16 model IDs من الأقوى إلى الأقل، ثم `openrouter/free` | Text؛ وبعضها Image/Video/Audio | Text | نشط عبر OpenAI-compatible chat completions |
+| `openrouter_moderation` | `nvidia/nemotron-3.5-content-safety:free` | Text/Image | Text | catalog route فقط، معطل |
+| `openrouter_audio_catalog` | `google/lyria-3-clip-preview`, `google/lyria-3-pro-preview` | Text/Image | Text/Audio | catalog فقط، معطل حتى يضاف adapter صوت |
+
+يستخدم OpenRouter endpoint `https://openrouter.ai/api/v1/chat/completions`، ويُرسل `response_format` فقط إذا أعلن model metadata دعم `response_format` أو `structured_outputs`. راجع [OpenRouter Free Models documentation][7] و[OpenRouter Quickstart][8] لتحديث القائمة قبل كل release.
+
+[5]: https://openrouter.ai/api/v1/models "OpenRouter Models API"
+[6]: https://openrouter.ai/collections/free-models "OpenRouter Free Models collection"
+[7]: https://openrouter.ai/openrouter/free "OpenRouter Free Models Router"
+[8]: https://openrouter.ai/docs/quickstart "OpenRouter Quickstart"
