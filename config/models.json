@@ -52,6 +52,18 @@
         "enabled": true
       }
     ],
+    "video_fast": [
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.7-flash",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.6-flash",
+        "enabled": true
+      }
+    ],
     "default": [
       {
         "provider": "google_gemini",
