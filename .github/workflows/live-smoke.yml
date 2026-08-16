@@ -16,6 +16,7 @@ on:
           - search
           - maps
           - image
+          - chatgpt_image
           - audio
           - embedding
           - all
