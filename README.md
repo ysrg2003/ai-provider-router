@@ -21,6 +21,8 @@
 
 > الفكرة الأساسية: عدّل الملفات الموجودة داخل `config/` لتغيير المزود أو النموذج أو الترتيب أو مجموعة المفاتيح، ولا تعدّل المشروع الذي يستعمل المدير.
 
+> **حالة التحقق الأخيرة:** في 2026-08-16 ثبت أن النص وSearch وMaps وEmbedding تعمل، وأن TTS أعاد صوتًا فعليًا. أما Image فالمسار البرمجي صحيح الآن ويستخدم `generateContent`، لكن المفاتيح الستة أعادت `429 RESOURCE_EXHAUSTED` بسبب الحصة. نماذج Imagen 4 محفوظة كـlegacy معطلة لأنها معلنة للإيقاف.
+
 ---
 
 ## قبل أن تبدأ: ماذا تحتاج؟
@@ -30,7 +32,7 @@
 | الشيء | هل هو مطلوب؟ | لماذا؟ |
 | --- | --- | --- |
 | Python 3.11 أو أحدث | نعم | تشغيل الحزمة والاختبارات |
-| مفتاح Gemini | اختياري | تفعيل `gemini-2.5-flash` و`gemini-2.5-flash-lite` |
+| مفتاح Gemini | اختياري | تفعيل مسارات Text وImage وTTS وEmbedding وGrounding بحسب الحصة |
 | مفتاح Hugging Face | اختياري | تفعيل خطة الاحتياط |
 | Git | اختياري محلياً | استنساخ المشروع وتحديثه |
 | GitHub | اختياري للتشغيل اليدوي، مطلوب للتشغيل التلقائي | حفظ المشروع وتشغيل workflow |
@@ -127,7 +129,7 @@ python -m unittest discover -s tests -v
 النتيجة الصحيحة تشبه:
 
 ```text
-Ran 2 tests
+Ran 27 tests
 OK
 ```
 
@@ -262,7 +264,7 @@ Gemini 2.5 Flash
 Gemini 2.5 Flash-Lite
 ```
 
-بعد انتهاء مسار Gemini ينتقل الراوتر إلى نماذج Hugging Face الموجودة في السلسلة نفسها. لا تُضاف نماذج TTS أو Image أو Embedding إلى `default` تلقائيًا لأن adapter الحالي يضمن JSON text completion، بينما هذه النماذج تحتاج واجهات وعمليات مختلفة.
+بعد انتهاء مسار Gemini ينتقل الراوتر إلى نماذج Hugging Face الموجودة في السلسلة نفسها. لا تُضاف نماذج TTS أو Image أو Embedding إلى `default` تلقائيًا؛ لكل فئة route وadapter مستقلان. مسار Image الحالي يستخدم نماذج Nano Banana عبر `generateContent`، ومسار TTS يستخدم Interactions، بينما Imagen 4 محفوظ في `image_legacy` معطل.
 
 مع وجود مفتاحين، يبدأ كل مفتاح من النموذج الأول. إذا فشل النموذج الأول للمفتاح، يحفظ الراوتر أن هذا المفتاح وصل إلى النموذج التالي. عند الطلب اللاحق، يستأنف هذا المفتاح من موضعه المحفوظ، بينما يبدأ مفتاح جديد من أول نموذج.
 
@@ -709,6 +711,23 @@ git ls-files .env
 
 ---
 
+# الحالة التشغيلية المؤكدة للمخرجات
+
+الجدول التالي يفرق بين ما تم اختباره فعليًا وما تم التحقق من خطة مساره فقط:
+
+| الفئة | المسار | المدخل | المخرج | الحالة الأخيرة |
+|---|---|---|---|---|
+| Text/JSON | `text` | نص أو وسائط متعددة حسب النموذج | نص/JSON | يعمل في الاختبارات الحية |
+| Search grounding | `text_grounded_search` | سؤال حديث | نص مع citations | يعمل في الاختبارات الحية |
+| Maps grounding | `text_grounded_maps` | سؤال عن مكان أو مسار | نص مع بيانات أماكن | يعمل في الاختبارات الحية |
+| Image | `image` | نص أو صورة مرجعية | صورة | المسار صحيح، لكن الحصة أعادت `429 RESOURCE_EXHAUSTED` لكل المفاتيح الستة |
+| TTS | `audio` | نص وتعليمات صوت | PCM audio | **نجح فعليًا**؛ MIME `audio/l16; rate=24000; channels=1` |
+| Embedding | `embedding` | نص | متجه embedding | يعمل فعليًا؛ أبعاد 3072 في الاختبار السابق |
+| Live | `live` | نص/صورة/صوت/فيديو | تدفق نص/صوت | route plan فقط؛ يحتاج WebSocket adapter |
+| Video generation | `video_generation` | prompt فيديو | job فيديو | غير مفعّل؛ لا يوجد Veo في جدول available-limits المرفق |
+
+للتفاصيل القابلة لإعادة الإنتاج، راجع [دليل التشغيل](docs/operations.md) و[كتالوج النماذج والحدود](docs/model-catalog.md). يحتوي دليل التشغيل على روابط GitHub Actions وتقارير smoke المنزوعة الحساسية، ولا يحتوي قيم المفاتيح.
+
 # القسم الثالث عشر: كيف تعرف أن النظام يعمل؟
 
 النظام يعمل بالشكل الصحيح إذا تحققت الشروط التالية:
@@ -740,6 +759,8 @@ ai-router --config-dir config --state-db /tmp/ai-router-check.db summary
 
 [4] [GitHub Actions — Secrets](https://docs.github.com/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions)
 
+[7] [Google Gemini API — Nano Banana image generation via generateContent](https://ai.google.dev/gemini-api/docs/generate-content/image-generation)
+
 ## مسارات المخرجات والاكتشاف التلقائي
 
 لم يعد `default` هو المسار الوحيد. يعرّف `config/models.json` قسم `output_routes` سلاسل مستقلة حسب المخرج المطلوب، ويختار `complete_auto()` المسار تلقائيًا من كلمات الطلب أو من `output_type` الصريح.
@@ -747,7 +768,7 @@ ai-router --config-dir config --state-db /tmp/ai-router-check.db summary
 | نوع الطلب | المسار | المخرجات | التنفيذ الحالي |
 |---|---|---|---|
 | نص أو JSON | `text` | نص | Gemini ثم Hugging Face |
-| صورة | `image` | Base64 image block | Gemini Image عبر Interactions |
+| صورة | `image` | Base64 image block | Nano Banana عبر `generateContent`؛ Imagen 4 في `image_legacy` فقط |
 | صوت من نص | `audio` | PCM audio | Gemini TTS |
 | متجهات | `embedding` | embedding vectors | Gemini Embeddings |
 | تحليل فيديو | `video_analysis` | نص/JSON | Gemini Interactions |
@@ -787,4 +808,4 @@ PYTHONPATH=src python -m ai_router.cli.main \
 
 ## التشغيل الحي والأسرار
 
-لإعداد `AI_ROUTER_GEMINI_KEYS_JSON` وتشغيل السيناريوهات الحية بأمان، راجع [دليل التشغيل والأسرار](docs/operations.md). يبدأ الدليل بفحص `routing` المحلي الذي لا يستهلك حصة، ثم يشرح تشغيل `text` و`search` و`maps` و`image` و`audio` و`embedding` كلًّا على حدة، مع تفسير `403` و`429` وتدوير المفاتيح.
+لإعداد `AI_ROUTER_GEMINI_KEYS_JSON` وتشغيل السيناريوهات الحية بأمان، راجع [دليل التشغيل والأسرار](docs/operations.md). يبدأ الدليل بفحص `routing` المحلي الذي لا يستهلك حصة، ثم يشرح تشغيل `text` و`search` و`maps` و`image` و`audio` و`embedding` كلًّا على حدة، مع تفسير `403` و`404` و`429` وتدوير المفاتيح. لاحظ أن `429` في Image بعد استخدام `generateContent` يعني نفاد الحصة، بينما `404` التاريخي كان خاصًا بـImagen 4 legacy.
