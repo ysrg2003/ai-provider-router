@@ -53,6 +53,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON: ${{ secrets.AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON }}
           CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+          CHATGPT_IMAGE_SMOKE_TIMEOUT: "120"
           SMOKE_SCENARIO: ${{ inputs.scenario }}
           SMOKE_STATE_DB: /tmp/ai-router-live-smoke.db
         run: |
