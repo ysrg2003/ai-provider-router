@@ -859,9 +859,9 @@ PYTHONPATH=src python -m ai_router.cli.main \
 
 ## Grounding كقدرة مستقلة
 
-عند طلب `google_search` أو `google_maps`، يختار الراوتر مسارًا يحتوي فقط على نماذج معلن دعمها للأداة. إذا كان النموذج الأساسي لا يملك Grounding، لا يرسل الراوتر إليه tool غير مدعوم؛ بل ينتقل إلى نموذج Gemini في مسار `text_grounded_search` أو `text_grounded_maps` الذي يدعم الأداة. هذا يحافظ على صحة الإسناد بدل إنتاج إجابة تبدو grounded وهي ليست كذلك.
+عند طلب `google_search` أو `google_maps`، يختار الراوتر مسارًا يحتوي فقط على نماذج معلن دعمها للأداة. مسار `text_grounded_search` يستخدم الآن Gemini `GenerateContent` مع payload `tools: [{"google_search": {}}]`، لأن هذا هو المسار الذي يطابق مثال Google GenAI ويعيد `groundingMetadata` وURL citations. أما المسارات التفاعلية الأخرى فتستمر عبر Interactions API. إذا كان النموذج الأساسي لا يملك Grounding، لا يرسل الراوتر إليه tool غير مدعوم؛ بل ينتقل إلى نموذج Gemini في مسار grounded مناسب. هذا يحافظ على صحة الإسناد بدل إنتاج إجابة تبدو grounded وهي ليست كذلك.
 
-نتيجة Grounding تعيد `annotations` و`steps` حتى يستطيع التطبيق إظهار citations. في Google Maps يجب عرض إسناد Google Maps للمستخدم، وفي Google Search يمكن عرض روابط `url_citation` التي يعيدها API [5] [6]. لا يتم تمرير Google Search أو Google Maps تلقائيًا إلى Hugging Face، لأن adapter OpenAI-compatible لا يملك هذه الأدوات من تلقاء نفسه؛ لإضافة fallback خارجي لـ Hugging Face نحتاج مزود Search/Maps مستقلًا ومفاتيحه.
+نتيجة Grounding تعيد `annotations` و`grounding_metadata`، ويمكن للتطبيق إظهار citations واستخراج روابط المصادر. في Google Maps يجب عرض إسناد Google Maps للمستخدم، وفي Google Search يمكن عرض روابط `url_citation` التي يعيدها API [5] [6]. لا يتم تمرير Google Search أو Google Maps تلقائيًا إلى Hugging Face، لأن adapter OpenAI-compatible لا يملك هذه الأدوات من تلقاء نفسه؛ لإضافة fallback خارجي لـ Hugging Face نحتاج مزود Search/Maps مستقلًا ومفاتيحه.
 
 المسارات `live` و`video_generation` تعرض خطة اختيار النموذج فقط في هذه المرحلة. Live يحتاج WebSocket stateful، وVeo يحتاج job creation/polling؛ لذلك لا تُعامل هذه العمليات كطلب JSON قصير.
 
