@@ -23,6 +23,7 @@ class ModelCatalogTests(unittest.TestCase):
         self.assertEqual(
             [item["model"] for item in self.models["output_routes"]["image"]],
             [
+                "chatgpt-api",
                 "gemini-3-pro-image",
                 "gemini-3.1-flash-image",
                 "gemini-3.1-flash-lite-image",

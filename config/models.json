@@ -1652,6 +1652,18 @@
     ],
     "image": [
       {
+        "provider": "chatgpt_image",
+        "model": "chatgpt-api",
+        "method": "image",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "image"
+        ],
+        "enabled": true
+      },
+      {
         "provider": "google_gemini",
         "model": "gemini-3-pro-image",
         "method": "image",

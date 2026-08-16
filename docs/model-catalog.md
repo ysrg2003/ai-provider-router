@@ -106,3 +106,18 @@
 [6]: https://openrouter.ai/collections/free-models "OpenRouter Free Models collection"
 [7]: https://openrouter.ai/openrouter/free "OpenRouter Free Models Router"
 [8]: https://openrouter.ai/docs/quickstart "OpenRouter Quickstart"
+
+
+## إضافة chatgpt-api إلى مسار Image
+
+أضيف مزود `chatgpt_image` كطبقة تشغيلية خارجية أمام نماذج Gemini Image. لا يمثل `chatgpt-api` نموذجًا مستقلًا من جدول Gemini؛ بل هو خدمة صور browser-backed يملكها المشروع وتستضيفها Hugging Face Space. لذلك يظل جدول النماذج الأصلي مرجعًا لنماذج Gemini، بينما يوضح mapping التنفيذي التالي ترتيب المسار:
+
+| الترتيب | provider | model | method | input_types | output_types | الحالة |
+|---:|---|---|---|---|---|---|
+| 1 | `chatgpt_image` | `chatgpt-api` | `image` job queue | `text` | `image` | نشط عند وجود `CHATGPT_API_KEY` |
+| 2 | `google_gemini` | `gemini-3-pro-image` | `image` / `generateContent` | `text`, `image` | `image`, `text` | fallback |
+| 3 | `google_gemini` | `gemini-3.1-flash-image` | `image` / `generateContent` | `text`, `image` | `image`, `text` | fallback |
+| 4 | `google_gemini` | `gemini-3.1-flash-lite-image` | `image` / `generateContent` | `text`, `image` | `image`, `text` | fallback |
+| 5 | `google_gemini` | `gemini-2.5-flash-image` | `image` / `generateContent` | `text`, `image` | `image`, `text` | fallback |
+
+يتطلب ChatGPT Space رأس `Authorization: Bearer <CHATGPT_API_KEY>`، ويعيد job_id ثم حالة job ثم ملف صورة. لا يرسل الراوتر image input إلى endpoint prompt-only؛ طلبات التعديل بالمرجع تبقى بحاجة إلى عقد reference-edit مستقل.

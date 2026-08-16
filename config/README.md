@@ -10,7 +10,7 @@
 Gemini 3.7 Flash → 3.6 → 3.5 → 3.5 Lite → 3.1 Lite → 3 → 2.5 → 2.5 Lite
 ```
 
-ثم تنتقل إلى نماذج Hugging Face. لا تُضاف نماذج TTS أو Image أو Embedding إلى السلسلة الافتراضية لأن لكل فئة route وadapter مختلفين. نماذج الصور التشغيلية الحالية هي Nano Banana (`gemini-3-pro-image` و`gemini-3.1-flash-image` و`gemini-3.1-flash-lite-image` و`gemini-2.5-flash-image`) عبر `generateContent`. صفوف Imagen 4 من الجدول محفوظة في `image_legacy` معطلة بسبب الإيقاف المعلن. نماذج الصوت الفعالة هي Gemini 3.1 Flash TTS وGemini 2.5 Flash TTS كما هو موضح في [جدول النماذج](../docs/model-catalog.md). لتعطيل أي نموذج مؤقتًا، لا تحذف الكائن؛ غيّر `enabled` إلى `false`.
+ثم تنتقل إلى نماذج Hugging Face. لا تُضاف نماذج TTS أو Image أو Embedding إلى السلسلة الافتراضية لأن لكل فئة route وadapter مختلفين. مسار الصور يبدأ الآن بخدمة `chatgpt_image/chatgpt-api` في Hugging Face Space، ثم يستخدم نماذج Nano Banana (`gemini-3-pro-image` و`gemini-3.1-flash-image` و`gemini-3.1-flash-lite-image` و`gemini-2.5-flash-image`) عبر `generateContent` كـfallback. صفوف Imagen 4 من الجدول محفوظة في `image_legacy` معطلة بسبب الإيقاف المعلن. نماذج الصوت الفعالة هي Gemini 3.1 Flash TTS وGemini 2.5 Flash TTS كما هو موضح في [جدول النماذج](../docs/model-catalog.md). لتعطيل أي نموذج مؤقتًا، لا تحذف الكائن؛ غيّر `enabled` إلى `false`.
 
 يملك كل مفتاح cursor مستقلًا داخل SQLite. يبدأ المفتاح الجديد من Gemini 3.7، أما المفتاح الذي فشل في نموذج سابق فيستأنف من النموذج التالي في الطلب اللاحق.
 
@@ -36,6 +36,25 @@ AI_ROUTER_GEMINI_KEYS_JSON=[
 ```
 
 سيستخدم النظام `gemini-1` أولاً ثم `gemini-2`. في GitHub Actions ضع القيمة نفسها في secret اسمه `AI_ROUTER_GEMINI_KEYS_JSON` بدلاً من ملف `.env`.
+
+## أريد تفعيل chatgpt-api لتوليد الصور
+
+يحصل الراوتر على الصور من Space الخاص بالمشروع عبر `https://yousefsg-chatgpt-api.hf.space`. يجب أن تكون قيمة `API_KEY` الموجودة في إعدادات Space محفوظة في `.env` المحلي أو GitHub Secret باسم `CHATGPT_API_KEY`:
+
+```dotenv
+CHATGPT_API_KEY=ضع_مفتاح_API_KEY_الخاص_بالـSpace_هنا
+```
+
+ولتدوير عدة مفاتيح:
+
+```dotenv
+AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON=[
+  {"id":"chatgpt-image-1","key":"المفتاح_الأول","project":"chatgpt-space"},
+  {"id":"chatgpt-image-2","key":"المفتاح_الثاني","project":"chatgpt-space"}
+]
+```
+
+الراوتر يضع هذا المزود أولًا في `output_routes.image`، ثم يستطلع job وينزّل صورة عند اكتمالها. إذا غاب المفتاح أو فشل Space أو انتهت المهلة، ينتقل تلقائيًا إلى Gemini Image. لا تضع مفتاح Space في `config/` أو في المستودع.
 
 ## أريد تفعيل OpenRouter والنماذج المجانية
 
