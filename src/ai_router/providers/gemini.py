@@ -262,7 +262,6 @@ class GeminiAdapter:
         payload = {
             "contents": [{"role": "user", "parts": [{"text": combined_prompt}]}],
             "tools": [{"google_search": {}}],
-            "generationConfig": {"responseMimeType": "application/json"},
         }
         try:
             response = requests.post(
