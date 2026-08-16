@@ -21,8 +21,11 @@ class ProviderResponse:
 class ProviderAdapter(Protocol):
     provider_id: str
 
-    def complete_json(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int) -> ProviderResponse:
+    def complete_json(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int, supports_response_format: bool = True) -> ProviderResponse:
         ...
 
     def complete_video_json(self, *, model: str, secret: str, video_uri: str, system_prompt: str, user_prompt: str, timeout_seconds: int) -> ProviderResponse:
+        ...
+
+    def complete_grounded_search(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int) -> ProviderResponse:
         ...

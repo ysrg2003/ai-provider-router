@@ -24,6 +24,7 @@ class ModelCatalogTests(unittest.TestCase):
             [item["model"] for item in self.models["output_routes"]["image"]],
             [
                 "chatgpt-conversation",
+                "chatgpt-api",
                 "gemini-3-pro-image",
                 "gemini-3.1-flash-image",
                 "gemini-3.1-flash-lite-image",
@@ -46,6 +47,23 @@ class ModelCatalogTests(unittest.TestCase):
             ["gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts"],
         )
         self.assertNotIn("gemini-2.5-pro-preview-tts", [item["model"] for item in self.models["output_routes"]["audio"]])
+
+    def test_openrouter_free_catalog_and_order_are_present(self):
+        reference = self.models["reference_catalog"]["openrouter_free"]
+        self.assertEqual(reference["count"], 19)
+        self.assertEqual(len(reference["active_text_models"]), 16)
+        self.assertEqual(reference["active_text_models"][0], "nvidia/nemotron-3-ultra-550b-a55b:free")
+        self.assertEqual(reference["active_text_models"][-1], "openrouter/free")
+        self.assertEqual(
+            reference["audio_catalog_disabled"],
+            ["google/lyria-3-clip-preview", "google/lyria-3-pro-preview"],
+        )
+        self.assertEqual(reference["moderation_catalog_disabled"], ["nvidia/nemotron-3.5-content-safety:free"])
+        self.assertIn("openrouter", {item["provider"] for item in self.models["model_chains"]["openrouter_free"]})
+        self.assertEqual(
+            [item["model"] for item in self.models["model_chains"]["openrouter_free"]],
+            reference["active_text_models"],
+        )
 
     def test_text_out_route_matches_eight_attached_gemini_rows(self):
         self.assertEqual(

@@ -7,6 +7,7 @@ from typing import Any
 from .config import ModelSpec, RouterConfig
 from .intent import RequestIntent, detect_intent
 from .providers.base import ProviderAdapter, ProviderError
+from .providers.chatgpt_image import ChatGPTImageAdapter
 from .providers.gemini import GeminiAdapter
 from .providers.openai_compatible import OpenAICompatibleAdapter
 from .providers.chatgpt_conversation_image import ChatGPTConversationImageAdapter
@@ -39,6 +40,8 @@ class AIRouter:
                 self.adapters[provider_id] = GeminiAdapter(spec.base_url)
             elif spec.kind == "openai_compatible":
                 self.adapters[provider_id] = OpenAICompatibleAdapter(provider_id, spec.base_url)
+            elif spec.kind == "chatgpt_image":
+                self.adapters[provider_id] = ChatGPTImageAdapter(spec.base_url)
             elif spec.kind == "chatgpt_conversation_image":
                 self.adapters[provider_id] = ChatGPTConversationImageAdapter(spec.base_url)
             else:
@@ -74,13 +77,16 @@ class AIRouter:
                 if self.store.is_cooling(model_spec.provider_id, model_spec.model, key.key_id, key.project):
                     continue
                 try:
-                    response = adapter.complete_json(
-                        model=model_spec.model,
-                        secret=key.secret,
-                        system_prompt=system_prompt,
-                        user_prompt=user_prompt,
-                        timeout_seconds=provider_spec.timeout_seconds or self.config.policy.request_timeout_seconds,
-                    )
+                    request_kwargs: dict[str, Any] = {
+                        "model": model_spec.model,
+                        "secret": key.secret,
+                        "system_prompt": system_prompt,
+                        "user_prompt": user_prompt,
+                        "timeout_seconds": provider_spec.timeout_seconds or self.config.policy.request_timeout_seconds,
+                    }
+                    if not model_spec.supports_response_format:
+                        request_kwargs["supports_response_format"] = False
+                    response = adapter.complete_json(**request_kwargs)
                     self.store.record_success(
                         provider=model_spec.provider_id,
                         model=model_spec.model,
@@ -264,11 +270,21 @@ class AIRouter:
         voice: str = "Kore",
         output_dimensionality: int | None = None,
         input_parts: list[dict[str, Any]] | None = None,
+        chain: str | None = None,
         latitude: float | None = None,
         longitude: float | None = None,
     ) -> dict[str, Any]:
         intent = detect_intent(user_prompt, output_type=output_type, grounding=grounding)
-        route_name, specs = self._resolve_route(intent)
+        if chain:
+            if grounding:
+                raise ValueError("grounding cannot be combined with an explicit chain")
+            try:
+                specs = self.config.model_chain(chain)
+            except KeyError as exc:
+                raise UnsupportedOutputType(f"Unknown model chain: {chain}") from exc
+            route_name = chain
+        else:
+            route_name, specs = self._resolve_route(intent)
         if intent.output_type == "live":
             raise UnsupportedOutputType("Live is a WebSocket session; call prepare_live_session()")
         if intent.output_type == "video_generation":
@@ -402,7 +418,21 @@ class AIRouter:
             if attempts >= self.config.policy.max_attempts:
                 break
         self.store.checkpoint()
-        raise AllProvidersFailed("All output-route attempts failed: " + " | ".join(errors[-12:]))
+        error_summary = self._summarize_route_errors(errors)
+        raise AllProvidersFailed("All output-route attempts failed: " + " | ".join(error_summary))
+
+    @staticmethod
+    def _summarize_route_errors(errors: list[str], limit: int = 12) -> list[str]:
+        """Keep the first and last attempts so the primary provider is diagnosable."""
+        if len(errors) <= limit:
+            return errors
+        tail_count = max(1, limit - 3)
+        omitted = len(errors) - 2 - tail_count
+        return [
+            *errors[:2],
+            f"... {omitted} intermediate attempts omitted ...",
+            *errors[-tail_count:],
+        ]
 
     @staticmethod
     def _invoke_output(
@@ -437,6 +467,14 @@ class AIRouter:
                 user_prompt=user_prompt,
                 timeout_seconds=timeout_seconds,
                 tools=tools,
+            )
+        if spec.method == "grounded_search":
+            return adapter.complete_grounded_search(
+                model=spec.model,
+                secret=secret,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                timeout_seconds=timeout_seconds,
             )
         if spec.method == "image":
             return adapter.generate_image(

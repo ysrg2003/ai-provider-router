@@ -11,9 +11,12 @@ on:
         options:
           - routing
           - text
+          - normal_search
+          - openrouter
           - search
           - maps
           - image
+          - chatgpt_image
           - audio
           - embedding
           - all
@@ -44,13 +47,20 @@ jobs:
       - name: Run bounded live smoke test
         env:
           AI_ROUTER_GEMINI_KEYS_JSON: ${{ secrets.AI_ROUTER_GEMINI_KEYS_JSON }}
+          AI_ROUTER_HF_KEYS_JSON: ${{ secrets.AI_ROUTER_HF_KEYS_JSON }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          AI_ROUTER_OPENROUTER_KEYS_JSON: ${{ secrets.AI_ROUTER_OPENROUTER_KEYS_JSON }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON: ${{ secrets.AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON }}
+          CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+          CHATGPT_IMAGE_SMOKE_TIMEOUT: "120"
           SMOKE_SCENARIO: ${{ inputs.scenario }}
           SMOKE_STATE_DB: /tmp/ai-router-live-smoke.db
         run: |
           set -euo pipefail
-          test -n "$AI_ROUTER_GEMINI_KEYS_JSON"
+          test -n "${AI_ROUTER_GEMINI_KEYS_JSON}${AI_ROUTER_HF_KEYS_JSON}${HF_TOKEN}${AI_ROUTER_OPENROUTER_KEYS_JSON}${OPENROUTER_API_KEY}${AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON}${CHATGPT_API_KEY}"
           mkdir -p artifacts
-          PYTHONPATH=src python scripts/live_smoke.py > artifacts/live-smoke.json
+          PYTHONPATH=src python scripts/live_smoke.py | tee artifacts/live-smoke.json
           grep -q '"status": "completed"' artifacts/live-smoke.json
 
       - name: Upload redacted smoke report

@@ -53,6 +53,31 @@ class GeminiMultimodalAdapterTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["json"]["contents"], [{"parts": [{"text": "draw a cat"}]}])
         self.assertEqual(post.call_args.kwargs["json"]["generationConfig"]["responseModalities"], ["TEXT", "IMAGE"])
 
+    def test_grounded_search_generate_content_payload_and_citations(self):
+        adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
+        response = FakeResponse({
+            "candidates": [{
+                "content": {"parts": [{"text": "Latest result: https://www.youtube.com/watch?v=abcdefghijk"}]},
+                "groundingMetadata": {
+                    "groundingChunks": [{"web": {"uri": "https://www.youtube.com/watch?v=abcdefghijk", "title": "Example video"}}]
+                },
+            }],
+            "usageMetadata": {"totalTokenCount": 7},
+        })
+        with patch("ai_router.providers.gemini.requests.post", return_value=response) as post:
+            result = adapter.complete_grounded_search(
+                model="gemini-2.5-flash",
+                secret="secret",
+                system_prompt="Search precisely.",
+                user_prompt="Find a current YouTube video.",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["output_type"], "text")
+        self.assertEqual(result.payload["annotations"][0]["url"], "https://www.youtube.com/watch?v=abcdefghijk")
+        self.assertEqual(post.call_args.args[0], "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent")
+        self.assertEqual(post.call_args.kwargs["json"]["tools"], [{"google_search": {}}])
+        self.assertNotIn("generationConfig", post.call_args.kwargs["json"])
+
     def test_tts_payload_and_output(self):
         adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
         response = FakeResponse({"output_audio": {"data": "c29uZw==", "mime_type": "audio/pcm"}, "usage": {"total_tokens": 4}})
@@ -138,26 +163,26 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(video_plan["output_type"], "video_generation")
             router.close()
 
-    def test_complete_auto_executes_image_route(self):
+    def test_complete_auto_executes_chatgpt_image_fallback(self):
         import os
 
         with tempfile.TemporaryDirectory() as temp:
-            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = '[{"id":"image-key","key":"secret","project":"p1"}]'
+            os.environ["AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON"] = '[{"id":"image-key","key":"secret","project":"p1"}]'
             try:
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
                 with patch.object(
-                    router.adapters["google_gemini"],
+                    router.adapters["chatgpt_image"],
                     "generate_image",
                     return_value=ProviderResponse({"output_type": "image", "data_base64": "aW1hZ2U="}, {}),
                 ) as generate:
                     result = router.complete_auto(user_prompt="أنشئ صورة لقطة")
                 self.assertEqual(result["route"], "image")
                 self.assertEqual(result["intent"], "image")
-                self.assertEqual(generate.call_args.kwargs["model"], "gemini-3-pro-image")
+                self.assertEqual(generate.call_args.kwargs["model"], "chatgpt-api")
 
                 router.close()
             finally:
-                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+                os.environ.pop("AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON", None)
 
     def test_chatgpt_conversation_is_first_and_gemini_is_fallback(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -193,12 +218,12 @@ class RouterRoutePlanTests(unittest.TestCase):
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
                 with patch.object(
                     router.adapters["google_gemini"],
-                    "complete_interaction_text",
-                    return_value=ProviderResponse({"output_type": "text", "text": "grounded"}, {}),
+                    "complete_grounded_search",
+                    return_value=ProviderResponse({"output_type": "text", "text": "grounded", "annotations": []}, {}),
                 ) as complete:
                     result = router.complete_auto(user_prompt="ما آخر الأخبار؟", output_type="text", grounding="search")
                 self.assertEqual(result["route"], "text_grounded_search")
-                self.assertEqual(complete.call_args.kwargs["tools"], [{"type": "google_search"}])
+                self.assertEqual(complete.call_args.kwargs["model"], "gemini-2.5-flash")
                 router.close()
             finally:
                 os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)

@@ -1,142 +1,60 @@
-# شرح مجلد config للمبتدئ
+# دليل إعدادات ai-provider-router
 
-إذا كنت تريد تغيير المزود أو النموذج أو ترتيب المحاولات، ابدأ من هذا المجلد. لا تضع مفاتيح API الحقيقية هنا. المفاتيح توضع في `.env` محلياً أو في GitHub Secrets. المرجع الكامل للنماذج والحدود والمدخلات والمخرجات هو [جدول available-limits](../docs/model-catalog.md)، ولا تُفعّل نماذج خارج صفوفه.
+هذا المجلد هو مصدر ترتيب المزودات والنماذج والسياسات. عدّل JSON هنا عندما تريد تغيير route أو تعطيل model، ولا تضع أي secret داخل هذه الملفات.
 
-## أريد تغيير ترتيب النماذج
+## الملفات
 
-افتح `models.json`. السلسلة الافتراضية تبدأ بنماذج Gemini النصية بترتيب تنازلي حسب الإصدار:
+| الملف | السؤال الذي يجيب عنه |
+|---|---|
+| `providers.json` | أين يوجد provider؟ وما نوع adapter والـtimeout والـkey pool؟ |
+| `models.json` | أي model يُستخدم لكل output route وبأي method؟ |
+| `key_pools.json` | أي environment variable يمد كل provider بالمفاتيح؟ |
+| `policies.json` | كم محاولة؟ ما timeout وcooldown وbackoff؟ |
 
-```text
-Gemini 3.7 Flash → 3.6 → 3.5 → 3.5 Lite → 3.1 Lite → 3 → 2.5 → 2.5 Lite
-```
+## الترتيب الحالي
 
-ثم تنتقل إلى نماذج Hugging Face. لا تُضاف نماذج TTS أو Image أو Embedding إلى السلسلة الافتراضية لأن لكل فئة route وadapter مختلفين. نماذج الصور التشغيلية الحالية هي Nano Banana (`gemini-3-pro-image` و`gemini-3.1-flash-image` و`gemini-3.1-flash-lite-image` و`gemini-2.5-flash-image`) عبر `generateContent`. صفوف Imagen 4 من الجدول محفوظة في `image_legacy` معطلة بسبب الإيقاف المعلن. نماذج الصوت الفعالة هي Gemini 3.1 Flash TTS وGemini 2.5 Flash TTS كما هو موضح في [جدول النماذج](../docs/model-catalog.md). لتعطيل أي نموذج مؤقتًا، لا تحذف الكائن؛ غيّر `enabled` إلى `false`.
+يبدأ route `image` بـ`chatgpt_conversation/chatgpt-conversation`، ثم `chatgpt_image/chatgpt-api`، ثم Gemini image models. يبدأ route `text` بـChatGPT conversation، بينما يبدأ `text_grounded_search` به ثم يستخدم Gemini `gemini-2.5-flash` كـfallback. خرائط Google، الصوت، embedding، وتحليل الفيديو لها routes مستقلة.
 
-يملك كل مفتاح cursor مستقلًا داخل SQLite. يبدأ المفتاح الجديد من Gemini 3.7، أما المفتاح الذي فشل في نموذج سابق فيستأنف من النموذج التالي في الطلب اللاحق.
+لا تعكس `model_chains.default` بالضرورة `output_routes.text`: الأولى مخصصة لعمليات `complete_json` الداخلية، أما اختيار المستخدم حسب نوع المخرج فيمر عبر `output_routes` و`complete_auto`.
 
-## أريد تفعيل Hugging Face بأبسط طريقة
+## إضافة أو تعطيل model
 
-لا تحتاج إلى تعديل `providers.json` أو `models.json`. أنشئ fine-grained Hugging Face Access Token بصلاحية Make calls to Inference Providers، ثم ضع في `.env`:
-
-```dotenv
-HF_TOKEN=hf_التوكن_الحقيقي
-```
-
-سيحوّل النظام هذا المتغير المفرد تلقائياً إلى مفتاح واحد لمجموعة Hugging Face، ثم يجرب النماذج العشرة الموجودة في `models.json` بالترتيب. في GitHub Actions ضع القيمة نفسها في Secret باسم `HF_TOKEN`.
-
-## أريد إضافة مفتاح Gemini أو تدوير عدة مفاتيح
-
-لا تعدّل `providers.json` ولا `models.json`. افتح `.env` وأضف عنصراً إلى المجموعة المناسبة:
-
-```dotenv
-AI_ROUTER_GEMINI_KEYS_JSON=[
-  {"id":"gemini-1","key":"المفتاح_الأول","project":"project-a"},
-  {"id":"gemini-2","key":"المفتاح_الجديد","project":"project-a"}
-]
-```
-
-سيستخدم النظام `gemini-1` أولاً ثم `gemini-2`. في GitHub Actions ضع القيمة نفسها في secret اسمه `AI_ROUTER_GEMINI_KEYS_JSON` بدلاً من ملف `.env`.
-
-## أريد تغيير اسم متغير الأسرار
-
-افتح `key_pools.json`:
-
-```json
-"gemini_default": {
-  "env": "AI_ROUTER_GEMINI_KEYS_JSON",
-  "format": "json_array",
-  "rotation": "ordered",
-  "cooldown_state": "sqlite"
-}
-```
-
-إذا غيّرت `env` إلى `MY_GEMINI_KEYS`، يجب أن تستخدم الاسم نفسه في `.env` أو GitHub Secrets. يبقى `fallback_env` مفيداً عندما تريد قبول متغير مفرد مثل `HF_TOKEN` إلى جانب مصفوفة المفاتيح:
-
-```dotenv
-MY_GEMINI_KEYS=[{"id":"gemini-1","key":"المفتاح","project":"project-a"}]
-```
-
-إذا غيّرت الاسم في ملف واحد فقط، فلن يجد البرنامج المفاتيح وسيظهر العدد `0` في أمر `summary`.
-
-## أريد تعديل مدة الانتظار بعد 429
-
-افتح `policies.json`:
-
-```json
-"cooldowns_seconds": {
-  "auth": 86400,
-  "quota": 900,
-  "transient": 120,
-  "invalid_or_unknown": 300
-}
-```
-
-القيمة `900` تعني 900 ثانية، أي 15 دقيقة. لا تغيّرها إلا إذا كنت تعرف سياسة الحصة لدى مزودك.
-
-## أريد إضافة مزود OpenAI-compatible
-
-أضف تعريفاً في `providers.json`:
+لتعطيل model مؤقتًا، غيّر `enabled` إلى `false` بدل حذف العنصر؛ هذا يحافظ على وضوح catalog ويمكّن rollback:
 
 ```json
 {
-  "id": "my_openai_provider",
-  "kind": "openai_compatible",
-  "enabled": true,
-  "base_url": "https://example.com/v1",
-  "key_pool": "my_provider_keys",
-  "default_timeout_seconds": 90
+  "provider": "google_gemini",
+  "model": "gemini-2.5-flash-image",
+  "method": "image",
+  "input_types": ["text", "image"],
+  "output_types": ["image", "text"],
+  "enabled": false
 }
 ```
 
-ثم أضف مجموعة المفاتيح في `key_pools.json`:
+لإضافة model، يجب أن يكون provider مسجلًا في `providers.json` وأن يكون `method` مدعومًا داخل adapter. لا يكفي إضافة الاسم إلى JSON إذا لم يعرف `router.py` نوع provider أو method.
 
-```json
-"my_provider_keys": {
-  "env": "AI_ROUTER_MY_PROVIDER_KEYS_JSON",
-  "format": "json_array",
-  "rotation": "ordered",
-  "cooldown_state": "sqlite"
-}
-```
+## إضافة provider جديد
 
-ثم أضف النموذج في `models.json`:
+أضف provider في `providers.json` مع `id` فريد و`kind` معروف و`base_url` و`key_pool`. أضف pool في `key_pools.json`، ثم أضف adapter في `src/ai_router/providers/`. بعد ذلك سجّل `kind` في `src/ai_router/router.py`، وأضف اختبارًا offline باستخدام mock response قبل أي smoke حي.
 
-```json
-{"provider": "my_openai_provider", "model": "my-model-name", "enabled": true}
-```
-
-وأخيراً ضع السر في `.env`:
-
-```dotenv
-AI_ROUTER_MY_PROVIDER_KEYS_JSON=[{"id":"my-key-1","key":"المفتاح","project":"my-project"}]
-```
-
-## أريد إضافة مزود API مختلف تماماً
-
-إذا لم يكن المزود يستخدم Gemini REST أو OpenAI-compatible، لا تحاول تغيير `models.json` فقط. يجب إنشاء adapter جديد داخل `src/ai_router/providers/`، ثم تسجيل نوعه في `src/ai_router/router.py`. اقرأ قسم **إضافة مزود جديد** في README الرئيسي قبل تنفيذ ذلك.
-
-## أريد استخدام نوع مخرج مختلف
-
-يحتوي `models.json` على `output_routes` مستقلة. لا تضف نموذج صورة إلى `default` النصي؛ أضفه إلى route المناسبة:
-
-| route | الاستخدام |
-|---|---|
-| `text` | نص وJSON |
-| `image` | توليد وتحرير الصور |
-| `audio` | تحويل النص إلى صوت |
-| `embedding` | المتجهات والبحث الدلالي |
-| `video_analysis` | تحليل فيديو وإخراج نص |
-| `live` | خطة جلسة Live عبر WebSocket |
-| `video_generation` | غير مفعّل؛ لا يوجد صف Veo في جدول available-limits المرفق |
-
-يمكن فحص الاختيار دون إرسال طلب إلى المزود:
+## التحقق بعد تعديل config
 
 ```bash
-PYTHONPATH=src python -m ai_router.cli.main \
-  --config-dir config --state-db /tmp/router.db \
-  route-plan --user "أنشئ صورة مع معلومات حديثة"
+cd ai-provider-router
+python3 -m json.tool config/providers.json >/dev/null
+python3 -m json.tool config/models.json >/dev/null
+python3 -m json.tool config/key_pools.json >/dev/null
+python3 -m json.tool config/policies.json >/dev/null
+PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-## أريد Grounding
+إذا نجحت JSON والاختبارات، استخدم `route_plan` للتأكد من أن أول model هو ما قصدته قبل إرسال طلب حي. لا تستخدم `all` smoke لمجرد التحقق من تعديل ترتيب واحد.
 
-استخدم `--grounding search` أو `--grounding maps` مع `call-auto`، أو اذكر كلمات مثل «مصادر حديثة» أو «خرائط Google» في الطلب. سيختار الراوتر نماذج Gemini التي تعلن دعم الأداة فقط. لا تُرسل أدوات Google تلقائيًا إلى Hugging Face؛ ذلك يحتاج مزودًا خارجيًا مستقلًا للبحث أو الخرائط.
+## مراجع المزودات
+
+يجب مراجعة [Gemini API][1]، [Hugging Face Inference][2]، و[OpenRouter API][3] قبل إضافة model جديد. قيم `input_types` و`output_types` و`supports_response_format` يجب أن تطابق adapter الفعلي، لا وصفًا تسويقيًا.
+
+[1]: https://ai.google.dev/gemini-api/docs "Gemini API Documentation"
+[2]: https://huggingface.co/docs/huggingface_hub/en/guides/inference "Hugging Face Inference Documentation"
+[3]: https://openrouter.ai/docs/api-reference/overview "OpenRouter API Reference"

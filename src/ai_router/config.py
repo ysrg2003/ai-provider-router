@@ -28,6 +28,7 @@ class ModelSpec:
     input_types: tuple[str, ...] = ("text",)
     output_types: tuple[str, ...] = ("text",)
     tools: tuple[str, ...] = ()
+    supports_response_format: bool = True
 
 
 @dataclass(frozen=True)
@@ -87,6 +88,7 @@ class RouterConfig:
                     input_types=tuple(str(value) for value in item.get("input_types", ["text"])),
                     output_types=tuple(str(value) for value in item.get("output_types", ["text"])),
                     tools=tuple(str(value) for value in item.get("tools", [])),
+                    supports_response_format=bool(item.get("supports_response_format", True)),
                 )
                 for item in items
             ]

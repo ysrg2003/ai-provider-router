@@ -3,17 +3,23 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any
+
+import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from ai_router import AIRouter
+from ai_router.providers.base import ProviderError
 from ai_router.router import AllProvidersFailed, UnsupportedOutputType
 
 SCENARIOS = {
     "text": {"user_prompt": "Return JSON with exactly one field ok set to true.", "output_type": "text"},
+    "normal_search": {"user_prompt": "Find the latest public English YouTube videos relevant to: vibe coding AI-assisted development software engineering. Return up to three exact YouTube URLs, titles, and a brief reason for each. Do not use any external tools; if you cannot verify a URL, say so explicitly.", "output_type": "text"},
+    "openrouter": {"user_prompt": "Return JSON with exactly one field ok set to true.", "output_type": "text", "chain": "openrouter_free"},
     "search": {"user_prompt": "What is the current UTC date? Use Google Search grounding and cite sources.", "output_type": "text", "grounding": "search"},
     "maps": {"user_prompt": "Name one well-known landmark near these coordinates and explain briefly.", "output_type": "text", "grounding": "maps", "latitude": 24.7136, "longitude": 46.6753},
     "image": {"user_prompt": "Create a simple blue circle on a white background.", "output_type": "image"},
@@ -45,6 +51,12 @@ def summarize(name: str, result: dict[str, Any]) -> dict[str, Any]:
                 "annotations": len(result.get("annotations", [])),
             }
         )
+        if name == "normal_search":
+            summary["normal_search_payload"] = {
+                key: result.get(key)
+                for key in ("videos", "error", "message")
+                if key in result
+            }
     return summary
 
 
@@ -59,6 +71,69 @@ def run_route_plans(router: AIRouter) -> list[dict[str, Any]]:
     return results
 
 
+def run_direct_chatgpt_image_smoke(router: AIRouter) -> dict[str, Any]:
+    """Exercise only chatgpt-api; never fall back to Gemini in this diagnostic."""
+    keys = router.config.keys_for("chatgpt_image")
+    provider = router.config.providers["chatgpt_image"]
+    result: dict[str, Any] = {
+        "scenario": "chatgpt_image",
+        "status": "failed",
+        "route": "chatgpt_image",
+        "provider": "chatgpt_image",
+        "model": "chatgpt-api",
+        "output_type": "image",
+    }
+    if not keys:
+        result.update({"error_type": "MissingSecret", "message": "chatgpt_image key pool is empty"})
+        return result
+    try:
+        session_response = requests.get(
+            f"{provider.base_url.rstrip('/')}/internal/visual-session",
+            headers={"Authorization": keys[0].secret},
+            timeout=90,
+        )
+        session_body = session_response.json() if session_response.headers.get("content-type", "").startswith("application/json") else {}
+        result["visual_session"] = {
+            "status_code": session_response.status_code,
+            "status": session_body.get("status"),
+            "prompt_selector_visible": session_body.get("prompt_selector_visible"),
+            "prompt_selector": session_body.get("prompt_selector"),
+            "login_marker_count": session_body.get("login_marker_count"),
+            "chatgpt_cookie_count": session_body.get("chatgpt_cookie_count"),
+            "logged_in": session_body.get("logged_in"),
+        }
+    except requests.RequestException as exc:
+        result["visual_session"] = {"error_type": type(exc).__name__, "message": str(exc)[:300]}
+    started = time.monotonic()
+    try:
+        response = router.adapters["chatgpt_image"].generate_image(
+            model="chatgpt-api",
+            secret=keys[0].secret,
+            prompt="Create a simple blue circle on a plain white background. No text.",
+            timeout_seconds=int(os.getenv("CHATGPT_IMAGE_SMOKE_TIMEOUT", "600")),
+        )
+    except ProviderError as exc:
+        result.update(
+            {
+                "error_type": type(exc).__name__,
+                "error_class": exc.error_class,
+                "status_code": exc.status_code,
+                "message": str(exc)[:1200],
+                "elapsed_seconds": round(time.monotonic() - started, 2),
+            }
+        )
+        return result
+    result.update(
+        {
+            "status": "passed",
+            "mime_type": response.payload.get("mime_type"),
+            "bytes_base64": len(response.payload.get("data_base64", "")),
+            "elapsed_seconds": round(time.monotonic() - started, 2),
+        }
+    )
+    return result
+
+
 def main() -> int:
     selected = os.getenv("SMOKE_SCENARIO", "all")
     state_db = Path(os.getenv("SMOKE_STATE_DB", "/tmp/ai-router-live-smoke.db"))
@@ -67,6 +142,8 @@ def main() -> int:
     try:
         if selected in {"all", "routing"}:
             results.extend(run_route_plans(router))
+        if selected == "chatgpt_image":
+            results.append(run_direct_chatgpt_image_smoke(router))
         scenario_names = list(SCENARIOS) if selected == "all" else ([selected] if selected in SCENARIOS else [])
         for name in scenario_names:
             spec = SCENARIOS[name]
@@ -74,7 +151,7 @@ def main() -> int:
                 result = router.complete_auto(**spec, operation=f"live_smoke_{name}")
                 results.append(summarize(name, result))
             except (AllProvidersFailed, UnsupportedOutputType, ValueError) as exc:
-                results.append({"scenario": name, "status": "failed", "error_type": type(exc).__name__, "message": str(exc)[:240]})
+                results.append({"scenario": name, "status": "failed", "error_type": type(exc).__name__, "message": str(exc)[:1200]})
         passed = sum(item["status"] in {"passed", "route_plan_only"} for item in results)
         config_summary = router.summary().get("config", {})
         payload = {

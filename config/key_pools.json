@@ -13,6 +13,20 @@
       "rotation": "ordered",
       "cooldown_state": "sqlite"
     },
+    "openrouter_default": {
+      "env": "AI_ROUTER_OPENROUTER_KEYS_JSON",
+      "fallback_env": "OPENROUTER_API_KEY",
+      "format": "json_array_or_single_token",
+      "rotation": "ordered",
+      "cooldown_state": "sqlite"
+    },
+    "chatgpt_image_default": {
+      "env": "AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON",
+      "fallback_env": "CHATGPT_API_KEY",
+      "format": "json_array_or_single_token",
+      "rotation": "ordered",
+      "cooldown_state": "sqlite"
+    },
     "chatgpt_conversation_default": {
       "env": "AI_ROUTER_CHATGPT_CONVERSATION_KEYS_JSON",
       "fallback_env": "CHATGPT_API_KEY",

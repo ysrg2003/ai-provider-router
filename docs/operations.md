@@ -1,186 +1,88 @@
-# دليل التشغيل والأسرار
+# التشغيل والعمليات
 
-هذا الدليل يشرح إعداد مفاتيح Gemini وتشغيل الفحص الحي في مستودع `ai-provider-router`. لا تضع أي قيمة حقيقية في Git أو في هذا الملف. القيمة الوحيدة التي يحتاجها GitHub Actions هي Secret باسم `AI_ROUTER_GEMINI_KEYS_JSON`.
+هذا الملف يشرح ما يحدث بعد أول تشغيل محلي: كيف تضبط الأسرار، كيف تشغل smoke محدودًا، كيف تقرأ التقرير، وكيف تتراجع بأمان.
 
-## النتيجة الأولى المتوقعة
+## تشغيل محلي متكرر
 
-بعد إعداد الـSecret وتشغيل workflow يدويًا، يجب أن يظهر تقرير artifact باسم `live-smoke-<run-id>` يحتوي على `live-smoke.json`. التقرير يعرض حالة كل سيناريو، المسار المختار، اسم النموذج، وحجم المخرج فقط. لا يعرض مفاتيح API أو محتوى Base64 للصورة والصوت.
-
-## خريطة الاعتمادات
-
-| الاسم | المكان | الغرض | التصنيف |
-|---|---|---|---|
-| `AI_ROUTER_GEMINI_KEYS_JSON` | GitHub Actions Secret | قائمة مفاتيح Gemini المرتبة | Secret مطلوب للفحص الحي |
-| `AI_ROUTER_HF_KEYS_JSON` | GitHub Actions Secret أو `.env` محلي | fallback النصي في Hugging Face | اختياري، Secret |
-| `HF_TOKEN` | GitHub Actions Secret أو `.env` محلي | مفتاح Hugging Face المفرد | اختياري، Secret |
-| `AI_ROUTER_CONFIG_DIR` | متغير بيئة محلي | مسار مجلد config | اختياري، غير سري |
-| `AI_ROUTER_STATE_DB` | متغير بيئة أو CLI | مسار SQLite للحالة | اختياري، غير سري |
-
-يقرأ `config/key_pools.json` الاسم `AI_ROUTER_GEMINI_KEYS_JSON` من pool اسمه `gemini_default`. لا تستخدم اسمًا آخر إلا إذا عدّلت ملف config نفسه.
-
-## صيغة key pool
-
-القيمة هي JSON array. كل عنصر يملك معرّفًا غير سري ومفتاحًا سريًا، ويمكن أن يملك اسم مشروع لأغراض الحالة:
-
-```json
-[
-  {"id": "gemini-project-1", "key": "<GEMINI_API_KEY_1>", "project": "project-1"},
-  {"id": "gemini-project-2", "key": "<GEMINI_API_KEY_2>", "project": "project-2"}
-]
-```
-
-لا تستخدم علامات الاقتباس الذكية أو فواصل زائدة. يجب أن تكون القيمة JSON صحيحة، ويجب ألا تظهر في commit أو issue أو log أو artifact.
-
-## إعداد Secret من GitHub UI
-
-افتح صفحة [Secrets and variables في إعدادات المستودع](https://github.com/ysrg2003/ai-provider-router/settings/secrets/actions)، ثم اضغط **New repository secret**. اكتب `AI_ROUTER_GEMINI_KEYS_JSON` في حقل الاسم والصق JSON array في حقل القيمة، ثم اضغط **Add secret**. لا تعرض القيمة بعد اللصق ولا تضعها في تعليق أو لقطة شاشة.
-
-إذا ظهر أن الاسم موجود، استخدم **Update** أو أعد حفظه بعد تغيير المفاتيح. GitHub يعرض اسم Secret وتاريخ تحديثه فقط، ولا يعرض القيمة القديمة؛ وهذا طبيعي.
-
-## إعداد Secret عبر GitHub CLI
-
-نفّذ الأمر من جهاز موثوق، وليس داخل مستودع عام أو سجل CI. المثال التالي يقرأ القيمة من ملف محلي مؤقت ثم يحذف الملف بعد الإضافة:
+استخدم state DB منفصلًا لكل تجربة طويلة أو worker. لا تجعل عمليتين تكتبان إلى نفس SQLite إذا لم تكن بحاجة إلى state مشترك.
 
 ```bash
-cat > /tmp/gemini-keys.json <<'JSON'
-[
-  {"id":"gemini-project-1","key":"<GEMINI_API_KEY_1>","project":"project-1"}
-]
-JSON
-
-gh secret set AI_ROUTER_GEMINI_KEYS_JSON \
-  --repo ysrg2003/ai-provider-router \
-  < /tmp/gemini-keys.json
-rm -f /tmp/gemini-keys.json
+cd ai-provider-router
+. .venv/bin/activate
+export AI_ROUTER_CONFIG_DIR=config
+export AI_ROUTER_STATE_DB=data/ai_router.db
+PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-النتيجة المتوقعة هي نجاح الأمر دون طباعة القيمة. إذا ظهر `403`, فراجع صلاحية GitHub token اللازمة لكتابة Actions Secrets، أو استخدم GitHub UI. لا تحاول قراءة قيمة Secret؛ GitHub لا يعيدها بعد التخزين.
-
-## تشغيل smoke test
-
-افتح تبويب [Actions](https://github.com/ysrg2003/ai-provider-router/actions)، اختر **Live smoke tests**، واضغط **Run workflow**. ابدأ بـ`routing` لأنه لا يرسل طلبًا إلى Gemini؛ هو يتحقق من اختيار مسارات Live وVeo فقط. بعد ذلك شغّل كل سيناريو منفردًا لتقليل استهلاك الحصة:
-
-| السيناريو | ما يختبره | استهلاك محتمل |
-|---|---|---|
-| `routing` | اختيار route لـ Live وVeo وتحليل الفيديو | لا يرسل طلبًا |
-| `text` | توليد نص صغير | طلب Gemini واحد أو محاولات fallback |
-| `search` | Google Search grounding | طلب Gemini مع Search grounding |
-| `maps` | Google Maps grounding | طلب Gemini مع Maps grounding |
-| `image` | توليد صورة صغيرة | طلب Image وقد يستهلك حصة صورة |
-| `audio` | TTS قصير | طلب TTS وقد يستهلك حصة صوت |
-| `embedding` | متجه قصير | طلب Embedding |
-| `all` | كل ما سبق ما عدا أنه يجمعها في تشغيل واحد | أعلى استهلاك؛ استخدمه فقط عند الحاجة |
-
-نجاح workflow يعني أن التقرير احتوى على `status: completed` وأن artifact رُفع. فشل سيناريو واحد يجعل job يفشل، لكن artifact يظل مرفوعًا بسبب `if: always()`.
-
-## تفسير الفشل
-
-| العلامة | السبب المحتمل | الإجراء |
-|---|---|---|
-| `Secret is empty` | الاسم غير صحيح أو Secret غير متاح للworkflow | تأكد من `AI_ROUTER_GEMINI_KEYS_JSON` على مستوى repository |
-| `403` أو `PERMISSION_DENIED` | المفتاح لا يملك وصولًا للنموذج أو المشروع | استخدم نموذجًا آخر في route أو راجع مشروع Google المرتبط بالمفتاح |
-| `429` أو `RESOURCE_EXHAUSTED` | الحصة نفدت أو حد يومي/دقيقة بلغ أقصاه | انتظر تجدد الحصة أو انتقل للمفتاح التالي؛ لا تكرر `all` بلا حاجة |
-| `invalid_or_unknown` | النموذج أو payload غير مناسب للعملية | راجع `config/models.json` وmethod الخاصة بالroute |
-| فشل `live` أو `video_generation` | هذه المسارات تحتاج WebSocket أو async job adapter | استخدم `route-plan` حاليًا؛ لا تعاملها كـ`call-auto` HTTP قصير |
-
-## التدوير والحالة
-
-يستخدم الراوتر ترتيب المفاتيح في `key_pools.json`، ويحفظ cursor مستقلًا لكل مفتاح وكل route في SQLite. عند فشل نموذج، يتقدم ذلك المفتاح إلى النموذج التالي. إذا بدأ مفتاح آخر، يبدأ من أول نموذج في السلسلة. لا تشارك ملف SQLite بين تشغيلين متوازيين إلا إذا كنت تدير قفلًا خارجيًا.
-
-## تدوير المفاتيح وإلغاؤها
-
-عند الاشتباه بتسريب مفتاح Gemini، افتح Google AI Studio أو Google Cloud للمشروع المرتبط، ألغِ المفتاح أو دوّره، أنشئ قيمة جديدة، ثم حدّث `AI_ROUTER_GEMINI_KEYS_JSON` في GitHub. بعد ذلك شغّل `routing` ثم سيناريو `text` واحدًا للتحقق. إذا ظهر المفتاح في أي سجل أو commit، اعتبره مكشوفًا حتى لو كان GitHub قد أخفى قيمته في logs.
-
-أما رمز GitHub نفسه، فلا تضعه في Secret الخاص بالمشروع. استخدم token قصير العمر وبأقل صلاحيات، وألغِه فور انتهاء المهمة من [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens).
-
-## التحقق المحلي دون شبكة
+قبل طلب حي، اطبع route plan لا summary الأسرار:
 
 ```bash
-cd /path/to/ai-provider-router
-python3 -m unittest discover -s tests -v
-python3 -m compileall -q src tests
-ruff check --select F,I src tests
-PYTHONPATH=src python -m ai_router.cli.main \
-  --config-dir config --state-db /tmp/ai-router.db \
-  route-plan --user "أنشئ صورة مع مصادر حديثة"
+PYTHONPATH=src python - <<'PY'
+from ai_router import AIRouter
+router = AIRouter()
+try:
+    print(router.route_plan(user_prompt="ابحث في الويب بحث حي عن خبر حديث", output_type="text"))
+finally:
+    router.close()
+PY
 ```
 
-النجاح المتوقع هو suite ناجحة، وroute plan يعرض `image` مع أول نموذج `imagen-4.0-ultra-generate-001` دون أي طلب خارجي. استخدم هذا المسار قبل أي smoke test حي.
+## GitHub Secrets
 
-## مرجع النماذج والمدخلات والمخرجات
+أضف Secrets في المستودع من **Settings → Secrets and variables → Actions → New repository secret**. استخدم الأسماء التالية كما يقرأها workflow والـkey pools:
 
-جدول النماذج والحدود المعتمد لهذا المشروع موجود في [docs/model-catalog.md](model-catalog.md)، وهو نسخة من `available-limits.md` المرفق. يجب أن يطابق كل route تنفيذي صفًا من ذلك الجدول؛ راجع قسم **سياسة اعتماد الجدول داخل ai-provider-router** لمعرفة mapping بين الاسم الظاهر وmodel ID.
+| Secret | تستخدمه |
+|---|---|
+| `AI_ROUTER_GEMINI_KEYS_JSON` | Gemini key pool |
+| `AI_ROUTER_HF_KEYS_JSON` | Hugging Face key pool الاختياري |
+| `HF_TOKEN` | fallback token لـHugging Face |
+| `AI_ROUTER_OPENROUTER_KEYS_JSON` | OpenRouter key pool |
+| `OPENROUTER_API_KEY` | fallback token لـOpenRouter |
+| `AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON` | direct `chatgpt_image` diagnostic/fallback |
+| `CHATGPT_API_KEY` | fallback لـChatGPT conversation وchatgpt_image |
 
-> **تصحيح مهم:** كان الخطأ السابق هو اعتبار Imagen 4 المسار التشغيلي الوحيد. التحقيق الرسمي أظهر أن Imagen 4 مُعلن لإيقافه في 2026-08-17، بينما نماذج Nano Banana الحالية (`gemini-3-pro-image` و`gemini-3.1-flash-image` و`gemini-3.1-flash-lite-image` و`gemini-2.5-flash-image`) تعلن `generateContent` في metadata. لذلك يستخدم Image الحالي `generateContent`، وتُحفظ Imagen في `image_legacy` معطلة. مسار TTS يظل `gemini-3.1-flash-tts-preview` و`gemini-2.5-flash-preview-tts` وفق الجدول المرفق.
+لا تضف `CHATGPT_COOKIES_NETSCAPE` إلى الراوتر. هذه cookie session تخص خدمة chatgpt-api أو Space فقط.
 
-## نتائج التشغيل الحي الفعلية
+## Live smoke
 
-تم تشغيل workflow [Live smoke tests](https://github.com/ysrg2003/ai-provider-router/actions/runs/31911509398) على commit `195ae9f` باستخدام Secret `AI_ROUTER_GEMINI_KEYS_JSON`. أثبت التقرير أن GitHub Actions حمّل **6 مفاتيح Gemini** بنجاح؛ لذلك أصبحت صيغة الـkey pool الصحيحة هي JSON array الصالحة، وليست قيمة نصية متعددة الأسطر. يتوافق وضع الإعداد هذا مع طريقة GitHub الرسمية لإضافة repository secret عبر `gh secret set NAME < file` [1].
+من GitHub افتح **Actions → Live smoke → Run workflow** واختر scenario واحدًا. الخيارات الحالية هي `routing`, `text`, `normal_search`, `openrouter`, `search`, `maps`, `image`, `chatgpt_image`, `audio`, `embedding`, و`all`.
 
-| الفئة | النتيجة الفعلية | الملاحظة التشغيلية |
+يستخدم workflow Python 3.11 وtimeout إجمالي 15 دقيقة وconcurrency group واحدًا مع `cancel-in-progress: false`. لذلك لا يقتل تشغيلًا سابقًا تلقائيًا، ولا تشغل عدة smoke لنفس ChatGPT session بلا حاجة. سيناريو `chatgpt_image` له timeout داخلي مضبوط إلى 120 ثانية في workflow، وهو diagnostic مباشر لا fallback له.
+
+الـworkflow ينشئ `artifacts/live-smoke.json` ويرفعه لمدة 7 أيام. النجاح يتطلب status `completed` وكل النتائج `passed` أو `route_plan_only`، وليس مجرد ظهور سطر progress.
+
+## معنى التقرير
+
+يحتوي التقرير على `scenario_filter` و`loaded_key_counts` و`passed_or_planned` و`total` ثم `results`. في النص تظهر `text_chars` و`annotations`. في الصورة تظهر `mime_type` و`bytes_base64`. في embedding تظهر `embedding_count` و`dimensions`. في `chatgpt_image` تظهر session diagnostics منقحة مثل `logged_in`, `prompt_selector`, `chatgpt_cookie_count`, و`error_type`.
+
+لا تحفظ أو ترفق prompt كاملًا أو Authorization أو cookies أو `data_base64`. التقرير المنقح دليل على نتيجة smoke فقط، وليس مخزنًا للبيانات الناتجة.
+
+## تشغيل سيناريو مناسب
+
+| الهدف | scenario | الاستهلاك المتوقع |
 |---|---|---|
-| تحميل المفاتيح | `google_gemini: 6`، و`huggingface: 0` | تم تحميل المفاتيح الستة دون تسجيل قيمها |
-| `live` | `route_plan_only` | تم التحقق من اختيار `gemini-3.1-flash-live-preview` فقط؛ لم يُفتح WebSocket |
-| `video_generation` | `route_plan_only` | تم التحقق من اختيار `veo-3.1-generate-preview` فقط؛ لم تُنشأ مهمة Veo |
-| `video_analysis` | `route_plan_only` | تم التحقق من route؛ لم يُرسل فيديو فعلي في هذا smoke المحدود |
-| `text` | `passed` | route `text` أعاد JSON يحوي الحقل `ok`؛ لذلك `text_chars: 0` متوقع وليس فشلًا |
-| `search` | `passed` | route `text_grounded_search`، ونتج نص مع تعليقين للمصادر |
-| `maps` | `passed` | route `text_grounded_maps`، ونتج نصًا من طلب Maps grounding |
-| `embedding` | `passed` | `1` embedding بأبعاد `3072` عبر `gemini-embedding-2` |
-| `image` | `failed` | جميع محاولات المفاتيح أعادت `quota/429` للنموذج الأول في route |
-| `audio` | `failed` | جميع محاولات المفاتيح أعادت `quota/429` لنموذج TTS الأول في route |
+| فحص route plan فقط | `routing` | لا يرسل generation request |
+| اختبار النص | `text` | طلب نص واحد إلى أول provider المتاح |
+| اختبار بحث Gemini | `search` | طلب grounded search عند توفر Gemini |
+| اختبار ChatGPT conversation search | `text` مع prompt `بحث حي` عبر عميل مخصص | طلب ChatGPT واحد وقد ينفذ browsing داخل الجلسة |
+| اختبار image route | `image` | قد يستهلك أول ChatGPT conversation ثم fallback عند الفشل |
+| تشخيص direct chatgpt_image | `chatgpt_image` | لا fallback؛ فحص session ثم طلب صورة |
+| فحص جميع الفئات | `all` | عدة طلبات وحصص؛ استخدمه فقط عند الحاجة |
 
-كانت المحصلة `7/9` حالات ناجحة أو مخططة، بينما أدت حالتا Image وTTS إلى exit code غير ناجح للـjob. يظل artifact متاحًا لأن خطوة رفع التقرير تستخدم `if: always()`. نتيجة `429` تعني أن الطلب رُفض بسبب الحصة أو حد الاستخدام في وقت التجربة؛ ولا تكفي وحدها لإثبات أن النموذج مدفوع دائمًا أو غير قابل للاستخدام بعد تجدد الحصة. تتبع وثائق Gemini الرسمية نموذج TTS عبر Interactions مع `response_format: {"type":"audio"}` و`generation_config.speech_config` [2]، كما توثق Image Generation عبر `interaction.output_image` [3].
+## الفشل والتعافي
 
-## الإصلاحات التي تحققت أثناء التجربة
+عند `401` أو `403` أصلح secret أولًا. عند `429` انتظر cooldown أو استخدم key pool آخر، ولا تكرر نفس الطلب سريعًا. عند timeout ChatGPT، افحص `/` و`/v1/models` في Space ثم افحص صلاحية `CHATGPT_COOKIES_NETSCAPE` داخل الخدمة. عند فشل provider الأول، اترك الراوتر ينتقل تلقائيًا إلى fallback بدل تشغيل duplicate request يدويًا.
 
-كان سبب ظهور `google_gemini: 0` في التشغيل الأول هو أن ملف المفاتيح المرفق استخدم نهايات أسطر CRLF، فدخل محرف `CR` داخل JSON عند بناء الـSecret بواسطة `awk` وأصبح JSON غير صالح. أُعيد إنشاء القيمة مع إزالة `CR` من كل سطر، والتحقق منها محليًا بواسطة `python3 -m json.tool`، ثم رُفعت إلى GitHub كـJSON array تحتوي ستة عناصر. لا تُطبع القيمة أو أجزاء منها في التقرير.
+## تحديث config وrollback
 
-كما عولجت استجابة `embedContent` التي تعيد كائنًا مفردًا تحت الحقل `embedding` بدل قائمة `embeddings`؛ أصبح الراوتر يطبع الكائن المفرد إلى قائمة موحدة، وهو ما أثبته التشغيل الحي بنتيجة `embedding_count: 1` و`dimensions: 3072`. هذا متوافق مع توثيق Gemini الذي يعرض `embedContent` لإنتاج embeddings، ويذكر أن `gemini-embedding-2` نموذج متعدد الوسائط وأن البعد الافتراضي هو `3072` [4].
+أنشئ commit صغيرًا لكل تغيير في ترتيب route أو secret naming. قبل الدفع شغّل JSON validation وsuite الاختبارات. للتراجع، أعد branch إلى commit السابق عبر revert عادي، ولا تستخدم force-push على `main`. لإعادة cursor وcooldowns إلى الصفر، أوقف الطلبات وانقل `data/ai_router.db` إلى backup ثم أنشئ DB جديدة.
 
-أضيف أيضًا إلى رسائل `AllProvidersFailed` تصنيف الخطأ ورقم HTTP، مثل `quota/429`، مع إبقاء body الخام خارج التقرير. وأضيفت تغطية اختبارية لهذا الإصلاح، فأصبحت مجموعة الاختبارات تحتوي **22 اختبارًا ناجحًا**.
+## النشر
 
-## بوابة الجودة المحلية
+خدمة chatgpt-api هي boundary منفصل. workflow `_deploy-chatgpt-space.yml` الموجود في الراوتر workflow مؤقت ومحدود؛ لا يفترض أنه ينشر كل Docker/requirements/README إلى Space. عند نشر خدمة كاملة، ادفع ملفات خدمة chatgpt-api إلى Space واضبط secrets هناك، ثم اختبر health و`/v1/models` قبل توصيل الراوتر.
 
-نُفذت الأوامر التالية من جذر المستودع بعد الإصلاحات:
+## المراجع
 
-```bash
-cd /path/to/ai-provider-router
-ruff check src scripts tests
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-python3 -m compileall -q src scripts tests
-```
-
-النتيجة الفعلية: `ruff` نجح، ونجحت الاختبارات الـ22، ونجح `compileall`. هذه الاختبارات لا تستهلك حصة Gemini لأنها تستخدم mocks؛ أما workflow الحي فهو منفصل ومحدود زمنيًا إلى 15 دقيقة، ويحتفظ بالartifact سبعة أيام.
-
-## ملاحظات أمنية بعد التجربة
-
-لا يحتوي هذا المستودع أو artifact على قيم مفاتيح Gemini. يجب تدوير مفاتيح Gemini الستة إذا ظهرت في سجل أو ملف غير موثوق، وتحديث Secret بعد التدوير. كما يجب إبطال **رمز GitHub الذي استُخدم لتنفيذ المهمة وظهر في المحادثة** من صفحة [GitHub Personal access tokens](https://github.com/settings/tokens) فور انتهاء التشغيل، ثم إنشاء رمز قصير العمر وبأقل صلاحيات عند الحاجة. لا تضع رمز GitHub داخل `AI_ROUTER_GEMINI_KEYS_JSON`؛ فهذا الـSecret مخصص لمفاتيح Gemini فقط.
-
-## تحقق حي بعد تصحيح جدول النماذج
-
-أُعيد تشغيل المسارين بعد commit `a4d047e` مع ستة مفاتيح محمّلة في كل مرة، وبمطابقة صريحة للمدخل والمخرج:
-
-| التشغيل | المدخل | المخرج | النموذج/المسار | النتيجة |
-|---|---|---|---|---|
-| [Image run 31926901906](https://github.com/ysrg2003/ai-provider-router/actions/runs/31926901906) | نص | صورة | Imagen 4 عبر REST `predict` | `404 NOT_FOUND`؛ أثبت أن Imagen legacy غير صالح كمسار تشغيلي حالي |
-| [TTS run 31927011803](https://github.com/ysrg2003/ai-provider-router/actions/runs/31927011803) | نص وتعليمات صوت | صوت | `gemini-3.1-flash-tts-preview` عبر Interactions | **نجح**؛ `output_type: audio`، وحجم Base64 منزوع الحساسية `166400`، وMIME `audio/l16; rate=24000; channels=1` |
-
-نتيجة TTS تؤكد أن صفّي TTS في الجدول مرتبطان بالمسار الصحيح، وأن parser يتعامل مع كتلة الصوت داخل `steps`. أما تشخيص Image المباشر فأظهر أن metadata لكل نماذج Nano Banana الأربعة يعيد `200` و`generateContent`، بينما استدعاء `generateContent` عبر `v1` و`v1beta` أعاد `429 RESOURCE_EXHAUSTED` مع المفاتيح الستة. هذا يعني أن مسار Image الصحيح أصبح معروفًا، لكن الحصة الحالية تمنع الإخراج؛ أما Imagen فأعاد `404` لأنه legacy مُعلن للإيقاف.
-
-## تشخيص Image العميق
-
-تم فحص metadata مباشرةً بالمفاتيح الستة. أعاد endpoint `GET /v1beta/models` الحالة `200` وأظهر نماذج Nano Banana الأربعة، كما أعاد `GET /v1beta/models/{model}` الحالة `200` لكل نموذج وأعلن `generateContent` ضمن `supportedGenerationMethods`. هذا يثبت أن أسماء النماذج صحيحة وأن المفتاح يرى النماذج.
-
-كان الخلل الأول في adapter: كان يرسل Native Gemini Image إلى `/interactions`، بينما العقدة الرسمية الحالية التي يعلنها metadata وتوثقها Google هي `models/{model}:generateContent`، مع `contents[].parts[]` وقراءة الصورة من `candidates[].content.parts[].inlineData`. تم إصلاح ذلك في commit `7bb2e3f` وإضافة اختبار payload وresponse.
-
-أُعيد اختبار `generateContent` مباشرةً عبر كل مفتاح من المفاتيح الستة، وبنسختي `v1` و`v1beta`. أعادت جميع الطلبات `429 RESOURCE_EXHAUSTED`، بينما أعاد metadata `200`. ثم شُغّل workflow Image بعد الإصلاح في [run 31927571350](https://github.com/ysrg2003/ai-provider-router/actions/runs/31927571350)، فكانت النتيجة `quota/429` بدل `404`. لذلك أصبح التشخيص الآن واضحًا: **المسار البرمجي وأسماء Nano Banana صحيحة، لكن الحصة تمنع الإخراج حاليًا**.
-
-أما Imagen 4، فقد أعاد metadata `200` مع `supportedGenerationMethods: ["predict"]`، لكن طلب `predict` أعاد `404 NOT_FOUND` لكل المفاتيح. وهذا متسق مع إعلان Google أن Imagen 4 سيُغلق في 2026-08-17؛ لذلك بقي في `image_legacy` للتوثيق فقط، وليس كخيار تلقائي.
-
-## References
-
-[1]: https://docs.github.com/actions/security-guides/using-secrets-in-github-actions "Using secrets in GitHub Actions — GitHub Docs"
-[2]: https://ai.google.dev/gemini-api/docs/speech-generation "Text-to-speech generation (TTS) — Gemini API"
-[3]: https://ai.google.dev/gemini-api/docs/image-generation "Image generation — Gemini API"
-[4]: https://ai.google.dev/gemini-api/docs/embeddings "Embeddings — Gemini API"
+[1]: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch "GitHub workflow_dispatch"
+[2]: https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions "GitHub Actions Secrets"
+[3]: https://github.com/ysrg2003/chatgpt-api "خدمة chatgpt-api"
