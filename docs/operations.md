@@ -257,3 +257,25 @@ python3 -m compileall -q src scripts tests
 يجب حفظ قيمة `API_KEY` التي عُيّنت في Hugging Face Space كـSecret في مستودع `ai-provider-router` باسم `CHATGPT_API_KEY`، أو استخدام مصفوفة `AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON` إذا كان هناك أكثر من مفتاح. لا تُحفظ القيمة في Git ولا تُطبع في التقارير. عند غياب المفتاح أو إرجاع `401` أو فشل job، ينتقل الراوتر إلى Gemini Image بالترتيب الحالي. عند إرسال `image_data`، يتجنب adapter الخارجي إرسال الصورة كأنها prompt نصي ويترك مسار التعديل لـGemini؛ وهذا يحافظ على دلالة المدخلات والمخرجات.
 
 الاختبار المحلي يثبت إنشاء job، polling، تنزيل `image/png`، وتصنيف خطأ المصادقة. أما الاختبار الحي للصورة عبر Space فيتطلب إضافة `CHATGPT_API_KEY` إلى Secrets الخاصة بمستودع الراوتر؛ فوجود `API_KEY` داخل Space وحده لا يجعل قيمته قابلة للقراءة من الراوتر. الخدمة نفسها هي browser-backed ChatGPT adapter وليست OpenAI Images API، ولذلك يعتمد نجاحها على بقاء جلسة ChatGPT داخل Space صالحة.
+
+
+## نتيجة اختبار Image بعد إضافة CHATGPT_API_KEY
+
+شُغّل سيناريو `image` منفردًا في workflow [run 31942957994](https://github.com/ysrg2003/ai-provider-router/actions/runs/31942957994) على commit `ab5416b`. أظهر التقرير المنزوع الحساسية أن workflow حمّل `google_gemini: 6` و`huggingface: 1` و`openrouter: 1`، لكنه حمّل `chatgpt_image: 0`. لذلك لم يبدأ طلب `chatgpt-api`، وانتقل الراوتر إلى Gemini Image، حيث أعادت المحاولات `quota/429 RESOURCE_EXHAUSTED`.
+
+هذه النتيجة لا تثبت فشل Space أو adapter؛ بل تثبت أن Secret لم يصل إلى job في ذلك التشغيل. وجود `API_KEY` داخل Hugging Face Space لا يجعل قيمته قابلة للقراءة من GitHub Actions. يجب أن يكون في مستودع `ai-provider-router` repository secret مستقل اسمه حرفيًا `CHATGPT_API_KEY`، وقيمته تساوي قيمة `API_KEY` في Space.
+
+### تصحيح حالة `chatgpt_image: 0`
+
+1. افتح [إعدادات Secrets الخاصة بمستودع ai-provider-router](https://github.com/ysrg2003/ai-provider-router/settings/secrets/actions).
+2. اختر **New repository secret**، واكتب الاسم `CHATGPT_API_KEY` حرفيًا.
+3. الصق قيمة `API_KEY` الموجودة في Space، ثم اختر **Add secret**. لا تطبع القيمة ولا تحفظها في ملف متتبع.
+4. افتح **Actions → Live smoke tests → Run workflow**، واختر `scenario: image`.
+5. نزّل artifact `live-smoke-<run-id>` وافحص `loaded_key_counts.chatgpt_image`. يجب أن تكون القيمة `1` أو أكثر.
+6. تحقق من أن النتيجة تشير إلى `chatgpt_image/chatgpt-api` وأن job انتقل إلى `done` ثم نُزّلت صورة ذات MIME يبدأ بـ`image/`.
+
+إذا بقي العدد صفرًا، فتحقق من ثلاثة أمور فقط: اسم Secret، مستوى Secret (`repository` لا environment غير مستخدم)، واسم الفرع/الworkflow الذي شُغّل. لا تشخّص المشكلة بطباعة environment أو Authorization header.
+
+لإعادة استخدام Space في مستودع آخر، لا تنسخ Playwright أو `CHATGPT_COOKIES_NETSCAPE`. استخدم HTTP API وضع قيمة `API_KEY` في Secret للمشروع المستدعي باسم مثل `CHATGPT_API_KEY`. الدليل الكامل موجود في [integration-chatgpt-image.md](integration-chatgpt-image.md)، ويشرح أيضًا عقد job وpolling، الاختبارات offline، smoke الحي المحدود، retries، fallback، والتراجع. أما دليل الخدمة نفسها فيشرح المسار العام في [chatgpt-api reuse guide](https://github.com/ysrg2003/chatgpt-api/blob/main/docs/reuse-in-another-project.md).
+
+لا تعتبر route `image` ناجحًا لمجرد أن `route-plan` اختار `chatgpt_image`. النجاح الحي يتطلب مفتاحًا محمّلًا، job مكتملًا، تنزيلًا غير فارغ، ونوع محتوى صوريًا. عند فشل Space أو انتهاء جلسة ChatGPT يجب أن ينتقل الراوتر إلى Gemini أو fallback المشروع المستدعي، وألا يستبدل صورة مرجعية موثوقة بمخرج غير مكتمل.
