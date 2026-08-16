@@ -105,7 +105,13 @@ PYTHONPATH=src python -m ai_router.cli.main \
   route-plan --user "أنشئ صورة مع مصادر حديثة"
 ```
 
-النجاح المتوقع هو suite ناجحة، وroute plan يعرض `image_grounded_search` دون أي طلب خارجي. استخدم هذا المسار قبل أي smoke test حي.
+النجاح المتوقع هو suite ناجحة، وroute plan يعرض `image` مع أول نموذج `imagen-4.0-ultra-generate-001` دون أي طلب خارجي. استخدم هذا المسار قبل أي smoke test حي.
+
+## مرجع النماذج والمدخلات والمخرجات
+
+جدول النماذج والحدود المعتمد لهذا المشروع موجود في [docs/model-catalog.md](model-catalog.md)، وهو نسخة من `available-limits.md` المرفق. يجب أن يطابق كل route تنفيذي صفًا من ذلك الجدول؛ راجع قسم **سياسة اعتماد الجدول داخل ai-provider-router** لمعرفة mapping بين الاسم الظاهر وmodel ID.
+
+> **تصحيح مهم:** تقارير smoke السابقة قبل commit التصحيح اختبرت أسماء Gemini Image قديمة مثل `gemini-3-pro-image` و`gemini-3.1-flash-image`. هذه الأسماء أزيلت من `models.json`. مسار Image الحالي يستخدم Imagen 4 عبر REST `predict`، ومسار TTS الحالي يقتصر على `gemini-3.1-flash-tts-preview` و`gemini-2.5-flash-preview-tts` وفق الجدول المرفق.
 
 ## نتائج التشغيل الحي الفعلية
 

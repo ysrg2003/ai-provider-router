@@ -12,17 +12,17 @@
 
 توضح الوثائق أن `google_maps` يحتاج عادةً إلى latitude وlongitude عند توفر موقع المستخدم، ويعيد نصًا مع place citations. الأداة مخصصة للأسئلة الجغرافية والمحلية، وهي مغلقة افتراضيًا ويجب تفعيلها صراحة. حدود الدعم الحالية تشمل نماذج مثل Gemini 3.5 Flash-Lite و3.5 Flash و3.1 Flash-Lite و3 Flash Preview و2.5 Flash و2.5 Flash-Lite. يجب عرض إسناد Google Maps للمستخدم عند استخدام النتائج.
 
-## Native image generation
+## Native image generation — superseded
 
-المصدر: https://ai.google.dev/gemini-api/docs/image-generation
+المصدر التاريخي: https://ai.google.dev/gemini-api/docs/image-generation
 
-توضح الوثائق أن Nano Banana هو اسم قدرات توليد الصور الأصلية في Gemini، وأن النماذج الحالية تشمل `gemini-3.1-flash-lite-image` و`gemini-3.1-flash-image` و`gemini-3-pro-image` و`gemini-2.5-flash-image`. واجهة Interactions تعيد `output_image`، ويمكن أن تستقبل نصًا وصورًا مرجعية، كما يمكن استخدام `google_search` مع نماذج الصور المدعومة. هذه ليست استجابة JSON النصية الحالية، لذلك تحتاج adapter وresponse type مستقلين.
+كانت هذه الفقرة تسجل أسماء Gemini Image تجريبية، لكنها لم تكن متوافقة مع جدول `available-limits.md` المرفق. لذلك لا تُستخدم الأسماء القديمة `gemini-3-pro-image` أو `gemini-3.1-flash-image` أو `gemini-3.1-flash-lite-image` أو `gemini-2.5-flash-image` في `models.json`.
 
-## Imagen
+## Imagen 4 — المرجع الحالي للمشروع
 
 المصدر: https://ai.google.dev/gemini-api/docs/imagen
 
-توضح الوثائق أن Imagen يولد صورًا من prompts نصية عبر `generateImages` أو REST `predict`، لكنها تشير أيضًا إلى أن Imagen سيُهمل في 2026-08-17 وأن الانتقال الموصى به هو Nano Banana. لذلك يجب إبقاء Imagen خارج المسار الافتراضي الجديد، أو جعله مسارًا legacy اختياريًا فقط.
+يعتمد المشروع الآن على صفوف Imagen 4 الثلاثة الموجودة في الجدول المرفق: `Imagen 4 Ultra Generate` و`Imagen 4 Generate` و`Imagen 4 Fast Generate`. يستخدم adapter الخاص بها REST `predict` مع model IDs `imagen-4.0-ultra-generate-001` و`imagen-4.0-generate-001` و`imagen-4.0-fast-generate-001`، ولا يرسلها إلى Interactions. يجب مراجعة صفحة Imagen الرسمية قبل الاستخدام الإنتاجي لأن حالة هذه النماذج أو تاريخ الإيقاف قد يتغير، ويُحدَّث mapping في `docs/model-catalog.md` أولًا.
 
 ## قرار التصميم
 

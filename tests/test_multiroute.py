@@ -38,18 +38,18 @@ class IntentTests(unittest.TestCase):
 class GeminiMultimodalAdapterTests(unittest.TestCase):
     def test_image_payload_and_output(self):
         adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
-        response = FakeResponse({"output_image": {"data": "aW1hZ2U=", "mime_type": "image/png"}, "usage": {"total_tokens": 5}})
+        response = FakeResponse({"predictions": [{"bytesBase64Encoded": "aW1hZ2U=", "mimeType": "image/png"}], "usage": {"total_tokens": 5}})
         with patch("ai_router.providers.gemini.requests.post", return_value=response) as post:
             result = adapter.generate_image(
-                model="gemini-3.1-flash-image",
+                model="imagen-4.0-generate-001",
                 secret="secret",
                 prompt="draw a cat",
                 timeout_seconds=30,
-                tools=[{"type": "google_search"}],
             )
         self.assertEqual(result.payload["output_type"], "image")
         self.assertEqual(result.payload["data_base64"], "aW1hZ2U=")
-        self.assertEqual(post.call_args.kwargs["json"]["tools"], [{"type": "google_search"}])
+        self.assertEqual(post.call_args.args[0], "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict")
+        self.assertEqual(post.call_args.kwargs["json"]["instances"], [{"prompt": "draw a cat"}])
 
     def test_tts_payload_and_output(self):
         adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
@@ -99,12 +99,18 @@ class RouterRoutePlanTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
             image_plan = router.route_plan(user_prompt="أنشئ صورة لمدينة مستقبلية")
+            audio_plan = router.route_plan(user_prompt="حوّل هذا النص إلى صوت", output_type="audio")
             search_plan = router.route_plan(user_prompt="ما آخر الأخبار مع مصادر حديثة؟")
             live_plan = router.route_plan(user_prompt="أريد محادثة صوتية مباشرة")
             video_plan = router.route_plan(user_prompt="توليد فيديو سينمائي")
             self.assertEqual(image_plan["output_type"], "image")
             self.assertEqual(image_plan["route"], "image")
-            self.assertEqual(image_plan["models"][0]["model"], "gemini-3-pro-image")
+            self.assertEqual(image_plan["models"][0]["model"], "imagen-4.0-ultra-generate-001")
+            self.assertEqual(image_plan["models"][0]["input_types"], ["text"])
+            self.assertEqual(image_plan["models"][0]["output_types"], ["image"])
+            self.assertEqual(audio_plan["models"][0]["model"], "gemini-3.1-flash-tts-preview")
+            self.assertEqual(audio_plan["models"][0]["input_types"], ["text"])
+            self.assertEqual(audio_plan["models"][0]["output_types"], ["audio"])
             self.assertEqual(search_plan["route"], "text_grounded_search")
             self.assertEqual(search_plan["models"][0]["tools"], ["search"])
             self.assertEqual(live_plan["output_type"], "live")
@@ -126,7 +132,8 @@ class RouterRoutePlanTests(unittest.TestCase):
                     result = router.complete_auto(user_prompt="أنشئ صورة لقطة")
                 self.assertEqual(result["route"], "image")
                 self.assertEqual(result["intent"], "image")
-                self.assertEqual(generate.call_args.kwargs["model"], "gemini-3-pro-image")
+                self.assertEqual(generate.call_args.kwargs["model"], "imagen-4.0-ultra-generate-001")
+
                 router.close()
             finally:
                 os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)

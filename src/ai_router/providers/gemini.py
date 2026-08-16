@@ -72,6 +72,13 @@ class GeminiAdapter:
         image_mime_type: str = "image/png",
         tools: list[dict[str, Any]] | None = None,
     ) -> ProviderResponse:
+        if model.startswith("imagen-"):
+            return self._generate_imagen(
+                model=model,
+                secret=secret,
+                prompt=prompt,
+                timeout_seconds=timeout_seconds,
+            )
         input_blocks: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
         if image_data:
             input_blocks.append({"type": "image", "mime_type": image_mime_type, "data": image_data})
@@ -89,6 +96,40 @@ class GeminiAdapter:
                 "data_base64": str(image["data"]),
                 "text": self._interaction_text_optional(body),
                 "steps": body.get("steps", []),
+            },
+            body.get("usage", body.get("usageMetadata", {})),
+        )
+
+    def _generate_imagen(self, *, model: str, secret: str, prompt: str, timeout_seconds: int) -> ProviderResponse:
+        endpoint = f"{self.base_url}/models/{model}:predict"
+        payload = {
+            "instances": [{"prompt": prompt}],
+            "parameters": {"sampleCount": 1},
+        }
+        try:
+            response = requests.post(
+                endpoint,
+                headers={"x-goog-api-key": secret, "Content-Type": "application/json"},
+                json=payload,
+                timeout=timeout_seconds,
+            )
+        except requests.RequestException as exc:
+            raise ProviderError(str(exc), error_class="transient") from exc
+        body = self._body(response)
+        if response.status_code >= 400:
+            raise self._http_error(response.status_code, body)
+        predictions = body.get("predictions") or []
+        first = predictions[0] if predictions else {}
+        if not isinstance(first, dict):
+            raise ProviderError("Imagen did not return an image prediction", error_class="invalid_or_unknown", retryable=False)
+        encoded = first.get("bytesBase64Encoded") or first.get("bytes_base64_encoded")
+        if not encoded:
+            raise ProviderError("Imagen did not return image bytes", error_class="invalid_or_unknown", retryable=False)
+        return ProviderResponse(
+            {
+                "output_type": "image",
+                "mime_type": str(first.get("mimeType") or first.get("mime_type") or "image/png"),
+                "data_base64": str(encoded),
             },
             body.get("usage", body.get("usageMetadata", {})),
         )
