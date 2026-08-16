@@ -71,6 +71,46 @@ def run_route_plans(router: AIRouter) -> list[dict[str, Any]]:
     return results
 
 
+def run_direct_chatgpt_conversation_image_smoke(router: AIRouter) -> dict[str, Any]:
+    """Exercise only chatgpt_conversation image generation; never fall back."""
+    keys = router.config.keys_for("chatgpt_conversation")
+    result: dict[str, Any] = {
+        "scenario": "chatgpt_conversation_image",
+        "status": "failed",
+        "route": "image",
+        "provider": "chatgpt_conversation",
+        "model": "chatgpt-conversation",
+        "output_type": "image",
+    }
+    if not keys:
+        result.update({"error_type": "MissingSecret", "message": "chatgpt_conversation key pool is empty"})
+        return result
+    started = time.monotonic()
+    try:
+        response = router.adapters["chatgpt_conversation"].generate_image(
+            model="chatgpt-conversation",
+            secret=keys[0].secret,
+            prompt="Create a simple blue circle on a plain white background. No text.",
+            timeout_seconds=int(os.getenv("CHATGPT_IMAGE_SMOKE_TIMEOUT", "600")),
+        )
+    except ProviderError as exc:
+        result.update({
+            "error_type": type(exc).__name__,
+            "error_class": exc.error_class,
+            "status_code": exc.status_code,
+            "message": str(exc)[:1200],
+            "elapsed_seconds": round(time.monotonic() - started, 2),
+        })
+        return result
+    result.update({
+        "status": "passed",
+        "mime_type": response.payload.get("mime_type"),
+        "bytes_base64": len(response.payload.get("data_base64", "")),
+        "elapsed_seconds": round(time.monotonic() - started, 2),
+    })
+    return result
+
+
 def run_direct_chatgpt_image_smoke(router: AIRouter) -> dict[str, Any]:
     """Exercise only chatgpt-api; never fall back to Gemini in this diagnostic."""
     keys = router.config.keys_for("chatgpt_image")
@@ -144,6 +184,8 @@ def main() -> int:
             results.extend(run_route_plans(router))
         if selected == "chatgpt_image":
             results.append(run_direct_chatgpt_image_smoke(router))
+        if selected == "chatgpt_conversation_image":
+            results.append(run_direct_chatgpt_conversation_image_smoke(router))
         scenario_names = list(SCENARIOS) if selected == "all" else ([selected] if selected in SCENARIOS else [])
         for name in scenario_names:
             spec = SCENARIOS[name]

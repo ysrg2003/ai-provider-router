@@ -51,7 +51,7 @@ PY
 
 ## Live smoke
 
-من GitHub افتح **Actions → Live smoke → Run workflow** واختر scenario واحدًا. الخيارات الحالية هي `routing`, `text`, `normal_search`, `openrouter`, `search`, `maps`, `image`, `chatgpt_image`, `audio`, `embedding`, و`all`.
+من GitHub افتح **Actions → Live smoke → Run workflow** واختر scenario واحدًا. الخيارات الحالية هي `routing`, `text`, `normal_search`, `openrouter`, `search`, `maps`, `image`, `chatgpt_image`, `chatgpt_conversation_image`, `audio`, `embedding`, و`all`. سيناريو `chatgpt_conversation_image` يستدعي adapter المحادثة العادية مباشرةً بلا fallback، وهو الاختبار الصحيح لإثبات أن ChatGPT conversation نفسه ولّد الصورة.
 
 يستخدم workflow Python 3.11 وtimeout إجمالي 15 دقيقة وconcurrency group واحدًا مع `cancel-in-progress: false`. لذلك لا يقتل تشغيلًا سابقًا تلقائيًا، ولا تشغل عدة smoke لنفس ChatGPT session بلا حاجة. سيناريو `chatgpt_image` له timeout داخلي مضبوط إلى 120 ثانية في workflow، وهو diagnostic مباشر لا fallback له.
 
@@ -72,7 +72,8 @@ PY
 | اختبار بحث Gemini | `search` | طلب grounded search عند توفر Gemini |
 | اختبار ChatGPT conversation search | `text` مع prompt `بحث حي` عبر `/v1/jobs` | إنشاء job واحد ثم polling حتى `done`؛ قد ينفذ browsing داخل الجلسة |
 | اختبار image route | `image` | قد يستهلك أول ChatGPT conversation ثم fallback عند الفشل |
-| تشخيص direct chatgpt_image | `chatgpt_image` | لا fallback؛ فحص session ثم طلب صورة |
+| تشخيص direct chatgpt_image | `chatgpt_image` | لا fallback؛ فحص session ثم طلب صورة عبر adapter القديم |
+| إثبات ChatGPT conversation للصورة | `chatgpt_conversation_image` | لا fallback؛ نفس `/v1/chat/completions` مع polling غير متزامن |
 | فحص جميع الفئات | `all` | عدة طلبات وحصص؛ استخدمه فقط عند الحاجة |
 
 ## الفشل والتعافي
