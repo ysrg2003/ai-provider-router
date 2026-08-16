@@ -44,6 +44,9 @@ class ChatGPTImageAdapterTests(unittest.TestCase):
         self.assertEqual(result.payload["mime_type"], "image/png")
         self.assertEqual(base64.b64decode(result.payload["data_base64"]), image_bytes)
         self.assertEqual(post.call_args.kwargs["json"], {"prompt": "a blue circle on white"})
+        self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "space-secret")
+        self.assertEqual(get.call_args_list[0].kwargs["headers"]["Authorization"], "space-secret")
+        self.assertEqual(get.call_args_list[-1].kwargs["headers"]["Authorization"], "space-secret")
         self.assertEqual(get.call_count, 3)
 
     def test_auth_error_is_not_retryable(self):

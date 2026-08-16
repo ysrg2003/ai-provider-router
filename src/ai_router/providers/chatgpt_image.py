@@ -38,7 +38,9 @@ class ChatGPTImageAdapter:
             )
         if not prompt.strip():
             raise ProviderError("image prompt is empty", error_class="invalid_or_unknown", retryable=False)
-        headers = {"Authorization": f"Bearer {secret}", "Content-Type": "application/json"}
+        # chatgpt-api's documented examples send the raw API key in Authorization.
+        # The Space accepts this form as well as the optional Bearer prefix.
+        headers = {"Authorization": secret, "Content-Type": "application/json"}
         endpoint = f"{self.base_url}/v1/visual-assets/jobs"
         try:
             response = requests.post(
@@ -61,7 +63,7 @@ class ChatGPTImageAdapter:
         download_endpoint = f"{status_endpoint}/download"
         while time.monotonic() < deadline:
             try:
-                status_response = requests.get(status_endpoint, headers={"Authorization": f"Bearer {secret}"}, timeout=min(timeout_seconds, 30))
+                status_response = requests.get(status_endpoint, headers={"Authorization": secret}, timeout=min(timeout_seconds, 30))
             except requests.RequestException as exc:
                 raise ProviderError(str(exc), error_class="transient") from exc
             status_body = self._body(status_response)
@@ -79,7 +81,7 @@ class ChatGPTImageAdapter:
         try:
             response = requests.get(
                 endpoint,
-                headers={"Authorization": f"Bearer {secret}"},
+                headers={"Authorization": secret},
                 timeout=min(timeout_seconds, 60),
             )
         except requests.RequestException as exc:
