@@ -448,6 +448,14 @@ class AIRouter:
                 timeout_seconds=timeout_seconds,
                 tools=tools,
             )
+        if spec.method == "grounded_search":
+            return adapter.complete_grounded_search(
+                model=spec.model,
+                secret=secret,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                timeout_seconds=timeout_seconds,
+            )
         if spec.method == "image":
             return adapter.generate_image(
                 model=spec.model,

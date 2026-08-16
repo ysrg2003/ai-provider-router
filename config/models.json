@@ -1571,7 +1571,7 @@
       {
         "provider": "google_gemini",
         "model": "gemini-2.5-flash",
-        "method": "interaction_text",
+        "method": "grounded_search",
         "input_types": [
           "text",
           "image",

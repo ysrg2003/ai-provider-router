@@ -247,6 +247,71 @@ class GeminiAdapter:
             raise ProviderError("Gemini did not return embeddings", error_class="invalid_or_unknown", retryable=False)
         return ProviderResponse({"output_type": "embedding", "embeddings": embeddings}, body.get("usageMetadata", {}))
 
+    def complete_grounded_search(
+        self,
+        *,
+        model: str,
+        secret: str,
+        system_prompt: str,
+        user_prompt: str,
+        timeout_seconds: int,
+    ) -> ProviderResponse:
+        """Run Google Search grounding through Gemini GenerateContent."""
+        endpoint = f"{self.base_url}/models/{model}:generateContent"
+        combined_prompt = f"{system_prompt.strip()}\n\n{user_prompt.strip()}".strip()
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": combined_prompt}]}],
+            "tools": [{"google_search": {}}],
+        }
+        try:
+            response = requests.post(
+                endpoint,
+                params={"key": secret},
+                headers={"Content-Type": "application/json"},
+                json=payload,
+                timeout=timeout_seconds,
+            )
+        except requests.RequestException as exc:
+            raise ProviderError(str(exc), error_class="transient") from exc
+        body = self._body(response)
+        if response.status_code >= 400:
+            raise self._http_error(response.status_code, body)
+        candidates = body.get("candidates") or []
+        first = candidates[0] if candidates and isinstance(candidates[0], dict) else {}
+        content = first.get("content") if isinstance(first.get("content"), dict) else {}
+        parts = content.get("parts") if isinstance(content.get("parts"), list) else []
+        text = "\n".join(
+            str(part.get("text"))
+            for part in parts
+            if isinstance(part, dict) and isinstance(part.get("text"), str) and part.get("text").strip()
+        ).strip()
+        grounding_metadata = first.get("groundingMetadata") or first.get("grounding_metadata") or body.get("groundingMetadata") or body.get("grounding_metadata") or {}
+        annotations = self._generate_content_annotations(grounding_metadata)
+        if not text:
+            raise ProviderError("Gemini GenerateContent returned no grounded text", error_class="invalid_or_unknown", retryable=False)
+        return ProviderResponse(
+            {
+                "output_type": "text",
+                "text": text,
+                "annotations": annotations,
+                "grounding_metadata": grounding_metadata,
+            },
+            body.get("usageMetadata", body.get("usage", {})),
+        )
+
+    @staticmethod
+    def _generate_content_annotations(metadata: Any) -> list[dict[str, Any]]:
+        annotations: list[dict[str, Any]] = []
+        chunks = metadata.get("groundingChunks", metadata.get("grounding_chunks", [])) if isinstance(metadata, dict) else []
+        for chunk in chunks or []:
+            if not isinstance(chunk, dict):
+                continue
+            web = chunk.get("web") if isinstance(chunk.get("web"), dict) else {}
+            uri = web.get("uri") or web.get("url")
+            if uri:
+                annotations.append({"type": "url_citation", "url": str(uri), "title": web.get("title")})
+        return annotations
+
     def complete_video_json(
         self,
         *,
