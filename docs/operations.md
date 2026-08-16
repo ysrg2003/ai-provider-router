@@ -168,6 +168,16 @@ python3 -m compileall -q src scripts tests
 
 نتيجة TTS تؤكد أن صفّي TTS في الجدول مرتبطان بالمسار الصحيح، وأن parser يتعامل مع كتلة الصوت داخل `steps`. أما تشخيص Image المباشر فأظهر أن metadata لكل نماذج Nano Banana الأربعة يعيد `200` و`generateContent`، بينما استدعاء `generateContent` عبر `v1` و`v1beta` أعاد `429 RESOURCE_EXHAUSTED` مع المفاتيح الستة. هذا يعني أن مسار Image الصحيح أصبح معروفًا، لكن الحصة الحالية تمنع الإخراج؛ أما Imagen فأعاد `404` لأنه legacy مُعلن للإيقاف.
 
+## تشخيص Image العميق
+
+تم فحص metadata مباشرةً بالمفاتيح الستة. أعاد endpoint `GET /v1beta/models` الحالة `200` وأظهر نماذج Nano Banana الأربعة، كما أعاد `GET /v1beta/models/{model}` الحالة `200` لكل نموذج وأعلن `generateContent` ضمن `supportedGenerationMethods`. هذا يثبت أن أسماء النماذج صحيحة وأن المفتاح يرى النماذج.
+
+كان الخلل الأول في adapter: كان يرسل Native Gemini Image إلى `/interactions`، بينما العقدة الرسمية الحالية التي يعلنها metadata وتوثقها Google هي `models/{model}:generateContent`، مع `contents[].parts[]` وقراءة الصورة من `candidates[].content.parts[].inlineData`. تم إصلاح ذلك في commit `7bb2e3f` وإضافة اختبار payload وresponse.
+
+أُعيد اختبار `generateContent` مباشرةً عبر كل مفتاح من المفاتيح الستة، وبنسختي `v1` و`v1beta`. أعادت جميع الطلبات `429 RESOURCE_EXHAUSTED`، بينما أعاد metadata `200`. ثم شُغّل workflow Image بعد الإصلاح في [run 31927571350](https://github.com/ysrg2003/ai-provider-router/actions/runs/31927571350)، فكانت النتيجة `quota/429` بدل `404`. لذلك أصبح التشخيص الآن واضحًا: **المسار البرمجي وأسماء Nano Banana صحيحة، لكن الحصة تمنع الإخراج حاليًا**.
+
+أما Imagen 4، فقد أعاد metadata `200` مع `supportedGenerationMethods: ["predict"]`، لكن طلب `predict` أعاد `404 NOT_FOUND` لكل المفاتيح. وهذا متسق مع إعلان Google أن Imagen 4 سيُغلق في 2026-08-17؛ لذلك بقي في `image_legacy` للتوثيق فقط، وليس كخيار تلقائي.
+
 ## References
 
 [1]: https://docs.github.com/actions/security-guides/using-secrets-in-github-actions "Using secrets in GitHub Actions — GitHub Docs"

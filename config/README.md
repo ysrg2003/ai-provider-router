@@ -10,7 +10,7 @@
 Gemini 3.7 Flash → 3.6 → 3.5 → 3.5 Lite → 3.1 Lite → 3 → 2.5 → 2.5 Lite
 ```
 
-ثم تنتقل إلى نماذج Hugging Face. لا تُضاف نماذج TTS أو Image أو Embedding إلى السلسلة الافتراضية لأن لكل فئة route وadapter مختلفين. نماذج الصور الفعالة هي Imagen 4، ونماذج الصوت الفعالة هي Gemini 3.1 Flash TTS وGemini 2.5 Flash TTS كما هو موضح في [جدول النماذج](../docs/model-catalog.md). لتعطيل أي نموذج مؤقتًا، لا تحذف الكائن؛ غيّر `enabled` إلى `false`.
+ثم تنتقل إلى نماذج Hugging Face. لا تُضاف نماذج TTS أو Image أو Embedding إلى السلسلة الافتراضية لأن لكل فئة route وadapter مختلفين. نماذج الصور التشغيلية الحالية هي Nano Banana (`gemini-3-pro-image` و`gemini-3.1-flash-image` و`gemini-3.1-flash-lite-image` و`gemini-2.5-flash-image`) عبر `generateContent`. صفوف Imagen 4 من الجدول محفوظة في `image_legacy` معطلة بسبب الإيقاف المعلن. نماذج الصوت الفعالة هي Gemini 3.1 Flash TTS وGemini 2.5 Flash TTS كما هو موضح في [جدول النماذج](../docs/model-catalog.md). لتعطيل أي نموذج مؤقتًا، لا تحذف الكائن؛ غيّر `enabled` إلى `false`.
 
 يملك كل مفتاح cursor مستقلًا داخل SQLite. يبدأ المفتاح الجديد من Gemini 3.7، أما المفتاح الذي فشل في نموذج سابق فيستأنف من النموذج التالي في الطلب اللاحق.
 
