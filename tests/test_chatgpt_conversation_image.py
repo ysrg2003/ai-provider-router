@@ -46,6 +46,46 @@ class ChatGPTConversationImageAdapterTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer local-secret")
         self.assertEqual(post.call_args.kwargs["url"] if "url" in post.call_args.kwargs else post.call_args.args[0], "https://uploaded.example/v1/chat/completions")
 
+    def test_extracts_text_from_ordinary_chat_completion(self):
+        response = requests.Response()
+        response.status_code = 200
+        response._content = json.dumps({
+            "choices": [{"message": {"content": "Live answer with sources."}}],
+            "usage": {"total_tokens": 8},
+        }).encode()
+        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=response) as post:
+            result = ChatGPTConversationImageAdapter("https://uploaded.example").complete_interaction_text(
+                model="chatgpt-conversation",
+                secret="local-secret",
+                system_prompt="Be concise.",
+                user_prompt="What is the current status?",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["output_type"], "text")
+        self.assertEqual(result.payload["text"], "Live answer with sources.")
+        self.assertEqual(post.call_args.kwargs["json"]["messages"], [
+            {"role": "system", "content": "Be concise."},
+            {"role": "user", "content": "What is the current status?"},
+        ])
+
+    def test_search_route_adds_live_web_instruction(self):
+        response = requests.Response()
+        response.status_code = 200
+        response._content = b'{"choices":[{"message":{"content":"Sourced answer"}}]}'
+        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=response) as post:
+            ChatGPTConversationImageAdapter("https://uploaded.example").complete_interaction_text(
+                model="chatgpt-conversation",
+                secret="local-secret",
+                system_prompt="",
+                user_prompt="ابحث في الويب بحث حي عن آخر الأخبار",
+                timeout_seconds=30,
+                tools=[{"type": "google_search"}],
+            )
+        messages = post.call_args.kwargs["json"]["messages"]
+        self.assertEqual(messages[-1]["role"], "user")
+        self.assertIn("بحثًا حيًا في الويب", messages[0]["content"])
+        self.assertIn("المصادر والروابط", messages[0]["content"])
+
     def test_missing_image_is_terminal_invalid_response(self):
         response = requests.Response()
         response.status_code = 200

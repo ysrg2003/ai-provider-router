@@ -252,6 +252,18 @@
   "output_routes": {
     "text": [
       {
+        "provider": "chatgpt_conversation",
+        "model": "chatgpt-conversation",
+        "method": "interaction_text",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "enabled": true
+      },
+      {
         "provider": "google_gemini",
         "model": "gemini-3.7-flash",
         "method": "json",
@@ -429,6 +441,21 @@
       }
     ],
     "text_grounded_search": [
+      {
+        "provider": "chatgpt_conversation",
+        "model": "chatgpt-conversation",
+        "method": "interaction_text",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "enabled": true,
+        "tools": [
+          "search"
+        ]
+      },
       {
         "provider": "google_gemini",
         "model": "gemini-2.5-flash",

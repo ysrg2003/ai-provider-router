@@ -22,7 +22,7 @@ _OUTPUT_MARKERS: dict[str, tuple[str, ...]] = {
 
 _GROUNDING_MARKERS: dict[str, tuple[str, ...]] = {
     "maps": ("google maps", "maps grounding", "map grounding", "near me", "nearby", "بالقرب مني", "موقعي", "مطاعم قريبة", "خرائط"),
-    "search": ("grounding", "google search", "web search", "search grounding", "ابحث", "مصادر حديثة", "الويب", "آخر الأخبار", "حاليًا", "الآن"),
+    "search": ("grounding", "google search", "web search", "live web", "live web search", "search grounding", "بحث حي", "ابحث", "مصادر حديثة", "الويب", "آخر الأخبار", "حاليًا", "الآن"),
 }
 
 
