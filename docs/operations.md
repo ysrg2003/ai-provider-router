@@ -157,6 +157,17 @@ python3 -m compileall -q src scripts tests
 
 لا يحتوي هذا المستودع أو artifact على قيم مفاتيح Gemini. يجب تدوير مفاتيح Gemini الستة إذا ظهرت في سجل أو ملف غير موثوق، وتحديث Secret بعد التدوير. كما يجب إبطال **رمز GitHub الذي استُخدم لتنفيذ المهمة وظهر في المحادثة** من صفحة [GitHub Personal access tokens](https://github.com/settings/tokens) فور انتهاء التشغيل، ثم إنشاء رمز قصير العمر وبأقل صلاحيات عند الحاجة. لا تضع رمز GitHub داخل `AI_ROUTER_GEMINI_KEYS_JSON`؛ فهذا الـSecret مخصص لمفاتيح Gemini فقط.
 
+## تحقق حي بعد تصحيح جدول النماذج
+
+أُعيد تشغيل المسارين بعد commit `a4d047e` مع ستة مفاتيح محمّلة في كل مرة، وبمطابقة صريحة للمدخل والمخرج:
+
+| التشغيل | المدخل | المخرج | النموذج/المسار | النتيجة |
+|---|---|---|---|---|
+| [Image run 31926901906](https://github.com/ysrg2003/ai-provider-router/actions/runs/31926901906) | نص | صورة | Imagen 4 عبر REST `predict` | `404 NOT_FOUND` من endpoint؛ لم تُنتج صورة، وهذا يختلف عن `429` ويشير إلى أن النموذج/endpoint غير متاح بهذه الصيغة الحالية |
+| [TTS run 31927011803](https://github.com/ysrg2003/ai-provider-router/actions/runs/31927011803) | نص وتعليمات صوت | صوت | `gemini-3.1-flash-tts-preview` عبر Interactions | **نجح**؛ `output_type: audio`، وحجم Base64 منزوع الحساسية `166400`، وMIME `audio/l16; rate=24000; channels=1` |
+
+نتيجة TTS تؤكد أن صفّي TTS في الجدول مرتبطان بالمسار الصحيح، وأن parser أصبح يتعامل مع كتلة الصوت داخل `steps` عندما لا يظهر الحقل convenience `output_audio` مباشرة. أما Image فالتعريف أصبح مطابقًا للجدول (`Imagen 4` الثلاثة) والطلب يرسل نصًا ويطلب صورة، لكن اختبار API الحالي أعاد `404`; لذلك لا يجوز وصف Image بأنه يعمل مع هذه المفاتيح قبل توفر endpoint/model فعلي يعيد صورة.
+
 ## References
 
 [1]: https://docs.github.com/actions/security-guides/using-secrets-in-github-actions "Using secrets in GitHub Actions — GitHub Docs"
