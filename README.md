@@ -772,13 +772,13 @@ git ls-files .env
 | Text/JSON | `text` | نص أو وسائط متعددة حسب النموذج | نص/JSON | يعمل في الاختبارات الحية |
 | Search grounding | `text_grounded_search` | سؤال حديث | نص مع citations | يعمل في الاختبارات الحية |
 | Maps grounding | `text_grounded_maps` | سؤال عن مكان أو مسار | نص مع بيانات أماكن | يعمل في الاختبارات الحية |
-| Image | `image` | نص أو صورة مرجعية | صورة | المسار صحيح، لكن الحصة أعادت `429 RESOURCE_EXHAUSTED` لكل المفاتيح الستة |
+| Image | `image` | نص أو صورة مرجعية | صورة | `chatgpt-api` هو الأول؛ في آخر run كان `chatgpt_image: 0` فانتقل الراوتر إلى Gemini، ثم أعادت مفاتيح Gemini الستة `429 RESOURCE_EXHAUSTED` |
 | TTS | `audio` | نص وتعليمات صوت | PCM audio | **نجح فعليًا**؛ MIME `audio/l16; rate=24000; channels=1` |
 | Embedding | `embedding` | نص | متجه embedding | يعمل فعليًا؛ أبعاد 3072 في الاختبار السابق |
 | Live | `live` | نص/صورة/صوت/فيديو | تدفق نص/صوت | route plan فقط؛ يحتاج WebSocket adapter |
 | Video generation | `video_generation` | prompt فيديو | job فيديو | غير مفعّل؛ لا يوجد Veo في جدول available-limits المرفق |
 
-للتفاصيل القابلة لإعادة الإنتاج، راجع [دليل التشغيل](docs/operations.md) و[كتالوج النماذج والحدود](docs/model-catalog.md). يحتوي دليل التشغيل على روابط GitHub Actions وتقارير smoke المنزوعة الحساسية، ولا يحتوي قيم المفاتيح.
+للتفاصيل القابلة لإعادة الإنتاج، راجع [دليل التشغيل](docs/operations.md) و[كتالوج النماذج والحدود](docs/model-catalog.md). ولإعداد `chatgpt-api` كمزود Image خارجي أو إعادة استخدامه من مشروع آخر، راجع [دليل تكامل ChatGPT Image](docs/integration-chatgpt-image.md) و[دليل إعادة الاستخدام في مستودع chatgpt-api](https://github.com/ysrg2003/chatgpt-api/blob/main/docs/reuse-in-another-project.md). يحتوي دليل التشغيل على روابط GitHub Actions وتقارير smoke المنزوعة الحساسية، ولا يحتوي قيم المفاتيح.
 
 # القسم الثالث عشر: كيف تعرف أن النظام يعمل؟
 
