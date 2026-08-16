@@ -108,7 +108,7 @@ def run_direct_chatgpt_image_smoke(router: AIRouter) -> dict[str, Any]:
             model="chatgpt-api",
             secret=keys[0].secret,
             prompt="Create a simple blue circle on a plain white background. No text.",
-            timeout_seconds=int(os.getenv("CHATGPT_IMAGE_SMOKE_TIMEOUT", "180")),
+            timeout_seconds=int(os.getenv("CHATGPT_IMAGE_SMOKE_TIMEOUT", "600")),
         )
     except ProviderError as exc:
         result.update(

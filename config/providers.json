@@ -30,7 +30,7 @@
       "enabled": true,
       "base_url": "https://yousefsg-chatgpt-api.hf.space",
       "key_pool": "chatgpt_image_default",
-      "default_timeout_seconds": 180
+      "default_timeout_seconds": 600
     }
   ]
 }
