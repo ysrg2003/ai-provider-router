@@ -82,7 +82,7 @@ def main() -> int:
                 result = router.complete_auto(**spec, operation=f"live_smoke_{name}")
                 results.append(summarize(name, result))
             except (AllProvidersFailed, UnsupportedOutputType, ValueError) as exc:
-                results.append({"scenario": name, "status": "failed", "error_type": type(exc).__name__, "message": str(exc)[:240]})
+                results.append({"scenario": name, "status": "failed", "error_type": type(exc).__name__, "message": str(exc)[:1200]})
         passed = sum(item["status"] in {"passed", "route_plan_only"} for item in results)
         config_summary = router.summary().get("config", {})
         payload = {
