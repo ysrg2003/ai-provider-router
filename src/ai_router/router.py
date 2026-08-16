@@ -9,6 +9,7 @@ from .intent import RequestIntent, detect_intent
 from .providers.base import ProviderAdapter, ProviderError
 from .providers.gemini import GeminiAdapter
 from .providers.openai_compatible import OpenAICompatibleAdapter
+from .providers.chatgpt_conversation_image import ChatGPTConversationImageAdapter
 from .store import RouterStore
 from .tools import build_tools
 
@@ -38,6 +39,8 @@ class AIRouter:
                 self.adapters[provider_id] = GeminiAdapter(spec.base_url)
             elif spec.kind == "openai_compatible":
                 self.adapters[provider_id] = OpenAICompatibleAdapter(provider_id, spec.base_url)
+            elif spec.kind == "chatgpt_conversation_image":
+                self.adapters[provider_id] = ChatGPTConversationImageAdapter(spec.base_url)
             else:
                 raise ValueError(f"Unsupported provider kind: {spec.kind}")
 

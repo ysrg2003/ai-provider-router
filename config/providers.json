@@ -15,6 +15,14 @@
       "base_url": "https://router.huggingface.co/v1",
       "key_pool": "huggingface_default",
       "default_timeout_seconds": 90
+    },
+    {
+      "id": "chatgpt_conversation",
+      "kind": "chatgpt_conversation_image",
+      "enabled": true,
+      "base_url": "https://yousefsg-chatgpt-api.hf.space",
+      "key_pool": "chatgpt_conversation_default",
+      "default_timeout_seconds": 270
     }
   ]
 }

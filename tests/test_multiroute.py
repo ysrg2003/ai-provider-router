@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -5,7 +6,7 @@ from unittest.mock import patch
 
 from ai_router import AIRouter
 from ai_router.intent import detect_intent
-from ai_router.providers.base import ProviderResponse
+from ai_router.providers.base import ProviderError, ProviderResponse
 from ai_router.providers.gemini import GeminiAdapter
 
 
@@ -119,9 +120,10 @@ class RouterRoutePlanTests(unittest.TestCase):
             video_plan = router.route_plan(user_prompt="توليد فيديو سينمائي")
             self.assertEqual(image_plan["output_type"], "image")
             self.assertEqual(image_plan["route"], "image")
-            self.assertEqual(image_plan["models"][0]["model"], "gemini-3-pro-image")
-            self.assertEqual(image_plan["models"][0]["input_types"], ["text", "image"])
-            self.assertEqual(image_plan["models"][0]["output_types"], ["image", "text"])
+            self.assertEqual(image_plan["models"][0]["provider"], "chatgpt_conversation")
+            self.assertEqual(image_plan["models"][0]["model"], "chatgpt-conversation")
+            self.assertEqual(image_plan["models"][0]["input_types"], ["text"])
+            self.assertEqual(image_plan["models"][0]["output_types"], ["image"])
             self.assertEqual(audio_plan["models"][0]["model"], "gemini-3.1-flash-tts-preview")
             self.assertEqual(audio_plan["models"][0]["input_types"], ["text"])
             self.assertEqual(audio_plan["models"][0]["output_types"], ["audio"])
@@ -150,6 +152,31 @@ class RouterRoutePlanTests(unittest.TestCase):
 
                 router.close()
             finally:
+                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+
+    def test_chatgpt_conversation_is_first_and_gemini_is_fallback(self):
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ["CHATGPT_API_KEY"] = "chatgpt-secret"
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = '[{"id":"gemini-key","key":"gemini-secret","project":"p1"}]'
+            try:
+                router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+                with patch.object(
+                    router.adapters["chatgpt_conversation"],
+                    "generate_image",
+                    side_effect=ProviderError("temporary failure", error_class="transient"),
+                ) as chatgpt_generate, patch.object(
+                    router.adapters["google_gemini"],
+                    "generate_image",
+                    return_value=ProviderResponse({"output_type": "image", "data_base64": "Z2VtaW5p"}, {}),
+                ) as gemini_generate:
+                    result = router.complete_auto(user_prompt="أنشئ صورة fallback", output_type="image")
+                self.assertEqual(result["output_type"], "image")
+                self.assertEqual(result["data_base64"], "Z2VtaW5p")
+                self.assertEqual(chatgpt_generate.call_count, 1)
+                self.assertEqual(gemini_generate.call_count, 1)
+                router.close()
+            finally:
+                os.environ.pop("CHATGPT_API_KEY", None)
                 os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
 
     def test_complete_auto_passes_grounding_tool(self):
