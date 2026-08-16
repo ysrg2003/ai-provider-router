@@ -7,6 +7,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+import requests
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -72,6 +74,7 @@ def run_route_plans(router: AIRouter) -> list[dict[str, Any]]:
 def run_direct_chatgpt_image_smoke(router: AIRouter) -> dict[str, Any]:
     """Exercise only chatgpt-api; never fall back to Gemini in this diagnostic."""
     keys = router.config.keys_for("chatgpt_image")
+    provider = router.config.providers["chatgpt_image"]
     result: dict[str, Any] = {
         "scenario": "chatgpt_image",
         "status": "failed",
@@ -83,6 +86,22 @@ def run_direct_chatgpt_image_smoke(router: AIRouter) -> dict[str, Any]:
     if not keys:
         result.update({"error_type": "MissingSecret", "message": "chatgpt_image key pool is empty"})
         return result
+    try:
+        session_response = requests.get(
+            f"{provider.base_url.rstrip('/')}/internal/visual-session",
+            headers={"Authorization": keys[0].secret},
+            timeout=90,
+        )
+        session_body = session_response.json() if session_response.headers.get("content-type", "").startswith("application/json") else {}
+        result["visual_session"] = {
+            "status_code": session_response.status_code,
+            "status": session_body.get("status"),
+            "prompt_selector_visible": session_body.get("prompt_selector_visible"),
+            "login_marker_count": session_body.get("login_marker_count"),
+            "logged_in": session_body.get("logged_in"),
+        }
+    except requests.RequestException as exc:
+        result["visual_session"] = {"error_type": type(exc).__name__, "message": str(exc)[:300]}
     started = time.monotonic()
     try:
         response = router.adapters["chatgpt_image"].generate_image(
