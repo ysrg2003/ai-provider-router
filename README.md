@@ -223,6 +223,12 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 يحتاج workflow إلى Secrets المناسبة للسيناريو. لا يمرر secrets إلى pull request من fork. يملك workflow `contents: read` فقط، ويرفع artifact redacted لا يحتوي المفاتيح. يجب عدم إضافة `CHATGPT_COOKIES_NETSCAPE` إلى هذا الراوتر؛ ضعه في Hugging Face Space أو مستودع خدمة chatgpt-api فقط.
 
+للحصول على خطوات الحصول والتخزين والتدوير لكل قيمة، اقرأ [`docs/credentials.md`](docs/credentials.md). لا تعتمد على جدول README وحده عند إنشاء secret جديد.
+
+## استخدام المشروع في مشروع آخر
+
+للاستخدام كـPython library اقرأ [`docs/reuse-in-another-project.md`](docs/reuse-in-another-project.md). وللاستخدام من مستودع آخر عبر GitHub Actions، اتبع [`docs/github-actions-reuse.md`](docs/github-actions-reuse.md)؛ يبدأ الدليل من مستودع host فارغ ويحتوي workflow كاملًا وSecrets/Variables وartifact والتحقق والـrollback.
+
 ## المراجع
 
 [1]: https://github.com/ysrg2003/ai-provider-router "المستودع المنشور"
