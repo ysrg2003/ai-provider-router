@@ -46,15 +46,28 @@ class ChatGPTConversationImageAdapterTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer local-secret")
         self.assertEqual(post.call_args.kwargs["url"] if "url" in post.call_args.kwargs else post.call_args.args[0], "https://uploaded.example/v1/chat/completions")
 
-    def test_extracts_text_from_ordinary_chat_completion(self):
-        response = requests.Response()
-        response.status_code = 200
-        response._content = json.dumps({
-            "choices": [{"message": {"content": "Live answer with sources."}}],
-            "usage": {"total_tokens": 8},
+    @staticmethod
+    def _job_responses(content="Live answer with sources."):
+        create = requests.Response()
+        create.status_code = 200
+        create._content = b'{"job_id":"job-1","status":"queued"}'
+        status = requests.Response()
+        status.status_code = 200
+        status._content = json.dumps({
+            "status": "done",
+            "response": {
+                "choices": [{"message": {"content": content}}],
+                "usage": {"total_tokens": 8},
+            },
         }).encode()
-        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=response) as post:
-            result = ChatGPTConversationImageAdapter("https://uploaded.example").complete_interaction_text(
+        return create, status
+
+    def test_extracts_text_from_queued_job(self):
+        create, status = self._job_responses()
+        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=create) as post, patch(
+            "ai_router.providers.chatgpt_conversation_image.requests.get", return_value=status
+        ) as get:
+            result = ChatGPTConversationImageAdapter("https://uploaded.example", poll_interval_seconds=0).complete_interaction_text(
                 model="chatgpt-conversation",
                 secret="local-secret",
                 system_prompt="Be concise.",
@@ -63,17 +76,19 @@ class ChatGPTConversationImageAdapterTests(unittest.TestCase):
             )
         self.assertEqual(result.payload["output_type"], "text")
         self.assertEqual(result.payload["text"], "Live answer with sources.")
+        self.assertEqual(post.call_args.args[0], "https://uploaded.example/v1/jobs")
         self.assertEqual(post.call_args.kwargs["json"]["messages"], [
             {"role": "system", "content": "Be concise."},
             {"role": "user", "content": "What is the current status?"},
         ])
+        self.assertEqual(get.call_args.args[0], "https://uploaded.example/v1/jobs/job-1")
 
-    def test_search_route_adds_live_web_instruction(self):
-        response = requests.Response()
-        response.status_code = 200
-        response._content = b'{"choices":[{"message":{"content":"Sourced answer"}}]}'
-        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=response) as post:
-            ChatGPTConversationImageAdapter("https://uploaded.example").complete_interaction_text(
+    def test_search_route_adds_live_web_instruction_to_queued_job(self):
+        create, status = self._job_responses("Sourced answer")
+        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=create) as post, patch(
+            "ai_router.providers.chatgpt_conversation_image.requests.get", return_value=status
+        ):
+            ChatGPTConversationImageAdapter("https://uploaded.example", poll_interval_seconds=0).complete_interaction_text(
                 model="chatgpt-conversation",
                 secret="local-secret",
                 system_prompt="",

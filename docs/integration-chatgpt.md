@@ -12,7 +12,8 @@
 ai-provider-router
       |
       | Authorization: Bearer CHATGPT_API_KEY
-      | POST /v1/chat/completions
+      | POST /v1/chat/completions للصور
+      | POST /v1/jobs ثم GET /v1/jobs/{job_id} للنص والبحث الحي
       v
 chatgpt-api / Hugging Face Space
       |
@@ -57,7 +58,7 @@ finally:
 
 ## النص
 
-عند `output_type="text"` يكون ChatGPT conversation أول route. يعيد adapter `output_type="text"` و`text`، ويحتفظ الراوتر ببيانات route وintent. إذا لم يوجد ChatGPT key صالح، يبدأ الراوتر بالنموذج التالي في route النص.
+عند `output_type="text"` يكون ChatGPT conversation أول route. ينشئ adapter job عبر `/v1/jobs` ثم يستطلع `/v1/jobs/{job_id}` حتى `done` أو `error`، ويستخرج النص من `response.choices[0].message.content`. إذا لم يوجد ChatGPT key صالح أو فشل job، يبدأ الراوتر بالنموذج التالي في route النص.
 
 ## البحث الحي
 
@@ -67,7 +68,7 @@ finally:
 ابحث في الويب بحث حي عن آخر أخبار الذكاء الاصطناعي، واذكر المصادر والروابط.
 ```
 
-`intent.py` يكتشف markers مثل `بحث حي` و`ابحث` و`web search` ويختار `text_grounded_search`. يضيف adapter تعليمات إلى ChatGPT لتنفيذ بحث حي وذكر المصادر. لا ينفذ الراوتر بحثًا منفصلًا ولا يرسل الطلب بالتوازي إلى Gemini. عند فشل ChatGPT، يأتي Gemini `gemini-2.5-flash` مع `grounded_search` كـfallback.
+`intent.py` يكتشف markers مثل `بحث حي` و`ابحث` و`web search` ويختار `text_grounded_search`. يضيف adapter تعليمات إلى ChatGPT لتنفيذ بحث حي وذكر المصادر، ثم يرسل الرسائل إلى `/v1/jobs` ويستطلع النتيجة. لا ينفذ الراوتر بحثًا منفصلًا ولا يرسل الطلب بالتوازي إلى Gemini. عند فشل ChatGPT job، يأتي Gemini `gemini-2.5-flash` مع `grounded_search` كـfallback.
 
 يجب على التطبيق المستهلك التحقق من وجود مصادر وروابط في النص؛ status `200` وحده لا يثبت أن browsing حدث فعليًا.
 
@@ -83,7 +84,7 @@ curl --fail https://yousefsg-chatgpt-api.hf.space/v1/models \
   --header "Authorization: Bearer $CHATGPT_API_KEY"
 ```
 
-إذا أعاد `/` health لكن أعاد `/v1/chat/completions` خطأ `401`، فالقيمة المطابقة بين `CHATGPT_API_KEY` و`API_SECRET_KEY` ناقصة. إذا ظهر timeout مع جلسة صالحة، اختبر الخدمة مباشرة قبل تغيير route الراوتر.
+إذا أعاد `/` health لكن أعاد `/v1/jobs` خطأ `401`، فالقيمة المطابقة بين `CHATGPT_API_KEY` و`API_SECRET_KEY` ناقصة. إذا ظهر timeout مع جلسة صالحة، افحص حالة job أولًا؛ لا تعتبر `queued` نجاحًا نهائيًا، ولا تغيّر route الراوتر قبل اختبار الخدمة مباشرة.
 
 ## اختبار offline
 

@@ -45,9 +45,9 @@ PY
 
 ## Daily live-search keepalive
 
-يوجد workflow مستقل في `.github/workflows/daily-live-search.yml` يعمل مرة كل 24 ساعة عند `03:17 UTC`. يرسل طلبًا واحدًا فقط إلى `CHATGPT_API_BASE_URL/v1/chat/completions` بعبارة صريحة `ابحث في الويب بحث حي`، ويحفظ تقريرًا منقحًا في artifact لمدة 7 أيام. يحتاج إلى `CHATGPT_API_KEY` فقط؛ لا تُرسل `CHATGPT_COOKIES_NETSCAPE` إلى الراوتر، لأنها تبقى في خدمة `chatgpt-api`.
+يوجد workflow مستقل في `.github/workflows/daily-live-search.yml` يعمل مرة كل 24 ساعة عند `03:17 UTC`. يرسل طلبًا واحدًا فقط إلى `CHATGPT_API_BASE_URL/jobs` بعبارة صريحة `ابحث في الويب بحث حي`، ثم يستطلع `jobs/{job_id}` حتى `done` أو `error`. هذا هو نفس نمط الطابور الذي تستخدمه نسخة ZIP الأصلية فوق `process_request`، ويمنع قطع اتصال Hugging Face أثناء البحث. يحفظ workflow تقريرًا منقحًا في artifact لمدة 7 أيام. يحتاج إلى `CHATGPT_API_KEY` فقط؛ لا تُرسل `CHATGPT_COOKIES_NETSCAPE` إلى الراوتر، لأنها تبقى في خدمة `chatgpt-api`.
 
-لتشغيله يدويًا افتح **Actions → Daily live search keepalive → Run workflow**. النجاح يتطلب HTTP `200` ونصًا فعليًا، ثم ملف `daily-live-search.json` بحالة `passed`. إذا فشل، افحص تطابق `CHATGPT_API_KEY` مع `API_SECRET_KEY` في الخدمة وصحة Space، ثم أعد التشغيل يدويًا مرة واحدة فقط.
+لتشغيله يدويًا افتح **Actions → Daily live search keepalive → Run workflow**. النجاح يتطلب إنشاء `job_id`، ثم حالة `done` ونصًا فعليًا، ثم ملف `daily-live-search.json` بحالة `passed`. إذا ظهر `error` أو انتهت مهلة polling، افحص تطابق `CHATGPT_API_KEY` مع `API_SECRET_KEY` في الخدمة وصحة Space، ثم أعد التشغيل يدويًا مرة واحدة فقط.
 
 ## Live smoke
 
@@ -70,7 +70,7 @@ PY
 | فحص route plan فقط | `routing` | لا يرسل generation request |
 | اختبار النص | `text` | طلب نص واحد إلى أول provider المتاح |
 | اختبار بحث Gemini | `search` | طلب grounded search عند توفر Gemini |
-| اختبار ChatGPT conversation search | `text` مع prompt `بحث حي` عبر عميل مخصص | طلب ChatGPT واحد وقد ينفذ browsing داخل الجلسة |
+| اختبار ChatGPT conversation search | `text` مع prompt `بحث حي` عبر `/v1/jobs` | إنشاء job واحد ثم polling حتى `done`؛ قد ينفذ browsing داخل الجلسة |
 | اختبار image route | `image` | قد يستهلك أول ChatGPT conversation ثم fallback عند الفشل |
 | تشخيص direct chatgpt_image | `chatgpt_image` | لا fallback؛ فحص session ثم طلب صورة |
 | فحص جميع الفئات | `all` | عدة طلبات وحصص؛ استخدمه فقط عند الحاجة |

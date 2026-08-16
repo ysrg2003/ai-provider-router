@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import time
 from typing import Any
 
 import requests
@@ -9,12 +10,13 @@ from .base import ProviderError, ProviderResponse
 
 
 class ChatGPTConversationImageAdapter:
-    """Use the uploaded service's ordinary ChatGPT conversation for text and images."""
+    """Use the uploaded service's ChatGPT conversation for text and images."""
 
     provider_id = "chatgpt_conversation"
 
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, base_url: str, *, poll_interval_seconds: float = 2.0) -> None:
         self.base_url = base_url.rstrip("/")
+        self.poll_interval_seconds = poll_interval_seconds
 
     def complete_interaction_text(
         self,
@@ -39,7 +41,7 @@ class ChatGPTConversationImageAdapter:
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": user_prompt})
-        body = self._post_chat(
+        body = self._post_job(
             secret=secret,
             messages=messages,
             timeout_seconds=timeout_seconds,
@@ -121,6 +123,69 @@ class ChatGPTConversationImageAdapter:
             body.get("usage", {}),
         )
 
+    def _post_job(
+        self,
+        *,
+        secret: str,
+        messages: list[dict[str, str]],
+        timeout_seconds: int,
+    ) -> dict[str, Any]:
+        endpoint = f"{self.base_url}/v1/jobs"
+        headers = {"Authorization": f"Bearer {secret}", "Content-Type": "application/json"}
+        request_timeout = min(max(timeout_seconds, 30), 60)
+        try:
+            response = requests.post(
+                endpoint,
+                headers=headers,
+                json={"model": "gpt-4o-mini", "messages": messages, "stream": False},
+                timeout=request_timeout,
+            )
+        except requests.RequestException as exc:
+            raise ProviderError(str(exc), error_class="transient") from exc
+        body = self._body(response)
+        if response.status_code >= 400:
+            raise self._http_error(response.status_code, body)
+        job_id = body.get("job_id")
+        if not isinstance(job_id, str) or not job_id:
+            raise ProviderError(
+                "chatgpt-api did not return a conversation job id",
+                error_class="invalid_or_unknown",
+                retryable=False,
+            )
+
+        deadline = time.monotonic() + max(timeout_seconds, 1)
+        status_endpoint = f"{endpoint}/{job_id}"
+        while time.monotonic() < deadline:
+            try:
+                status_response = requests.get(
+                    status_endpoint,
+                    headers={"Authorization": f"Bearer {secret}"},
+                    timeout=min(request_timeout, 30),
+                )
+            except requests.RequestException as exc:
+                raise ProviderError(str(exc), error_class="transient") from exc
+            status_body = self._body(status_response)
+            if status_response.status_code >= 400:
+                raise self._http_error(status_response.status_code, status_body)
+            state = str(status_body.get("status") or "").lower()
+            if state == "done":
+                result = status_body.get("response")
+                if isinstance(result, dict):
+                    return result
+                raise ProviderError(
+                    "chatgpt-api conversation job returned no response",
+                    error_class="invalid_or_unknown",
+                    retryable=False,
+                )
+            if state == "error":
+                raise ProviderError(
+                    str(status_body.get("error") or "chatgpt-api conversation job failed"),
+                    error_class="upstream_error",
+                    retryable=False,
+                )
+            time.sleep(min(self.poll_interval_seconds, max(0.0, deadline - time.monotonic())))
+        raise ProviderError("chatgpt-api conversation job timed out", error_class="transient")
+
     def _post_chat(
         self,
         *,
@@ -191,7 +256,10 @@ class ChatGPTConversationImageAdapter:
     @staticmethod
     def _http_error(status_code: int, body: dict[str, Any]) -> ProviderError:
         error = body.get("error", {}) if isinstance(body, dict) else {}
-        message = str(error.get("message") or error.get("type") or "request rejected") if isinstance(error, dict) else "request rejected"
+        if isinstance(error, dict):
+            message = str(error.get("message") or error.get("type") or "request rejected")
+        else:
+            message = "request rejected"
         if status_code in {401, 403}:
             return ProviderError(message, error_class="auth", status_code=status_code, retryable=False)
         if status_code == 429:
