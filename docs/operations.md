@@ -43,6 +43,12 @@ PY
 
 لا تضف `CHATGPT_COOKIES_NETSCAPE` إلى الراوتر. هذه cookie session تخص خدمة chatgpt-api أو Space فقط.
 
+## Daily live-search keepalive
+
+يوجد workflow مستقل في `.github/workflows/daily-live-search.yml` يعمل مرة كل 24 ساعة عند `03:17 UTC`. يرسل طلبًا واحدًا فقط إلى `CHATGPT_API_BASE_URL/v1/chat/completions` بعبارة صريحة `ابحث في الويب بحث حي`، ويحفظ تقريرًا منقحًا في artifact لمدة 7 أيام. يحتاج إلى `CHATGPT_API_KEY` فقط؛ لا تُرسل `CHATGPT_COOKIES_NETSCAPE` إلى الراوتر، لأنها تبقى في خدمة `chatgpt-api`.
+
+لتشغيله يدويًا افتح **Actions → Daily live search keepalive → Run workflow**. النجاح يتطلب HTTP `200` ونصًا فعليًا، ثم ملف `daily-live-search.json` بحالة `passed`. إذا فشل، افحص تطابق `CHATGPT_API_KEY` مع `API_SECRET_KEY` في الخدمة وصحة Space، ثم أعد التشغيل يدويًا مرة واحدة فقط.
+
 ## Live smoke
 
 من GitHub افتح **Actions → Live smoke → Run workflow** واختر scenario واحدًا. الخيارات الحالية هي `routing`, `text`, `normal_search`, `openrouter`, `search`, `maps`, `image`, `chatgpt_image`, `audio`, `embedding`, و`all`.

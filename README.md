@@ -221,6 +221,9 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 ## GitHub Actions والأسرار
 
+يوجد workflow يومي باسم [`daily-live-search.yml`](.github/workflows/daily-live-search.yml) ينفذ بحثًا حيًا واحدًا كل 24 ساعة عند `03:17 UTC`، ويمكن تشغيله يدويًا من **Actions → Daily live search keepalive → Run workflow**. يحتاج فقط إلى Secret باسم `CHATGPT_API_KEY` يطابق `API_SECRET_KEY` في خدمة `chatgpt-api`. عنوان الخدمة الافتراضي هو Space الحالي، ويمكن تغييره بمتغير غير سري باسم `CHATGPT_API_BASE_URL`. لا يحتاج هذا workflow إلى `CHATGPT_COOKIES_NETSCAPE`؛ cookies تبقى داخل الخدمة.
+
+
 يحتاج workflow إلى Secrets المناسبة للسيناريو. لا يمرر secrets إلى pull request من fork. يملك workflow `contents: read` فقط، ويرفع artifact redacted لا يحتوي المفاتيح. يجب عدم إضافة `CHATGPT_COOKIES_NETSCAPE` إلى هذا الراوتر؛ ضعه في Hugging Face Space أو مستودع خدمة chatgpt-api فقط.
 
 للحصول على خطوات الحصول والتخزين والتدوير لكل قيمة، اقرأ [`docs/credentials.md`](docs/credentials.md). لا تعتمد على جدول README وحده عند إنشاء secret جديد.

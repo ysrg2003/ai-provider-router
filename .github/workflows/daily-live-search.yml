@@ -1,0 +1,93 @@
+name: Daily live search keepalive
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-live-search
+  cancel-in-progress: false
+
+jobs:
+  live-search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CHATGPT_API_BASE_URL: ${{ vars.CHATGPT_API_BASE_URL || 'https://yousefsg-chatgpt-api.hf.space/v1' }}
+      CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+    steps:
+      - name: Check out router
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install HTTP client
+        run: python -m pip install --disable-pip-version-check requests
+
+      - name: Run one live web search
+        run: |
+          set -euo pipefail
+          test -n "$CHATGPT_API_BASE_URL"
+          test -n "$CHATGPT_API_KEY"
+          mkdir -p artifacts
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import requests
+
+          url = os.environ["CHATGPT_API_BASE_URL"].rstrip("/") + "/chat/completions"
+          prompt = (
+              "ابحث في الويب بحث حي الآن عن أحدث خبر موثوق في الذكاء الاصطناعي. "
+              "اذكر عنوان الخبر، تاريخه، ملخصًا قصيرًا، والمصدر مع الرابط. "
+              "لا تعتمد على الذاكرة وحدها؛ نفّذ البحث الفعلي قبل الإجابة."
+          )
+          response = requests.post(
+              url,
+              headers={
+                  "Authorization": f"Bearer {os.environ['CHATGPT_API_KEY']}",
+                  "Content-Type": "application/json",
+              },
+              json={
+                  "model": "gpt-4o-mini",
+                  "messages": [{"role": "user", "content": prompt}],
+              },
+              timeout=480,
+          )
+          response.raise_for_status()
+          body = response.json()
+          content = body.get("choices", [{}])[0].get("message", {}).get("content", "")
+          if isinstance(content, list):
+              content = "\n".join(
+                  item.get("text", "") for item in content
+                  if isinstance(item, dict) and item.get("type") in {"text", "output_text"}
+              )
+          if not isinstance(content, str) or len(content.strip()) < 40:
+              raise SystemExit("live search returned no substantive text")
+          report = {
+              "status": "passed",
+              "operation": "daily_live_search_keepalive",
+              "text_chars": len(content.strip()),
+              "http_status": response.status_code,
+          }
+          Path("artifacts/daily-live-search.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Upload redacted report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-live-search-${{ github.run_id }}
+          path: artifacts/daily-live-search.json
+          if-no-files-found: ignore
+          retention-days: 7
