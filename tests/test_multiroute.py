@@ -75,6 +75,7 @@ class GeminiMultimodalAdapterTests(unittest.TestCase):
         self.assertEqual(result.payload["annotations"][0]["url"], "https://www.youtube.com/watch?v=abcdefghijk")
         self.assertEqual(post.call_args.args[0], "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent")
         self.assertEqual(post.call_args.kwargs["json"]["tools"], [{"google_search": {}}])
+        self.assertEqual(post.call_args.kwargs["json"]["generationConfig"], {"responseMimeType": "application/json"})
 
     def test_tts_payload_and_output(self):
         adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
