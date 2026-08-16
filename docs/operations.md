@@ -1,6 +1,6 @@
 # دليل التشغيل والأسرار
 
-هذا الدليل يشرح إعداد مفاتيح Gemini وتشغيل الفحص الحي في مستودع `ai-provider-router`. لا تضع أي قيمة حقيقية في Git أو في هذا الملف. القيمة الوحيدة التي يحتاجها GitHub Actions هي Secret باسم `AI_ROUTER_GEMINI_KEYS_JSON`.
+هذا الدليل يشرح إعداد مفاتيح Gemini وHugging Face وOpenRouter وتشغيل الفحص الحي في مستودع `ai-provider-router`. لا تضع أي قيمة حقيقية في Git أو في هذا الملف. يستخدم workflow الأسرار المتاحة فقط، وتُعرض أعداد المفاتيح وتصنيفات الأخطاء دون القيم أو body الخام.
 
 ## النتيجة الأولى المتوقعة
 
@@ -13,6 +13,8 @@
 | `AI_ROUTER_GEMINI_KEYS_JSON` | GitHub Actions Secret | قائمة مفاتيح Gemini المرتبة | Secret مطلوب للفحص الحي |
 | `AI_ROUTER_HF_KEYS_JSON` | GitHub Actions Secret أو `.env` محلي | fallback النصي في Hugging Face | اختياري، Secret |
 | `HF_TOKEN` | GitHub Actions Secret أو `.env` محلي | مفتاح Hugging Face المفرد | اختياري، Secret |
+| `AI_ROUTER_OPENROUTER_KEYS_JSON` | GitHub Actions Secret أو `.env` محلي | قائمة مفاتيح OpenRouter المرتبة | اختياري، Secret |
+| `OPENROUTER_API_KEY` | GitHub Actions Secret أو `.env` محلي | مفتاح OpenRouter المفرد كـfallback | اختياري، Secret |
 | `AI_ROUTER_CONFIG_DIR` | متغير بيئة محلي | مسار مجلد config | اختياري، غير سري |
 | `AI_ROUTER_STATE_DB` | متغير بيئة أو CLI | مسار SQLite للحالة | اختياري، غير سري |
 
@@ -35,7 +37,7 @@
 
 افتح صفحة [Secrets and variables في إعدادات المستودع](https://github.com/ysrg2003/ai-provider-router/settings/secrets/actions)، ثم اضغط **New repository secret**. اكتب `AI_ROUTER_GEMINI_KEYS_JSON` في حقل الاسم والصق JSON array في حقل القيمة، ثم اضغط **Add secret**. لا تعرض القيمة بعد اللصق ولا تضعها في تعليق أو لقطة شاشة.
 
-إذا ظهر أن الاسم موجود، استخدم **Update** أو أعد حفظه بعد تغيير المفاتيح. GitHub يعرض اسم Secret وتاريخ تحديثه فقط، ولا يعرض القيمة القديمة؛ وهذا طبيعي.
+إذا ظهر أن الاسم موجود، استخدم **Update** أو أعد حفظه بعد تغيير المفاتيح. GitHub يعرض اسم Secret وتاريخ تحديثه فقط، ولا يعرض القيمة القديمة؛ وهذا طبيعي. أعد الإجراء نفسه للأسماء `AI_ROUTER_OPENROUTER_KEYS_JSON` أو `OPENROUTER_API_KEY` عند اختبار OpenRouter.
 
 ## إعداد Secret عبر GitHub CLI
 
@@ -56,6 +58,34 @@ rm -f /tmp/gemini-keys.json
 
 النتيجة المتوقعة هي نجاح الأمر دون طباعة القيمة. إذا ظهر `403`, فراجع صلاحية GitHub token اللازمة لكتابة Actions Secrets، أو استخدم GitHub UI. لا تحاول قراءة قيمة Secret؛ GitHub لا يعيدها بعد التخزين.
 
+## إعداد OpenRouter
+
+أنشئ مفتاحًا من [OpenRouter Keys](https://openrouter.ai/keys)، ثم خزّنه محليًا في `.env` أو في GitHub Actions Secret. الصيغة الأبسط هي:
+
+```dotenv
+OPENROUTER_API_KEY=sk-or-v1-<OPENROUTER_API_KEY>
+```
+
+ولتدوير عدة مفاتيح:
+
+```dotenv
+AI_ROUTER_OPENROUTER_KEYS_JSON=[
+  {"id":"openrouter-1","key":"sk-or-v1-<OPENROUTER_API_KEY_1>","project":"openrouter"},
+  {"id":"openrouter-2","key":"sk-or-v1-<OPENROUTER_API_KEY_2>","project":"openrouter"}
+]
+```
+
+يقرأ الراوتر المصفوفة أولًا ثم `OPENROUTER_API_KEY`. لا يحتاج OpenRouter إلى adapter خاص؛ فهو يستخدم OpenAI-compatible `POST /api/v1/chat/completions` [5]. لا تُضاف الأسرار إلى release أو backup أو artifacts.
+
+للتأكد من القراءة دون إرسال طلب:
+
+```bash
+cd /path/to/ai-provider-router
+ai-router --config-dir config --state-db /tmp/openrouter-summary.db summary
+```
+
+إذا ظهر `openrouter` في `providers` وظهر عدد الأسرار دون القيمة، فالإعداد المحلي صحيح. إذا ظهر العدد صفرًا، تحقق من اسم المتغير وJSON array، ولا تطبع secret لتشخيصه.
+
 ## تشغيل smoke test
 
 افتح تبويب [Actions](https://github.com/ysrg2003/ai-provider-router/actions)، اختر **Live smoke tests**، واضغط **Run workflow**. ابدأ بـ`routing` لأنه لا يرسل طلبًا إلى Gemini؛ هو يتحقق من اختيار مسارات Live وVeo فقط. بعد ذلك شغّل كل سيناريو منفردًا لتقليل استهلاك الحصة:
@@ -64,6 +94,7 @@ rm -f /tmp/gemini-keys.json
 |---|---|---|
 | `routing` | اختيار route لـ Live وVeo وتحليل الفيديو | لا يرسل طلبًا |
 | `text` | توليد نص صغير | طلب Gemini واحد أو محاولات fallback |
+| `openrouter` | سلسلة OpenRouter المجانية وحدها | طلب واحد أو محاولات fallback عبر 16 نموذجًا مجانيًا نشطًا |
 | `search` | Google Search grounding | طلب Gemini مع Search grounding |
 | `maps` | Google Maps grounding | طلب Gemini مع Maps grounding |
 | `image` | توليد صورة صغيرة | طلب Image وقد يستهلك حصة صورة |
@@ -105,7 +136,7 @@ PYTHONPATH=src python -m ai_router.cli.main \
   route-plan --user "أنشئ صورة مع مصادر حديثة"
 ```
 
-النجاح المتوقع هو suite ناجحة، وroute plan يعرض `image` مع أول نموذج `imagen-4.0-ultra-generate-001` دون أي طلب خارجي. استخدم هذا المسار قبل أي smoke test حي.
+النجاح المتوقع هو suite ناجحة، وroute plan يعرض `image` مع أول نموذج Native Gemini Image `gemini-3-pro-image` دون أي طلب خارجي. استخدم هذا المسار قبل أي smoke test حي. لفحص OpenRouter دون طلب استخدم `route-plan --user "أجب عبر OpenRouter"` أو راجع route `openrouter_free` مباشرة.
 
 ## مرجع النماذج والمدخلات والمخرجات
 
@@ -115,7 +146,8 @@ PYTHONPATH=src python -m ai_router.cli.main \
 
 ## نتائج التشغيل الحي الفعلية
 
-تم تشغيل workflow [Live smoke tests](https://github.com/ysrg2003/ai-provider-router/actions/runs/31911509398) على commit `195ae9f` باستخدام Secret `AI_ROUTER_GEMINI_KEYS_JSON`. أثبت التقرير أن GitHub Actions حمّل **6 مفاتيح Gemini** بنجاح؛ لذلك أصبحت صيغة الـkey pool الصحيحة هي JSON array الصالحة، وليست قيمة نصية متعددة الأسطر. يتوافق وضع الإعداد هذا مع طريقة GitHub الرسمية لإضافة repository secret عبر `gh secret set NAME < file` [1].
+تم تشغيل workflow [Live smoke tests](https://github.com/ysrg2003/ai-provider-router/actions/runs/31911509398) على commit `195ae9f` باستخدام Secret `AI_ROUTER_GEMINI_KEYS_JSON`.
+ أثبت التقرير أن GitHub Actions حمّل **6 مفاتيح Gemini** بنجاح؛ لذلك أصبحت صيغة الـkey pool الصحيحة هي JSON array الصالحة، وليست قيمة نصية متعددة الأسطر. يتوافق وضع الإعداد هذا مع طريقة GitHub الرسمية لإضافة repository secret عبر `gh secret set NAME < file` [1].
 
 | الفئة | النتيجة الفعلية | الملاحظة التشغيلية |
 |---|---|---|
@@ -138,7 +170,7 @@ PYTHONPATH=src python -m ai_router.cli.main \
 
 كما عولجت استجابة `embedContent` التي تعيد كائنًا مفردًا تحت الحقل `embedding` بدل قائمة `embeddings`؛ أصبح الراوتر يطبع الكائن المفرد إلى قائمة موحدة، وهو ما أثبته التشغيل الحي بنتيجة `embedding_count: 1` و`dimensions: 3072`. هذا متوافق مع توثيق Gemini الذي يعرض `embedContent` لإنتاج embeddings، ويذكر أن `gemini-embedding-2` نموذج متعدد الوسائط وأن البعد الافتراضي هو `3072` [4].
 
-أضيف أيضًا إلى رسائل `AllProvidersFailed` تصنيف الخطأ ورقم HTTP، مثل `quota/429`، مع إبقاء body الخام خارج التقرير. وأضيفت تغطية اختبارية لهذا الإصلاح، فأصبحت مجموعة الاختبارات تحتوي **22 اختبارًا ناجحًا**.
+أضيف أيضًا إلى رسائل `AllProvidersFailed` تصنيف الخطأ ورقم HTTP، مثل `quota/429`، مع إبقاء body الخام خارج التقرير. بعد إضافة OpenRouter وmetadata الخاصة بـ`response_format` أصبحت مجموعة الاختبارات تحتوي **31 اختبارًا ناجحًا**.
 
 ## بوابة الجودة المحلية
 
@@ -151,7 +183,8 @@ PYTHONPATH=src python3 -m unittest discover -s tests -v
 python3 -m compileall -q src scripts tests
 ```
 
-النتيجة الفعلية: `ruff` نجح، ونجحت الاختبارات الـ22، ونجح `compileall`. هذه الاختبارات لا تستهلك حصة Gemini لأنها تستخدم mocks؛ أما workflow الحي فهو منفصل ومحدود زمنيًا إلى 15 دقيقة، ويحتفظ بالartifact سبعة أيام.
+النتيجة الفعلية: `ruff` نجح، ونجحت الاختبارات الـ31، ونجح `compileall`.
+ هذه الاختبارات لا تستهلك حصة Gemini لأنها تستخدم mocks؛ أما workflow الحي فهو منفصل ومحدود زمنيًا إلى 15 دقيقة، ويحتفظ بالartifact سبعة أيام.
 
 ## ملاحظات أمنية بعد التجربة
 
@@ -178,9 +211,17 @@ python3 -m compileall -q src scripts tests
 
 أما Imagen 4، فقد أعاد metadata `200` مع `supportedGenerationMethods: ["predict"]`، لكن طلب `predict` أعاد `404 NOT_FOUND` لكل المفاتيح. وهذا متسق مع إعلان Google أن Imagen 4 سيُغلق في 2026-08-17؛ لذلك بقي في `image_legacy` للتوثيق فقط، وليس كخيار تلقائي.
 
+## OpenRouter live smoke status
+
+أُضيف سيناريو `openrouter` إلى workflow، وهو يستعمل `chain=openrouter_free` فقط ويحقن `AI_ROUTER_OPENROUTER_KEYS_JSON` أو `OPENROUTER_API_KEY` دون كشفهما. لم يُنفّذ طلب OpenRouter حي في هذه النسخة لعدم وجود مفتاح OpenRouter مقدم في المهمة؛ لذلك لا يوجد ادعاء بأن أي نموذج OpenRouter نجح فعليًا. بعد إضافة Secret، شغّل **Actions → Live smoke tests → Run workflow → scenario: openrouter**. نجاحه يتطلب artifact بحالة `completed` ونتيجة `passed`، أما `429` فيسجل rate limit/quota وينتقل الراوتر حسب policy.
+
 ## References
 
 [1]: https://docs.github.com/actions/security-guides/using-secrets-in-github-actions "Using secrets in GitHub Actions — GitHub Docs"
 [2]: https://ai.google.dev/gemini-api/docs/speech-generation "Text-to-speech generation (TTS) — Gemini API"
 [3]: https://ai.google.dev/gemini-api/docs/image-generation "Image generation — Gemini API"
 [4]: https://ai.google.dev/gemini-api/docs/embeddings "Embeddings — Gemini API"
+[5]: https://openrouter.ai/docs/quickstart "OpenRouter Quickstart"
+[6]: https://openrouter.ai/openrouter/free "OpenRouter Free Models Router"
+[7]: https://openrouter.ai/collections/free-models "OpenRouter Free Models collection"
+[8]: https://openrouter.ai/api/v1/models "OpenRouter Models API"

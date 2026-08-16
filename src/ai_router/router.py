@@ -71,13 +71,16 @@ class AIRouter:
                 if self.store.is_cooling(model_spec.provider_id, model_spec.model, key.key_id, key.project):
                     continue
                 try:
-                    response = adapter.complete_json(
-                        model=model_spec.model,
-                        secret=key.secret,
-                        system_prompt=system_prompt,
-                        user_prompt=user_prompt,
-                        timeout_seconds=provider_spec.timeout_seconds or self.config.policy.request_timeout_seconds,
-                    )
+                    request_kwargs: dict[str, Any] = {
+                        "model": model_spec.model,
+                        "secret": key.secret,
+                        "system_prompt": system_prompt,
+                        "user_prompt": user_prompt,
+                        "timeout_seconds": provider_spec.timeout_seconds or self.config.policy.request_timeout_seconds,
+                    }
+                    if not model_spec.supports_response_format:
+                        request_kwargs["supports_response_format"] = False
+                    response = adapter.complete_json(**request_kwargs)
                     self.store.record_success(
                         provider=model_spec.provider_id,
                         model=model_spec.model,

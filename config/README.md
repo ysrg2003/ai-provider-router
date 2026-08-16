@@ -1,6 +1,6 @@
 # شرح مجلد config للمبتدئ
 
-إذا كنت تريد تغيير المزود أو النموذج أو ترتيب المحاولات، ابدأ من هذا المجلد. لا تضع مفاتيح API الحقيقية هنا. المفاتيح توضع في `.env` محلياً أو في GitHub Secrets. المرجع الكامل للنماذج والحدود والمدخلات والمخرجات هو [جدول available-limits](../docs/model-catalog.md)، ولا تُفعّل نماذج خارج صفوفه.
+إذا كنت تريد تغيير المزود أو النموذج أو ترتيب المحاولات، ابدأ من هذا المجلد. لا تضع مفاتيح API الحقيقية هنا. المفاتيح توضع في `.env` محلياً أو في GitHub Secrets. مرجع Gemini والحدود الأصلية هو [جدول available-limits](../docs/model-catalog.md)، أما كتالوج OpenRouter المجاني المستقل فموثق في [docs/openrouter-free.md](../docs/openrouter-free.md) ويُحدّث من OpenRouter Models API.
 
 ## أريد تغيير ترتيب النماذج
 
@@ -36,6 +36,35 @@ AI_ROUTER_GEMINI_KEYS_JSON=[
 ```
 
 سيستخدم النظام `gemini-1` أولاً ثم `gemini-2`. في GitHub Actions ضع القيمة نفسها في secret اسمه `AI_ROUTER_GEMINI_KEYS_JSON` بدلاً من ملف `.env`.
+
+## أريد تفعيل OpenRouter والنماذج المجانية
+
+أنشئ مفتاحًا من [لوحة OpenRouter](https://openrouter.ai/keys)، ثم اختر إحدى الطريقتين. الطريقة الأبسط تستخدم متغيرًا مفردًا:
+
+```dotenv
+OPENROUTER_API_KEY=sk-or-v1-ضع_المفتاح_هنا
+```
+
+أما عند الحاجة إلى تدوير عدة مفاتيح، فاستخدم مصفوفة JSON مرتبة:
+
+```dotenv
+AI_ROUTER_OPENROUTER_KEYS_JSON=[
+  {"id":"openrouter-1","key":"sk-or-v1-المفتاح_الأول","project":"openrouter"},
+  {"id":"openrouter-2","key":"sk-or-v1-المفتاح_الثاني","project":"openrouter"}
+]
+```
+
+يقرأ الراوتر `AI_ROUTER_OPENROUTER_KEYS_JSON` أولًا، ويستخدم `OPENROUTER_API_KEY` كـfallback عندما لا توجد المصفوفة. يحفظ SQLite cursor مستقلًا لكل مفتاح OpenRouter ولكل نموذج، ثم ينتقل إلى النموذج التالي عند `401` أو `403` أو `429` أو timeout أو JSON غير صالح.
+
+تم تثبيت كتالوج OpenRouter في `config/models.json` من [قائمة Free Models](https://openrouter.ai/collections/free-models) و[Free Models Router](https://openrouter.ai/openrouter/free) وendpoint النماذج الرسمي. يضم الكتالوج **19 نموذجًا مجانيًا**، منها **16 نموذجًا نصيًا/متعدد الوسائط نشطًا** مرتبة من الأقوى إلى الأقل حسب ترتيب المجموعة، ويأتي `openrouter/free` أخيرًا لأنه router meta وليس نموذجًا ثابتًا. نموذجا Lyria الصوتيان محفوظان في catalog معطلان لأن هذا المشروع لا يملك adapter صوت OpenRouter، ونموذج Content Safety محفوظ في route moderation معطل لاستخدامه كحارس لا كمولد عام.
+
+للتأكد من الإعداد دون كشف المفتاح:
+
+```bash
+ai-router --config-dir config --state-db /tmp/openrouter-check.db summary
+```
+
+يجب أن يظهر `openrouter` ضمن providers. عند إضافة المفتاح سيظهر عدد الأسرار تحت `openrouter` فقط، ولا تُطبع القيمة نفسها. يستخدم المشروع endpoint `https://openrouter.ai/api/v1/chat/completions` المتوافق مع OpenAI [1].
 
 ## أريد تغيير اسم متغير الأسرار
 
@@ -128,6 +157,8 @@ AI_ROUTER_MY_PROVIDER_KEYS_JSON=[{"id":"my-key-1","key":"المفتاح","projec
 | `video_analysis` | تحليل فيديو وإخراج نص |
 | `live` | خطة جلسة Live عبر WebSocket |
 | `video_generation` | غير مفعّل؛ لا يوجد صف Veo في جدول available-limits المرفق |
+| `openrouter_free` | سلسلة OpenRouter المجانية المرتبة، وتدعم text ثم multimodal input حسب model metadata |
+| `openrouter_moderation` | نموذج Content Safety موثق لكنه معطل؛ يحتاج سياسة moderation مستقلة |
 
 يمكن فحص الاختيار دون إرسال طلب إلى المزود:
 
@@ -139,4 +170,7 @@ PYTHONPATH=src python -m ai_router.cli.main \
 
 ## أريد Grounding
 
-استخدم `--grounding search` أو `--grounding maps` مع `call-auto`، أو اذكر كلمات مثل «مصادر حديثة» أو «خرائط Google» في الطلب. سيختار الراوتر نماذج Gemini التي تعلن دعم الأداة فقط. لا تُرسل أدوات Google تلقائيًا إلى Hugging Face؛ ذلك يحتاج مزودًا خارجيًا مستقلًا للبحث أو الخرائط.
+استخدم `--grounding search` أو `--grounding maps` مع `call-auto`، أو اذكر كلمات مثل «مصادر حديثة» أو «خرائط Google» في الطلب. سيختار الراوتر نماذج Gemini التي تعلن دعم الأداة فقط. لا تُرسل أدوات Google تلقائيًا إلى Hugging Face أو OpenRouter تلقائيًا؛ ذلك يحتاج plugin أو مزود Search/Maps مستقلًا. OpenRouter نفسه يدعم plugins مثل web search، لكن لم نفعّلها في هذا الإصدار لأن adapter الحالي يمرر chat completions العامة فقط [2].
+
+[1]: https://openrouter.ai/docs/quickstart "OpenRouter Quickstart"
+[2]: https://openrouter.ai/docs/api-reference/overview "OpenRouter API Reference"

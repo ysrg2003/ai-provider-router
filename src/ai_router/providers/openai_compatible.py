@@ -13,7 +13,7 @@ class OpenAICompatibleAdapter:
         self.provider_id = provider_id
         self.base_url = base_url.rstrip("/")
 
-    def complete_json(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int) -> ProviderResponse:
+    def complete_json(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int, supports_response_format: bool = True) -> ProviderResponse:
         endpoint = f"{self.base_url}/chat/completions"
         payload = {
             "model": model,
@@ -22,8 +22,9 @@ class OpenAICompatibleAdapter:
                 {"role": "user", "content": user_prompt},
             ],
             "stream": False,
-            "response_format": {"type": "json_object"},
         }
+        if supports_response_format:
+            payload["response_format"] = {"type": "json_object"}
         try:
             response = requests.post(
                 endpoint,
