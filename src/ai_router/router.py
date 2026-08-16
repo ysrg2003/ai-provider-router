@@ -415,7 +415,21 @@ class AIRouter:
             if attempts >= self.config.policy.max_attempts:
                 break
         self.store.checkpoint()
-        raise AllProvidersFailed("All output-route attempts failed: " + " | ".join(errors[-12:]))
+        error_summary = self._summarize_route_errors(errors)
+        raise AllProvidersFailed("All output-route attempts failed: " + " | ".join(error_summary))
+
+    @staticmethod
+    def _summarize_route_errors(errors: list[str], limit: int = 12) -> list[str]:
+        """Keep the first and last attempts so the primary provider is diagnosable."""
+        if len(errors) <= limit:
+            return errors
+        tail_count = max(1, limit - 3)
+        omitted = len(errors) - 2 - tail_count
+        return [
+            *errors[:2],
+            f"... {omitted} intermediate attempts omitted ...",
+            *errors[-tail_count:],
+        ]
 
     @staticmethod
     def _invoke_output(

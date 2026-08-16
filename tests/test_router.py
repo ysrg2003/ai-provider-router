@@ -230,5 +230,15 @@ class RouterTests(unittest.TestCase):
                 os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
 
 
+    def test_route_error_summary_keeps_primary_and_tail_attempts(self) -> None:
+        errors = [f"provider-{index}" for index in range(20)]
+        summary = AIRouter._summarize_route_errors(errors)
+        self.assertIn("provider-0", summary[0])
+        self.assertIn("provider-1", summary[1])
+        self.assertIn("intermediate attempts omitted", summary[2])
+        self.assertIn("provider-19", summary[-1])
+        self.assertLessEqual(len(summary), 12)
+
+
 if __name__ == "__main__":
     unittest.main()
