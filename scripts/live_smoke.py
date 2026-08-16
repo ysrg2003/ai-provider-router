@@ -47,6 +47,12 @@ def summarize(name: str, result: dict[str, Any]) -> dict[str, Any]:
                 "annotations": len(result.get("annotations", [])),
             }
         )
+        if name == "normal_search":
+            summary["normal_search_payload"] = {
+                key: result.get(key)
+                for key in ("videos", "error", "message")
+                if key in result
+            }
     return summary
 
 
