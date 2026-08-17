@@ -37,3 +37,14 @@
 ## queued image smoke و404 المؤقت
 
 بعد تحويل adapter إلى `/v1/jobs`، بدأ [run 31989710774](https://github.com/ysrg2003/ai-provider-router/actions/runs/31989710774) دورة Playwright ووصل إلى `Timeout 120000ms exceeded` بعد نحو 129 ثانية؛ وهذا أزال 502 المتزامن. بعد fallback screenshot السريع ظهر [run 31989892050](https://github.com/ysrg2003/ai-provider-router/actions/runs/31989892050) بـ`Job not found` بعد 23 ثانية، ثم تكرر بعد استقرار Space في [run 31990244227](https://github.com/ysrg2003/ai-provider-router/actions/runs/31990244227) بعد 45 ثانية. أضيف في adapter تجاهل 404 المؤقت ضمن deadline، مع اختبار offline لذلك.
+
+
+## إعادة الاختبار بصيغة المستخدم اليدوية — 2026-08-17
+
+غيّر smoke إلى prompt المستخدم المختصر نفسه تقريبًا:
+
+`Generate image about wise stickman read book in library`
+
+المسار الفعلي لا يضيف system prompt: adapter يرسل رسالة واحدة فقط `{role: user, content: prompt}`، وخدمة `chatgpt-api` لا تضيف تعليمات نظامية عندما لا توجد tools. كما أن `CHATGPT_FORCE_IMAGE_MODEL` فارغ افتراضيًا، فلا يجري اختيار نموذج أو تحويل إلى نموذج قديم.
+
+نتيجة [run 31990695403](https://github.com/ysrg2003/ai-provider-router/actions/runs/31990695403): فشل بـ`upstream_error` ورسالة `Timeout 120000ms exceeded` بعد `127.48` ثانية. لم تعد النتيجة رسالة Free plan quota، ولم تُنتج صورة. لذلك هذه التجربة لا تثبت أن ChatGPT حظر الطلب بسبب system prompt؛ بل تثبت أن الطلب اليدوي الصياغة وصل إلى مسار Playwright ثم تعطل أثناء الانتظار.
