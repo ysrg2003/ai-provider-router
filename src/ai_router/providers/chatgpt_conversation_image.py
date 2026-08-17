@@ -91,7 +91,7 @@ class ChatGPTConversationImageAdapter:
                 error_class="invalid_or_unknown",
                 retryable=False,
             ) from exc
-        image = self._first_image(content)
+        image = self._first_image_from_body(body, content)
         if image is None:
             raise ProviderError(
                 "chatgpt conversation returned no image",
@@ -226,23 +226,68 @@ class ChatGPTConversationImageAdapter:
                     parts.append(text.strip())
         return "\n".join(parts).strip()
 
-    @staticmethod
-    def _first_image(content: Any) -> tuple[str, str] | None:
-        if not isinstance(content, list):
+    @classmethod
+    def _first_image_from_body(cls, body: dict[str, Any], content: Any) -> tuple[str, str] | None:
+        candidates: list[Any] = [content]
+        for key in ("output", "data", "images", "image", "result"):
+            if key in body:
+                candidates.append(body[key])
+        for candidate in candidates:
+            image = cls._first_image(candidate)
+            if image is not None:
+                return image
+        return None
+
+    @classmethod
+    def _first_image(cls, value: Any) -> tuple[str, str] | None:
+        """Extract image bytes from common ChatGPT/OpenAI and browser-wrapper shapes."""
+        if isinstance(value, str):
+            return cls._parse_image_string(value, "image/png")
+        if isinstance(value, list):
+            for item in value:
+                image = cls._first_image(item)
+                if image is not None:
+                    return image
             return None
-        for part in content:
-            if not isinstance(part, dict) or part.get("type") != "image_url":
-                continue
-            image_url = part.get("image_url")
-            url = image_url.get("url") if isinstance(image_url, dict) else image_url
-            if not isinstance(url, str) or not url.startswith("data:image/"):
-                continue
-            header, separator, encoded = url.partition(",")
-            if not separator or ";base64" not in header:
-                continue
-            mime_type = header[5:].split(";", 1)[0].strip().lower()
-            if mime_type.startswith("image/") and encoded:
-                return mime_type, encoded
+        if not isinstance(value, dict):
+            return None
+
+        mime = str(value.get("mime_type") or value.get("content_type") or value.get("media_type") or "image/png").lower()
+        if not mime.startswith("image/"):
+            mime = "image/png"
+        for key in ("image_url", "url", "src", "data_url", "image", "image_asset", "attachment"):
+            nested = value.get(key)
+            if nested is not None:
+                image = cls._first_image(nested) if isinstance(nested, (dict, list)) else cls._parse_image_string(str(nested), mime)
+                if image is not None:
+                    return image
+        for key in ("b64_json", "data_base64", "image_base64", "base64", "result"):
+            encoded = value.get(key)
+            if isinstance(encoded, str) and encoded:
+                if encoded.startswith("data:image/"):
+                    image = cls._parse_image_string(encoded, mime)
+                    if image is not None:
+                        return image
+                else:
+                    return mime, encoded
+        for key in ("content", "parts", "output"):
+            nested = value.get(key)
+            if nested is not None:
+                image = cls._first_image(nested)
+                if image is not None:
+                    return image
+        return None
+
+    @staticmethod
+    def _parse_image_string(value: str, default_mime: str) -> tuple[str, str] | None:
+        if not value:
+            return None
+        if value.startswith("data:image/"):
+            header, separator, encoded = value.partition(",")
+            if separator and ";base64" in header and encoded:
+                mime_type = header[5:].split(";", 1)[0].strip().lower()
+                if mime_type.startswith("image/"):
+                    return mime_type, encoded
         return None
 
     @staticmethod

@@ -109,6 +109,18 @@ class ChatGPTConversationImageAdapterTests(unittest.TestCase):
         self.assertIn("بحثًا حيًا في الويب", messages[0]["content"])
         self.assertIn("المصادر والروابط", messages[0]["content"])
 
+    def test_extracts_output_image_b64_json_shape(self):
+        encoded = base64.b64encode(b"output-image").decode("ascii")
+        body = {"output": [{"type": "image_generation_call", "result": encoded, "mime_type": "image/webp"}]}
+        result = ChatGPTConversationImageAdapter._first_image_from_body(body, None)
+        self.assertEqual(result, ("image/webp", encoded))
+
+    def test_extracts_nested_data_url_without_image_url_type(self):
+        encoded = base64.b64encode(b"nested-image").decode("ascii")
+        body = {"result": {"attachment": {"src": f"data:image/jpeg;base64,{encoded}"}}}
+        result = ChatGPTConversationImageAdapter._first_image_from_body(body, None)
+        self.assertEqual(result, ("image/jpeg", encoded))
+
     def test_missing_image_is_terminal_invalid_response(self):
         response = requests.Response()
         response.status_code = 200
