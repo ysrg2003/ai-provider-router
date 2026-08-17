@@ -1712,7 +1712,9 @@
         "output_types": [
           "image"
         ],
-        "enabled": true
+        "enabled": false,
+        "legacy": true,
+        "reason": "Legacy /v1/visual-assets/jobs is not present in the ZIP-based chatgpt-api; use chatgpt_conversation via /v1/jobs."
       },
       {
         "provider": "google_gemini",

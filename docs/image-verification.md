@@ -9,14 +9,16 @@
 | نص مباشر على نسخة ZIP | نجح | أعاد النص الاختباري المحدد |
 | نص عبر `/v1/jobs` | نجح | دورة `queued → done` أعادت النص المحدد |
 | البحث الحي اليومي | نجح | [GitHub Actions run 31959469256](https://github.com/ysrg2003/ai-provider-router/actions/runs/31959469256)؛ التقرير المنقح أثبت `transport: queued_job` و`http_status: 200` و`text_chars: 884` |
-| route الصورة العام | نجح | [GitHub Actions run 31959554678](https://github.com/ysrg2003/ai-provider-router/actions/runs/31959554678)؛ أعاد PNG بحجم Base64 غير فارغ |
-| ChatGPT conversation عبر نفس `/v1/jobs`، بلا fallback | لم ينجح | [run 31983568049](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983568049)؛ أنشأ المسار الطلب وانتظر النتيجة، لكن النتيجة لم تحتوي `image_url` وأعادت `chatgpt conversation returned no image` |
+| route الصورة العام قبل توحيد النقل | نجح | [run 31959554678](https://github.com/ysrg2003/ai-provider-router/actions/runs/31959554678)؛ أعاد PNG، لكن التقرير القديم لم يذكر provider وكان يسمح بالـfallback |
+| البحث الحي بعد توحيد النقل | نجح | [run 31983527404](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983527404)؛ `transport: queued_job` وHTTP `200` و`text_chars: 641` |
+| ChatGPT conversation للصورة عبر نفس `/v1/jobs` | لم ينجح | [run 31983568049](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983568049)؛ أعاد `provider: chatgpt_conversation` ثم `chatgpt conversation returned no image` |
+| route الصورة بعد توحيد النقل | لم ينجح | [run 31983645449](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983645449)؛ ChatGPT لم يُعد صورة، والـlegacy endpoint أعاد 404، وGemini كان عنده 429 quota |
 
 ## تفسير النتيجة
 
-نجاح route الصورة العام لا يثبت أن ChatGPT ولّد الصورة؛ فهذا route يسمح بالانتقال التسلسلي إلى fallback. كما أن direct `chatgpt_image` القديم يعيد `404` لأن `/v1/visual-assets/jobs` غير موجود في نسخة ZIP الحالية. لذلك يستدعي الاختبار المباشر `chatgpt_conversation_image` الآن **نفس `/v1/jobs` المستخدم للبحث الحي**، ثم يختلف فقط في فحص `image_url`. نتيجة التشغيل الجديد تثبت أن النقل الموحد يعمل، لكن ChatGPT في الجلسة المنشورة لم يُعد عنصر `image_url`.
+الآن يستخدم النظام **نفس `/v1/jobs`** للبحث والنص والصور. في الصورة يختلف فقط استخراج النتيجة: يجب أن تكون `message.content` قائمة وبداخلها `image_url`. أثبت التشغيل أن النقل الموحد يعمل للبحث، لكن ChatGPT لم يُعد صورة. كما أثبت direct `chatgpt_image` أن `/v1/visual-assets/jobs` يعيد 404 في نسخة ZIP الحالية؛ لذلك عُطّل هذا المسار القديم من route الصور، وبقي ChatGPT conversation هو المحاولة الأولى ثم Gemini fallback عند الحاجة.
 
-لم يُنشأ Release لأن شرط الإصدار كان التحقق أولًا من توليد الصورة بواسطة ChatGPT نفسه. لا ينبغي تسجيل إصدار على أنه ناجح اعتمادًا على fallback أو على HTTP `200` فقط.
+لم يُنشأ Release حتى الآن لأن شرط الإصدار هو نجاح ChatGPT conversation نفسه في إعادة `image_url`. لا ينبغي تسجيل إصدار على أنه ناجح اعتمادًا على fallback أو على HTTP `200` فقط.
 
 ## طريقة التحقق الصحيحة لاحقًا
 

@@ -163,26 +163,14 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(video_plan["output_type"], "video_generation")
             router.close()
 
-    def test_complete_auto_executes_chatgpt_image_fallback(self):
-        import os
-
+    def test_image_route_excludes_legacy_visual_asset_provider(self):
         with tempfile.TemporaryDirectory() as temp:
-            os.environ["AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON"] = '[{"id":"image-key","key":"secret","project":"p1"}]'
-            try:
-                router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
-                with patch.object(
-                    router.adapters["chatgpt_image"],
-                    "generate_image",
-                    return_value=ProviderResponse({"output_type": "image", "data_base64": "aW1hZ2U="}, {}),
-                ) as generate:
-                    result = router.complete_auto(user_prompt="أنشئ صورة لقطة")
-                self.assertEqual(result["route"], "image")
-                self.assertEqual(result["intent"], "image")
-                self.assertEqual(generate.call_args.kwargs["model"], "chatgpt-api")
-
-                router.close()
-            finally:
-                os.environ.pop("AI_ROUTER_CHATGPT_IMAGE_KEYS_JSON", None)
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            plan = router.route_plan(user_prompt="أنشئ صورة لقطة", output_type="image")
+            providers = [model["provider"] for model in plan["models"]]
+            self.assertEqual(providers[0], "chatgpt_conversation")
+            self.assertNotIn("chatgpt_image", providers)
+            router.close()
 
     def test_chatgpt_conversation_is_first_and_gemini_is_fallback(self):
         with tempfile.TemporaryDirectory() as temp:
