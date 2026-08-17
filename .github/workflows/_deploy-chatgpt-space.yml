@@ -25,6 +25,21 @@ jobs:
           git -c "http.extraheader=Authorization: Basic $AUTH" clone https://huggingface.co/spaces/Yousefsg/chatgpt-api.git space
           find space -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -a source/* space/
+          {
+            cat <<'EOF'
+          ---
+          title: ChatGPT API
+          emoji: 🤖
+          colorFrom: blue
+          colorTo: purple
+          sdk: docker
+          app_port: 7860
+          pinned: false
+          ---
+
+          EOF
+            cat source/README.md
+          } > space/README.md
           cd space
           git config user.name "ai-provider-router deploy"
           git config user.email "actions@users.noreply.github.com"
