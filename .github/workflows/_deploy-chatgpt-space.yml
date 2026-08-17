@@ -32,5 +32,13 @@ jobs:
             echo "Space already contains the requested main.py"
             exit 0
           fi
-          git commit -m "fix: recover from stuck visual browser jobs"
+          git commit -m "deploy chatgpt-api main.py"
           git -c "http.extraheader=Authorization: Basic $AUTH" push origin HEAD:main
+
+      - name: Restart Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_REPO: Yousefsg/chatgpt-api
+        run: |
+          python -m pip install --quiet huggingface_hub
+          python scripts/restart_hf_space.py
