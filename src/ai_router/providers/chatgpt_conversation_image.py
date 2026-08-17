@@ -78,7 +78,7 @@ class ChatGPTConversationImageAdapter:
         del model, image_data, image_mime_type, tools
         if not prompt.strip():
             raise ProviderError("image prompt is empty", error_class="invalid_or_unknown", retryable=False)
-        body = self._post_job(
+        body = self._post_chat(
             secret=secret,
             messages=[{"role": "user", "content": prompt}],
             timeout_seconds=timeout_seconds,
