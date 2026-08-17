@@ -1,4 +1,5 @@
 import os
+import time
 
 from huggingface_hub import HfApi
 
@@ -18,7 +19,15 @@ try:
 except Exception:
     if not deploy_rev:
         raise
-    # Hugging Face documents that changing Space configuration triggers a restart.
-    # This fallback is used when the direct restart endpoint has a transient 500.
+    # First refresh a harmless public revision marker. This is useful when the
+    # restart endpoint has a transient 500 and also records the deployed source.
     api.add_space_variable(repo_id=repo_id, key="SPACE_DEPLOY_REV", value=deploy_rev)
-    print(f"Triggered Space restart through configuration refresh for {repo_id}")
+    time.sleep(3)
+    try:
+        api.pause_space(repo_id=repo_id)
+        time.sleep(3)
+        api.restart_space(repo_id=repo_id)
+        print(f"Triggered pause/restart recovery for {repo_id}")
+    except Exception:
+        # Do not claim success if the Space could not be restarted.
+        raise
