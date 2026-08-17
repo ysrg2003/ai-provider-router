@@ -21,7 +21,7 @@
 
 > الفكرة الأساسية: عدّل الملفات الموجودة داخل `config/` لتغيير المزود أو النموذج أو الترتيب أو مجموعة المفاتيح، ولا تعدّل المشروع الذي يستعمل المدير.
 
-> **حالة التحقق الأخيرة:** في 2026-08-16 ثبت أن النص وSearch وMaps وEmbedding تعمل، وأن TTS أعاد صوتًا فعليًا. أما Image فالمسار البرمجي صحيح الآن ويستخدم `generateContent`، لكن المفاتيح الستة أعادت `429 RESOURCE_EXHAUSTED` بسبب الحصة. نماذج Imagen 4 محفوظة كـlegacy معطلة لأنها معلنة للإيقاف.
+> **حالة التحقق الأخيرة:** في 2026-08-17 نجحت الاختبارات المحلية وعددها 34 اختبارًا، وأصبح `chatgpt_space` أول provider لمسارات النص والبحث الحي والصورة. نجح اختبار النص الحي، ووصل اختبار البحث الحي إلى Space، بينما لم تُعد جلسة Space الحالية `images` في اختبار الصورة؛ لذلك لا يعتبر الراوتر الرد النصي صورة، ويبقي fallback متاحًا. راجع [توثيق ChatGPT Space](docs/chatgpt-space.md) للتشغيل والتشخيص.
 
 ---
 
@@ -779,6 +779,31 @@ git ls-files .env
 | Video generation | `video_generation` | prompt فيديو | job فيديو | غير مفعّل؛ لا يوجد Veo في جدول available-limits المرفق |
 
 للتفاصيل القابلة لإعادة الإنتاج، راجع [دليل التشغيل](docs/operations.md) و[كتالوج النماذج والحدود](docs/model-catalog.md). يحتوي دليل التشغيل على روابط GitHub Actions وتقارير smoke المنزوعة الحساسية، ولا يحتوي قيم المفاتيح.
+
+# تكامل ChatGPT Space كمصدر أول
+
+أُضيفت خدمة `chatgpt-api` المنشورة على Hugging Face كـprovider مستقل اسمه `chatgpt_space`. لا يحتاج هذا التكامل إلى Cookies أو Playwright داخل الراوتر؛ فهو يستدعي endpoint HTTP المتوافق مع OpenAI عبر `POST /v1/chat/completions`، ويقرأ Secret من البيئة فقط.
+
+تحتاج إلى إعداد:
+
+```dotenv
+CHATGPT_API_BASE_URL=https://yousefsg-chatgpt-api.hf.space
+CHATGPT_API_SECRET_KEY=ضع_المفتاح_الحقيقي_هنا
+```
+
+يضع `config/models.json` ChatGPT في مقدمة routes الخاصة بـ`text` و`text_grounded_search` و`image` و`image_grounded_search`. في مسار البحث يضيف adapter تلقائيًا العبارة `ابحث في الويب بحث حي:`، وفي مسار الصورة يطبع `data_base64` فقط عندما تعيد Space صورة قابلة للتنزيل في `images[].data_url` أو `images[].src`.
+
+للتجربة:
+
+```bash
+CHATGPT_API_SECRET_KEY=ضع_المفتاح_هنا \
+ai-router --config-dir config --state-db /tmp/chatgpt-router.db \
+  call-auto --output-type text --grounding search \
+  --system "أجب بالعربية مع روابط المصادر." \
+  --user "ما آخر أخبار نماذج الذكاء الاصطناعي؟"
+```
+
+التوثيق الكامل، بما في ذلك تدوير المفاتيح، فحص الجاهزية، توليد الصور، حدود المهلة، ومراجعة الأسرار، موجود في [docs/chatgpt-space.md](docs/chatgpt-space.md). كما توجد نسخة مستقلة من ملفات الخدمة في `vendors/chatgpt-api/` دون `.git` أو النسخة المتداخلة من Space.
 
 # القسم الثالث عشر: كيف تعرف أن النظام يعمل؟
 

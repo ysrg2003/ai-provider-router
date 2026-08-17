@@ -7,6 +7,7 @@ from typing import Any
 from .config import ModelSpec, RouterConfig
 from .intent import RequestIntent, detect_intent
 from .providers.base import ProviderAdapter, ProviderError
+from .providers.chatgpt_space import ChatGPTSpaceAdapter
 from .providers.gemini import GeminiAdapter
 from .providers.openai_compatible import OpenAICompatibleAdapter
 from .store import RouterStore
@@ -38,6 +39,8 @@ class AIRouter:
                 self.adapters[provider_id] = GeminiAdapter(spec.base_url)
             elif spec.kind == "openai_compatible":
                 self.adapters[provider_id] = OpenAICompatibleAdapter(provider_id, spec.base_url)
+            elif spec.kind == "chatgpt_space":
+                self.adapters[provider_id] = ChatGPTSpaceAdapter(spec.base_url)
             else:
                 raise ValueError(f"Unsupported provider kind: {spec.kind}")
 

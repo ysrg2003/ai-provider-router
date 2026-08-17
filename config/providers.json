@@ -1,6 +1,15 @@
 {
   "providers": [
     {
+      "id": "chatgpt_space",
+      "kind": "chatgpt_space",
+      "enabled": true,
+      "base_url": "https://yousefsg-chatgpt-api.hf.space",
+      "base_url_env": "CHATGPT_API_BASE_URL",
+      "key_pool": "chatgpt_space_default",
+      "default_timeout_seconds": 300
+    },
+    {
       "id": "google_gemini",
       "kind": "gemini_rest",
       "enabled": true,

@@ -71,7 +71,7 @@ class RouterConfig:
             item["id"]: ProviderSpec(
                 provider_id=item["id"],
                 kind=item["kind"],
-                base_url=item["base_url"].rstrip("/"),
+                base_url=os.getenv(str(item.get("base_url_env", "")), item["base_url"]).rstrip("/"),
                 key_pool=item["key_pool"],
                 enabled=bool(item.get("enabled", True)),
                 timeout_seconds=int(item.get("default_timeout_seconds", 90)),

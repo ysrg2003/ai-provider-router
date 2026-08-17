@@ -6,6 +6,7 @@ from unittest.mock import patch
 from ai_router import AIRouter
 from ai_router.intent import detect_intent
 from ai_router.providers.base import ProviderResponse
+from ai_router.providers.chatgpt_space import ChatGPTSpaceAdapter
 from ai_router.providers.gemini import GeminiAdapter
 
 
@@ -33,6 +34,64 @@ class IntentTests(unittest.TestCase):
     def test_maps_detection_precedes_generic_search(self):
         intent = detect_intent("ابحث في خرائط Google عن مطاعم قريبة مني")
         self.assertEqual(intent.grounding, "maps")
+
+
+class ChatGPTSpaceAdapterTests(unittest.TestCase):
+    def test_text_search_prefix_and_auth_header(self):
+        adapter = ChatGPTSpaceAdapter("https://space.example")
+        response = FakeResponse({"choices": [{"message": {"content": "grounded"}}], "usage": {"total_tokens": 3}})
+        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response) as post:
+            result = adapter.complete_interaction_text(
+                model="gpt-4o-mini",
+                secret="secret",
+                system_prompt="",
+                user_prompt="ما آخر موديل؟",
+                timeout_seconds=300,
+                tools=[{"type": "search"}],
+            )
+        self.assertEqual(result.payload["text"], "grounded")
+        self.assertEqual(post.call_args.args[0], "https://space.example/v1/chat/completions")
+        self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer secret")
+        self.assertEqual(post.call_args.kwargs["json"]["messages"][0]["content"], "ابحث في الويب بحث حي: ما آخر موديل؟")
+
+    def test_image_src_fallback_is_downloaded(self):
+        adapter = ChatGPTSpaceAdapter("https://space.example")
+        response = FakeResponse({
+            "choices": [{"message": {"content": "done"}}],
+            "images": [{"src": "https://cdn.example/image.png"}],
+        })
+        download = FakeResponse({})
+        download.content = b"png-bytes"
+        download.headers = {"content-type": "image/png"}
+        download.raise_for_status = lambda: None
+        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response), patch("ai_router.providers.chatgpt_space.requests.get", return_value=download) as get:
+            result = adapter.generate_image(
+                model="gpt-4o-mini",
+                secret="secret",
+                prompt="draw a cat",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["output_type"], "image")
+        self.assertEqual(result.payload["mime_type"], "image/png")
+        self.assertEqual(result.payload["data_base64"], "cG5nLWJ5dGVz")
+        self.assertEqual(get.call_args.args[0], "https://cdn.example/image.png")
+
+    def test_image_data_url_is_normalized(self):
+        adapter = ChatGPTSpaceAdapter("https://space.example")
+        response = FakeResponse({
+            "choices": [{"message": {"content": "done"}}],
+            "images": [{"data_url": "data:image/png;base64,aW1hZ2U="}],
+        })
+        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response):
+            result = adapter.generate_image(
+                model="gpt-4o-mini",
+                secret="secret",
+                prompt="draw a cat",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["output_type"], "image")
+        self.assertEqual(result.payload["data_base64"], "aW1hZ2U=")
+        self.assertEqual(result.payload["mime_type"], "image/png")
 
 
 class GeminiMultimodalAdapterTests(unittest.TestCase):
@@ -119,13 +178,15 @@ class RouterRoutePlanTests(unittest.TestCase):
             video_plan = router.route_plan(user_prompt="توليد فيديو سينمائي")
             self.assertEqual(image_plan["output_type"], "image")
             self.assertEqual(image_plan["route"], "image")
-            self.assertEqual(image_plan["models"][0]["model"], "gemini-3-pro-image")
+            self.assertEqual(image_plan["models"][0]["provider"], "chatgpt_space")
+            self.assertEqual(image_plan["models"][0]["model"], "gpt-4o-mini")
             self.assertEqual(image_plan["models"][0]["input_types"], ["text", "image"])
             self.assertEqual(image_plan["models"][0]["output_types"], ["image", "text"])
             self.assertEqual(audio_plan["models"][0]["model"], "gemini-3.1-flash-tts-preview")
             self.assertEqual(audio_plan["models"][0]["input_types"], ["text"])
             self.assertEqual(audio_plan["models"][0]["output_types"], ["audio"])
             self.assertEqual(search_plan["route"], "text_grounded_search")
+            self.assertEqual(search_plan["models"][0]["provider"], "chatgpt_space")
             self.assertEqual(search_plan["models"][0]["tools"], ["search"])
             self.assertEqual(live_plan["output_type"], "live")
             self.assertEqual(video_plan["output_type"], "video_generation")
