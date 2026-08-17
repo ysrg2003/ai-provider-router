@@ -19,7 +19,7 @@
 
 ## تفسير النتيجة
 
-يستخدم النظام `/v1/jobs` للنص والبحث الحي، بينما تستخدم الصورة direct `/v1/chat/completions` كما في تجربة المستخدم اليدوية الناجحة. هذا الفصل أزال `Job not found` من مسار الصورة. في الحالتين تستخدم الخدمة نفس المحادثة العادية وPlaywright. اكتُشف أن ChatGPT في واجهة الويب لا يلزم أن يعيد `image_url` داخل JSON؛ الصورة الأصلية تظهر كـ`<img>` جديد داخل `main`، وقد يكون `src` من `estuary/content` أو `files/download` أو `oaiusercontent` أو `data:`/`blob`. لذلك عُدّل `chatgpt-api` لالتقاط asset جديد من DOM بعد baseline، خارج assistant bubble، ثم تنزيل bytes من المتصفح وتطبيعها إلى `image_url` داخليًا. وعُدّل الراوتر لقبول `image_url` و`output_image` و`image_generation_call` و`b64_json` وأشكال asset المتداخلة.
+يستخدم النظام `/v1/jobs` للنص والبحث الحي، بينما تستخدم الصورة direct `/v1/chat/completions` كما في تجربة المستخدم اليدوية الناجحة. هذا الفصل أزال `Job not found` من مسار الصورة. في الحالتين تستخدم الخدمة نفس المحادثة العادية وPlaywright. اكتُشف أن ChatGPT في واجهة الويب لا يلزم أن يعيد `image_url` داخل JSON؛ الصورة الأصلية تظهر كـ`<img>` جديد داخل `main`، وقد يكون `src` من `estuary/content` أو `files/download` أو `oaiusercontent` أو `data:`/`blob`. لذلك عُدّل `chatgpt-api` لالتقاط asset جديد من DOM بعد baseline، خارج assistant bubble، ثم تنزيل bytes من المتصفح وتطبيعها إلى `image_url` داخليًا. وإذا ظهر رد نصي أول بلا صورة، تنفذ الخدمة متابعة واحدة داخل نفس الصفحة والمحادثة: `Please generate the image from my previous request now. Image only.` ثم تعيد فحص DOM؛ فلا تُعتبر رسالة quota الأولى نهاية نهائية قبل اكتمال دورة الطلب الثاني. وعُدّل الراوتر لقبول `image_url` و`output_image` و`image_generation_call` و`b64_json` وأشكال asset المتداخلة.
 
 أثبت التشغيل أن النقل الموحد يعمل للبحث، لكن الاختبار المحلي الأخير أعاد صراحةً رسالة ChatGPT: `You've hit the Free plan limit for image generations requests...`. هذا **حد حصة الحساب** وليس دليلًا على أن parser لم يجد الصورة. كما أثبت direct `chatgpt_image` أن `/v1/visual-assets/jobs` يعيد 404 في نسخة ZIP الحالية؛ لذلك عُطّل المسار القديم من route الصور، وبقي ChatGPT conversation هو المحاولة الأولى ثم Gemini fallback عند الحاجة.
 
@@ -27,7 +27,7 @@
 
 ## طريقة التحقق الصحيحة لاحقًا
 
-بعد تجدد قدرة إنشاء الصور، شغّل **Actions → Live smoke → Run workflow → `chatgpt_conversation_image`**. هذا الاختبار يستخدم direct `/v1/chat/completions` للصورة، بينما يبقى `/v1/jobs` هو النقل الموصى به للنص والبحث الحي. لا تستخدم `image` وحده لإثبات ChatGPT، لأنه يسمح بالـfallback. يعتبر التحقق ناجحًا فقط عندما يعيد التقرير `status: passed` و`provider: chatgpt_conversation` و`mime_type` للصورة و`bytes_base64` أكبر من صفر. إذا أعاد ChatGPT رسالة Free plan limit، انتظر reset ولا تغيّر parser بناءً على تلك النتيجة.
+بعد تجدد قدرة إنشاء الصور، شغّل **Actions → Live smoke → Run workflow → `chatgpt_conversation_image`**. هذا الاختبار يستخدم direct `/v1/chat/completions` للصورة، وينتظر الطلب الأول ثم متابعة واحدة داخل نفس المحادثة قبل الحكم النهائي؛ بينما يبقى `/v1/jobs` هو النقل الموصى به للنص والبحث الحي. لا تستخدم `image` وحده لإثبات ChatGPT، لأنه يسمح بالـfallback. يعتبر التحقق ناجحًا فقط عندما يعيد التقرير `status: passed` و`provider: chatgpt_conversation` و`mime_type` للصورة و`bytes_base64` أكبر من صفر. إذا أعاد ChatGPT رسالة Free plan limit، انتظر reset ولا تغيّر parser بناءً على تلك النتيجة.
 
 ## الأمن والنسخ الاحتياطية
 
