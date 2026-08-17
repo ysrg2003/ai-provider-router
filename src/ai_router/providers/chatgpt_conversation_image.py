@@ -78,7 +78,11 @@ class ChatGPTConversationImageAdapter:
         del model, image_data, image_mime_type, tools
         if not prompt.strip():
             raise ProviderError("image prompt is empty", error_class="invalid_or_unknown", retryable=False)
-        body = self._post_chat(
+        # Use the persistent queued-job transport for images as well. The Space
+        # ingress can return 502 while a synchronous browser request is still
+        # running; /v1/jobs returns immediately and SQLite preserves job state
+        # across worker/process boundaries.
+        body = self._post_job(
             secret=secret,
             messages=[{"role": "user", "content": prompt}],
             timeout_seconds=timeout_seconds,

@@ -12,7 +12,7 @@
 ai-provider-router
       |
       | Authorization: Bearer CHATGPT_API_KEY
-       | POST /v1/chat/completions للصور، وPOST /v1/jobs ثم GET /v1/jobs/{job_id} للنص والبحث
+       | POST /v1/jobs ثم GET /v1/jobs/{job_id} للصور والنص والبحث؛ والـjob للصورة يشغّل نفس direct conversation داخل الخدمة
        | استخراج asset الصورة أو النص حسب نوع النتيجة
       v
 chatgpt-api / Hugging Face Space
@@ -37,7 +37,7 @@ chatgpt.com conversation
 
 ## الصور
 
-عند `output_type="image"` يختار الراوتر `chatgpt_conversation/chatgpt-conversation` أولًا. يرسل adapter prompt المستخدم مباشرة إلى `/v1/chat/completions` كما في الاستخدام اليدوي الناجح. تلتقط خدمة `chatgpt-api` asset الصورة من `main img`، بما في ذلك رابط `estuary/content`، ثم تطبّعه إلى `data:image/...;base64,...`. يقبل الراوتر أيضًا `output_image` و`image_generation_call.result` و`b64_json` إذا أعادها wrapper آخر. لا يستخدم مسار `/v1/jobs` للصورة لأن HF ingress أثبت `Job not found` في هذا المسار؛ jobs مخصصة للنص والبحث الحي.
+عند `output_type="image"` يختار الراوتر `chatgpt_conversation/chatgpt-conversation` أولًا. يرسل adapter prompt المستخدم إلى `/v1/jobs` ثم يعمل polling على `/v1/jobs/{job_id}`؛ أما الخدمة نفسها فتفتح direct conversation عادية في Playwright، وتلتقط asset الصورة من `main img`، بما في ذلك رابط `estuary/content`، ثم تطبّعه إلى `data:image/...;base64,...`. أصلحت الخدمة SQLite persistence، لذلك لم يعد `Job not found` سببًا لمنع jobs الخاصة بالصور، كما أن queued transport يتجنب 502 الناتج عن إبقاء HTTP request متزامنًا مفتوحًا عبر HF ingress. يقبل الراوتر أيضًا `output_image` و`image_generation_call.result` و`b64_json` إذا أعادها wrapper آخر.
 
 ```python
 from ai_router import AIRouter
@@ -84,7 +84,7 @@ curl --fail https://yousefsg-chatgpt-api.hf.space/v1/models \
   --header "Authorization: Bearer $CHATGPT_API_KEY"
 ```
 
-إذا أعاد `/` health لكن أعاد `/v1/jobs` خطأ `401`، فالقيمة المطابقة بين `CHATGPT_API_KEY` و`API_SECRET_KEY` ناقصة. للصور اختبر `/v1/chat/completions` مباشرة؛ لا تعتبر HTTP `200` وحدها نجاحًا، بل تحقق من وجود asset مطبّع وprovider الصحيح.
+إذا أعاد `/` health لكن أعاد `/v1/jobs` خطأ `401`، فالقيمة المطابقة بين `CHATGPT_API_KEY` و`API_SECRET_KEY` ناقصة. للصور اختبر سيناريو `chatgpt_conversation_image`؛ لا تعتبر HTTP `200` وحدها نجاحًا، بل تحقق من وجود asset مطبّع وprovider الصحيح. إذا ظهر 502 من direct endpoint، لا تغيّر cookies مباشرة: النقل المعتمد للراوتر هو jobs مع polling.
 
 ## اختبار offline
 
