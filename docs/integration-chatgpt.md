@@ -12,8 +12,8 @@
 ai-provider-router
       |
       | Authorization: Bearer CHATGPT_API_KEY
-      | POST /v1/jobs ثم GET /v1/jobs/{job_id} للنص والبحث والصور
-      | استخراج النص أو image_url حسب نوع النتيجة
+       | POST /v1/chat/completions للصور، وPOST /v1/jobs ثم GET /v1/jobs/{job_id} للنص والبحث
+       | استخراج asset الصورة أو النص حسب نوع النتيجة
       v
 chatgpt-api / Hugging Face Space
       |
@@ -37,7 +37,7 @@ chatgpt.com conversation
 
 ## الصور
 
-عند `output_type="image"` يختار الراوتر `chatgpt_conversation/chatgpt-conversation` أولًا. يرسل adapter prompt المستخدم إلى `/v1/jobs`، ثم يستطلع `/v1/jobs/{job_id}` حتى `done`. يتوقع أن تكون `response.choices[0].message.content` قائمة تحتوي عنصرًا من النوع `image_url` ورابطًا يبدأ بـ`data:image/` ويحتوي Base64. الاختلاف عن النص هو طريقة استخراج النتيجة فقط؛ النقل والطابور متماثلان.
+عند `output_type="image"` يختار الراوتر `chatgpt_conversation/chatgpt-conversation` أولًا. يرسل adapter prompt المستخدم مباشرة إلى `/v1/chat/completions` كما في الاستخدام اليدوي الناجح. تلتقط خدمة `chatgpt-api` asset الصورة من `main img`، بما في ذلك رابط `estuary/content`، ثم تطبّعه إلى `data:image/...;base64,...`. يقبل الراوتر أيضًا `output_image` و`image_generation_call.result` و`b64_json` إذا أعادها wrapper آخر. لا يستخدم مسار `/v1/jobs` للصورة لأن HF ingress أثبت `Job not found` في هذا المسار؛ jobs مخصصة للنص والبحث الحي.
 
 ```python
 from ai_router import AIRouter
@@ -54,7 +54,7 @@ finally:
     router.close()
 ```
 
-إذا أعاد ChatGPT نصًا فقط أو Base64 غير صالح، يسجل الراوتر ProviderError ثم يجرب `chatgpt_image` وبعده Gemini image models. لا تُرسل الصورة نفسها إلى Gemini في المحاولة الأولى؛ كل provider يستلم الطلب فقط عندما يصل دوره.
+إذا أعاد ChatGPT نصًا فقط أو رسالة Free plan quota أو Base64 غير صالح، يسجل الراوتر ProviderError ثم يجرب fallback المفعّل التالي حسب config. لا يُعتبر النجاح العام دليلًا على ChatGPT إلا إذا ظهر `provider: chatgpt_conversation`. لا تُرسل الصورة نفسها إلى Gemini في المحاولة الأولى؛ كل provider يستلم الطلب فقط عندما يصل دوره.
 
 ## النص
 
@@ -84,7 +84,7 @@ curl --fail https://yousefsg-chatgpt-api.hf.space/v1/models \
   --header "Authorization: Bearer $CHATGPT_API_KEY"
 ```
 
-إذا أعاد `/` health لكن أعاد `/v1/jobs` خطأ `401`، فالقيمة المطابقة بين `CHATGPT_API_KEY` و`API_SECRET_KEY` ناقصة. إذا ظهر timeout مع جلسة صالحة، افحص حالة job أولًا؛ لا تعتبر `queued` نجاحًا نهائيًا، ولا تغيّر route الراوتر قبل اختبار الخدمة مباشرة.
+إذا أعاد `/` health لكن أعاد `/v1/jobs` خطأ `401`، فالقيمة المطابقة بين `CHATGPT_API_KEY` و`API_SECRET_KEY` ناقصة. للصور اختبر `/v1/chat/completions` مباشرة؛ لا تعتبر HTTP `200` وحدها نجاحًا، بل تحقق من وجود asset مطبّع وprovider الصحيح.
 
 ## اختبار offline
 

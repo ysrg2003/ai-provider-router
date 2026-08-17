@@ -13,12 +13,13 @@
 | البحث الحي بعد توحيد النقل | نجح | [run 31983527404](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983527404)؛ `transport: queued_job` وHTTP `200` و`text_chars: 641` |
 | ChatGPT conversation للصورة عبر نفس `/v1/jobs` | لم ينجح | [run 31983568049](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983568049)؛ أعاد `provider: chatgpt_conversation` ثم `chatgpt conversation returned no image` |
 | فحص نسخة ZIP بعد parser DOM الجديد | لم ينجح بسبب الحصة | أعاد ChatGPT رسالة Free plan image-generation limit؛ لم تظهر صورة جديدة لأن الحساب محظور مؤقتًا من التوليد |
-| الاختبار الحي بعد تصنيف quota | لم ينجح بسبب الحصة | [run 31984921000](https://github.com/ysrg2003/ai-provider-router/actions/runs/31984921000)؛ صنّف الرسالة الآن `error_class: quota` مع وقت reset ظاهر في الرسالة |
+| الاختبار الحي بعد تصنيف quota عبر `/v1/jobs` | لم ينجح بسبب الحصة | [run 31984921000](https://github.com/ysrg2003/ai-provider-router/actions/runs/31984921000)؛ صنّف الرسالة `error_class: quota` |
+| الاختبار الحي بعد نقل الصورة إلى direct chat | لم ينجح بسبب الحصة | [run 31986140581](https://github.com/ysrg2003/ai-provider-router/actions/runs/31986140581)؛ اختفى `Job not found` ووصل الطلب إلى `chatgpt_conversation` ثم أعاد Free plan quota |
 | route الصورة بعد توحيد النقل | لم ينجح | [run 31983645449](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983645449)؛ ChatGPT لم يُعد صورة، والـlegacy endpoint أعاد 404، وGemini كان عنده 429 quota |
 
 ## تفسير النتيجة
 
-الآن يستخدم النظام **نفس `/v1/jobs`** للبحث والنص والصور. اكتُشف أن ChatGPT في واجهة الويب لا يلزم أن يعيد `image_url` داخل JSON؛ الصورة الأصلية تظهر كـ`<img>` جديد داخل `main`، وقد يكون `src` من `estuary/content` أو `files/download` أو `oaiusercontent` أو `data:`/`blob`. لذلك عُدّل `chatgpt-api` لالتقاط asset جديد من DOM بعد baseline، خارج assistant bubble، ثم تنزيل bytes من المتصفح وتطبيعها إلى `image_url` داخليًا. وعُدّل الراوتر لقبول `image_url` و`output_image` و`image_generation_call` و`b64_json` وأشكال asset المتداخلة.
+يستخدم النظام `/v1/jobs` للنص والبحث الحي، بينما تستخدم الصورة direct `/v1/chat/completions` كما في تجربة المستخدم اليدوية الناجحة. هذا الفصل أزال `Job not found` من مسار الصورة. في الحالتين تستخدم الخدمة نفس المحادثة العادية وPlaywright. اكتُشف أن ChatGPT في واجهة الويب لا يلزم أن يعيد `image_url` داخل JSON؛ الصورة الأصلية تظهر كـ`<img>` جديد داخل `main`، وقد يكون `src` من `estuary/content` أو `files/download` أو `oaiusercontent` أو `data:`/`blob`. لذلك عُدّل `chatgpt-api` لالتقاط asset جديد من DOM بعد baseline، خارج assistant bubble، ثم تنزيل bytes من المتصفح وتطبيعها إلى `image_url` داخليًا. وعُدّل الراوتر لقبول `image_url` و`output_image` و`image_generation_call` و`b64_json` وأشكال asset المتداخلة.
 
 أثبت التشغيل أن النقل الموحد يعمل للبحث، لكن الاختبار المحلي الأخير أعاد صراحةً رسالة ChatGPT: `You've hit the Free plan limit for image generations requests...`. هذا **حد حصة الحساب** وليس دليلًا على أن parser لم يجد الصورة. كما أثبت direct `chatgpt_image` أن `/v1/visual-assets/jobs` يعيد 404 في نسخة ZIP الحالية؛ لذلك عُطّل المسار القديم من route الصور، وبقي ChatGPT conversation هو المحاولة الأولى ثم Gemini fallback عند الحاجة.
 
@@ -26,7 +27,7 @@
 
 ## طريقة التحقق الصحيحة لاحقًا
 
-بعد تجدد قدرة إنشاء الصور، شغّل **Actions → Live smoke → Run workflow → `chatgpt_conversation_image`**. هذا الاختبار يستخدم نفس `/v1/jobs` الذي أثبت نجاح البحث الحي. لا تستخدم `image` وحده لإثبات ChatGPT، لأنه يسمح بالـfallback. يعتبر التحقق ناجحًا فقط عندما يعيد التقرير `status: passed` و`provider: chatgpt_conversation` و`mime_type` للصورة و`bytes_base64` أكبر من صفر. إذا أعاد ChatGPT رسالة Free plan limit، انتظر reset ولا تغيّر parser بناءً على تلك النتيجة.
+بعد تجدد قدرة إنشاء الصور، شغّل **Actions → Live smoke → Run workflow → `chatgpt_conversation_image`**. هذا الاختبار يستخدم direct `/v1/chat/completions` للصورة، بينما يبقى `/v1/jobs` هو النقل الموصى به للنص والبحث الحي. لا تستخدم `image` وحده لإثبات ChatGPT، لأنه يسمح بالـfallback. يعتبر التحقق ناجحًا فقط عندما يعيد التقرير `status: passed` و`provider: chatgpt_conversation` و`mime_type` للصورة و`bytes_base64` أكبر من صفر. إذا أعاد ChatGPT رسالة Free plan limit، انتظر reset ولا تغيّر parser بناءً على تلك النتيجة.
 
 ## الأمن والنسخ الاحتياطية
 
