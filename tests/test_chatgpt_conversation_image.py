@@ -14,29 +14,36 @@ from ai_router.providers.chatgpt_conversation_image import (
 
 
 class ChatGPTConversationImageAdapterTests(unittest.TestCase):
-    def test_extracts_image_from_ordinary_chat_completion(self):
-        raw = b"ordinary-chat-image"
+    def test_extracts_image_from_queued_conversation_job(self):
+        raw = b"queued-chat-image"
         encoded = base64.b64encode(raw).decode("ascii")
-        response = requests.Response()
-        response.status_code = 200
-        response._content = json.dumps({
-            "choices": [{
-                "message": {
-                    "content": [
-                        {"type": "text", "text": "Done."},
-                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded}"}},
-                    ]
-                }
-            }],
-            "usage": {"total_tokens": 4},
+        create = requests.Response()
+        create.status_code = 200
+        create._content = b'{"job_id":"image-job-1","status":"queued"}'
+        status = requests.Response()
+        status.status_code = 200
+        status._content = json.dumps({
+            "status": "done",
+            "response": {
+                "choices": [{
+                    "message": {
+                        "content": [
+                            {"type": "text", "text": "Done."},
+                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded}"}},
+                        ]
+                    }
+                }],
+                "usage": {"total_tokens": 4},
+            },
         }).encode()
-        response.headers["content-type"] = "application/json"
 
-        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=response) as post:
-            result = ChatGPTConversationImageAdapter("https://uploaded.example").generate_image(
+        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=create) as post, patch(
+            "ai_router.providers.chatgpt_conversation_image.requests.get", return_value=status
+        ) as get:
+            result = ChatGPTConversationImageAdapter("https://uploaded.example", poll_interval_seconds=0).generate_image(
                 model="chatgpt-conversation",
                 secret="local-secret",
-                prompt="create a blue circle",
+                prompt="generate an image of a blue circle",
                 timeout_seconds=30,
             )
 
@@ -44,7 +51,8 @@ class ChatGPTConversationImageAdapterTests(unittest.TestCase):
         self.assertEqual(result.payload["mime_type"], "image/png")
         self.assertEqual(base64.b64decode(result.payload["data_base64"]), raw)
         self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer local-secret")
-        self.assertEqual(post.call_args.kwargs["url"] if "url" in post.call_args.kwargs else post.call_args.args[0], "https://uploaded.example/v1/chat/completions")
+        self.assertEqual(post.call_args.args[0], "https://uploaded.example/v1/jobs")
+        self.assertEqual(get.call_args.args[0], "https://uploaded.example/v1/jobs/image-job-1")
 
     @staticmethod
     def _job_responses(content="Live answer with sources."):
@@ -104,8 +112,15 @@ class ChatGPTConversationImageAdapterTests(unittest.TestCase):
     def test_missing_image_is_terminal_invalid_response(self):
         response = requests.Response()
         response.status_code = 200
-        response._content = b'{"choices":[{"message":{"content":"text only"}}]}'
-        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=response), self.assertRaisesRegex(ProviderError, "no image"):
+        create = requests.Response()
+        create.status_code = 200
+        create._content = b'{"job_id":"image-job-2","status":"queued"}'
+        status = requests.Response()
+        status.status_code = 200
+        status._content = b'{"status":"done","response":{"choices":[{"message":{"content":"text only"}}]}}'
+        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=create), patch(
+            "ai_router.providers.chatgpt_conversation_image.requests.get", return_value=status
+        ), self.assertRaisesRegex(ProviderError, "no image"):
             ChatGPTConversationImageAdapter("https://uploaded.example").generate_image(
                 model="chatgpt-conversation",
                 secret="local-secret",

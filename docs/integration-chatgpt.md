@@ -12,8 +12,8 @@
 ai-provider-router
       |
       | Authorization: Bearer CHATGPT_API_KEY
-      | POST /v1/chat/completions للصور
-      | POST /v1/jobs ثم GET /v1/jobs/{job_id} للنص والبحث الحي
+      | POST /v1/jobs ثم GET /v1/jobs/{job_id} للنص والبحث والصور
+      | استخراج النص أو image_url حسب نوع النتيجة
       v
 chatgpt-api / Hugging Face Space
       |
@@ -37,7 +37,7 @@ chatgpt.com conversation
 
 ## الصور
 
-عند `output_type="image"` يختار الراوتر `chatgpt_conversation/chatgpt-conversation` أولًا. يرسل adapter prompt المستخدم إلى `/v1/chat/completions`. يتوقع أن تكون `choices[0].message.content` قائمة تحتوي عنصرًا من النوع `image_url` ورابطًا يبدأ بـ`data:image/` ويحتوي Base64.
+عند `output_type="image"` يختار الراوتر `chatgpt_conversation/chatgpt-conversation` أولًا. يرسل adapter prompt المستخدم إلى `/v1/jobs`، ثم يستطلع `/v1/jobs/{job_id}` حتى `done`. يتوقع أن تكون `response.choices[0].message.content` قائمة تحتوي عنصرًا من النوع `image_url` ورابطًا يبدأ بـ`data:image/` ويحتوي Base64. الاختلاف عن النص هو طريقة استخراج النتيجة فقط؛ النقل والطابور متماثلان.
 
 ```python
 from ai_router import AIRouter
