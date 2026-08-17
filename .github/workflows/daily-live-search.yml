@@ -31,7 +31,7 @@ jobs:
       - name: Install HTTP client
         run: python -m pip install --disable-pip-version-check requests
 
-      - name: Run one queued live web search
+      - name: Run one direct live web search
         run: |
           set -euo pipefail
           test -n "$CHATGPT_API_BASE_URL"
@@ -40,7 +40,6 @@ jobs:
           python - <<'PY'
           import json
           import os
-          import time
           from pathlib import Path
           import requests
 
@@ -54,62 +53,38 @@ jobs:
               "اذكر عنوان الخبر، تاريخه، ملخصًا قصيرًا، والمصدر مع الرابط. "
               "لا تعتمد على الذاكرة وحدها؛ نفّذ البحث الفعلي قبل الإجابة."
           )
-          create = requests.post(
-              base_url + "/jobs",
+          response = requests.post(
+              base_url + "/chat/completions",
               headers=headers,
               json={
                   "model": "gpt-4o-mini",
                   "messages": [{"role": "user", "content": prompt}],
                   "stream": False,
               },
-              timeout=60,
+              timeout=600,
           )
-          create.raise_for_status()
-          created = create.json()
-          job_id = created.get("job_id")
-          if not isinstance(job_id, str) or not job_id:
-              raise SystemExit("queued search did not return a job_id")
-
-          deadline = time.monotonic() + 600
-          while time.monotonic() < deadline:
-              status_response = requests.get(
-                  base_url + "/jobs/" + job_id,
-                  headers={"Authorization": headers["Authorization"]},
-                  timeout=30,
+          response.raise_for_status()
+          body = response.json()
+          content = body.get("choices", [{}])[0].get("message", {}).get("content", "")
+          if isinstance(content, list):
+              content = "\n".join(
+                  item.get("text", "")
+                  for item in content
+                  if isinstance(item, dict) and item.get("type") in {"text", "output_text"}
               )
-              status_response.raise_for_status()
-              status_body = status_response.json()
-              state = str(status_body.get("status") or "").lower()
-              if state == "done":
-                  response_body = status_body.get("response")
-                  if not isinstance(response_body, dict):
-                      raise SystemExit("completed search job returned no response")
-                  content = response_body.get("choices", [{}])[0].get("message", {}).get("content", "")
-                  if isinstance(content, list):
-                      content = "\n".join(
-                          item.get("text", "")
-                          for item in content
-                          if isinstance(item, dict) and item.get("type") in {"text", "output_text"}
-                      )
-                  if not isinstance(content, str) or len(content.strip()) < 40:
-                      raise SystemExit("live search returned no substantive text")
-                  report = {
-                      "status": "passed",
-                      "operation": "daily_live_search_keepalive",
-                      "transport": "queued_job",
-                      "text_chars": len(content.strip()),
-                      "http_status": status_response.status_code,
-                  }
-                  Path("artifacts/daily-live-search.json").write_text(
-                      json.dumps(report, ensure_ascii=False, indent=2) + "\n",
-                      encoding="utf-8",
-                  )
-                  break
-              if state == "error":
-                  raise SystemExit("chatgpt-api queued search failed")
-              time.sleep(2)
-          else:
-              raise SystemExit("chatgpt-api queued search timed out")
+          if not isinstance(content, str) or len(content.strip()) < 40:
+              raise SystemExit("live search returned no substantive text")
+          report = {
+              "status": "passed",
+              "operation": "daily_live_search_keepalive",
+              "transport": "direct_chat_completion",
+              "text_chars": len(content.strip()),
+              "http_status": response.status_code,
+          }
+          Path("artifacts/daily-live-search.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
           PY
 
       - name: Upload redacted report
