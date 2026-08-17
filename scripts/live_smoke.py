@@ -97,7 +97,7 @@ def run_direct_chatgpt_conversation_image_smoke(router: AIRouter) -> dict[str, A
         response = router.adapters["chatgpt_conversation"].generate_image(
             model="chatgpt-conversation",
             secret=keys[0].secret,
-            prompt="Generate an image of a simple blue circle on a plain white background. Image only; no explanatory text.",
+            prompt="Generate image about wise stickman read book in library",
             timeout_seconds=int(os.getenv("CHATGPT_IMAGE_SMOKE_TIMEOUT", "600")),
         )
     except ProviderError as exc:
