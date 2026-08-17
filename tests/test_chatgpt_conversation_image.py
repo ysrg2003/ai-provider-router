@@ -137,6 +137,20 @@ class ChatGPTConversationImageAdapterTests(unittest.TestCase):
             )
         self.assertEqual(raised.exception.error_class, "quota")
 
+    def test_string_error_body_is_preserved_for_http_500(self):
+        response = requests.Response()
+        response.status_code = 500
+        response._content = b'{"error":"browser request failed"}'
+        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=response), self.assertRaisesRegex(ProviderError, "browser request failed") as raised:
+            ChatGPTConversationImageAdapter("https://uploaded.example").generate_image(
+                model="chatgpt-conversation",
+                secret="local-secret",
+                prompt="create an image",
+                timeout_seconds=30,
+            )
+        self.assertEqual(raised.exception.error_class, "transient")
+        self.assertEqual(raised.exception.status_code, 500)
+
     def test_auth_error_is_non_retryable(self):
         response = requests.Response()
         response.status_code = 401

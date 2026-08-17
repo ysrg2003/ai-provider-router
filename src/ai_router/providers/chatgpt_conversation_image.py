@@ -306,8 +306,11 @@ class ChatGPTConversationImageAdapter:
         error = body.get("error", {}) if isinstance(body, dict) else {}
         if isinstance(error, dict):
             message = str(error.get("message") or error.get("type") or "request rejected")
+        elif isinstance(error, str) and error.strip():
+            message = error.strip()[:1200]
         else:
-            message = "request rejected"
+            raw = body.get("message") if isinstance(body, dict) else None
+            message = str(raw).strip()[:1200] if isinstance(raw, str) and raw.strip() else "request rejected"
         if status_code in {401, 403}:
             return ProviderError(message, error_class="auth", status_code=status_code, retryable=False)
         if status_code == 429:
