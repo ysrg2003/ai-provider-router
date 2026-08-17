@@ -13,6 +13,7 @@
 | البحث الحي بعد توحيد النقل | نجح | [run 31983527404](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983527404)؛ `transport: queued_job` وHTTP `200` و`text_chars: 641` |
 | ChatGPT conversation للصورة عبر نفس `/v1/jobs` | لم ينجح | [run 31983568049](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983568049)؛ أعاد `provider: chatgpt_conversation` ثم `chatgpt conversation returned no image` |
 | فحص نسخة ZIP بعد parser DOM الجديد | لم ينجح بسبب الحصة | أعاد ChatGPT رسالة Free plan image-generation limit؛ لم تظهر صورة جديدة لأن الحساب محظور مؤقتًا من التوليد |
+| الاختبار الحي بعد تصنيف quota | لم ينجح بسبب الحصة | [run 31984921000](https://github.com/ysrg2003/ai-provider-router/actions/runs/31984921000)؛ صنّف الرسالة الآن `error_class: quota` مع وقت reset ظاهر في الرسالة |
 | route الصورة بعد توحيد النقل | لم ينجح | [run 31983645449](https://github.com/ysrg2003/ai-provider-router/actions/runs/31983645449)؛ ChatGPT لم يُعد صورة، والـlegacy endpoint أعاد 404، وGemini كان عنده 429 quota |
 
 ## تفسير النتيجة
@@ -29,4 +30,12 @@
 
 ## الأمن والنسخ الاحتياطية
 
-لا تحتوي التقارير أو النسخ الاحتياطية على cookies أو مفاتيح API أو `data_base64`. حُفظت النسخة المحلية في `backups/2026-08-16-original-zip-rebuild` على شكل Git bundles وأرشيفات للملفات المتعقبة فقط.
+لا تحتوي التقارير أو النسخ الاحتياطية على cookies أو مفاتيح API أو `data_base64`. حُفظت النسخة المحلية على شكل Git bundles وأرشيفات للملفات المتعقبة فقط.
+
+## References
+
+[1] [OpenAI Image Generation guide](https://developers.openai.com/api/docs/guides/image-generation) — يوضح `b64_json` و`image_generation_call` و`output.result`.
+
+[2] [leeguooooo/chatgpt-imagegen](https://github.com/leeguooooo/chatgpt-imagegen) — مشروع مرجعي يقود المحادثة العادية ويبحث عن asset جديد داخل `main img` ثم ينزّل bytes من `src`.
+
+[3] [Reference source](https://raw.githubusercontent.com/leeguooooo/chatgpt-imagegen/main/chatgpt-imagegen) — يحدد `estuary/content` و`files/download` و`oaiusercontent`، ويشرح baseline وstable polling.
