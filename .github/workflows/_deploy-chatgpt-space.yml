@@ -13,7 +13,7 @@ jobs:
       - name: Checkout router
         uses: actions/checkout@v4
 
-      - name: Deploy main.py to Hugging Face Space
+      - name: Deploy attached ZIP project to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         shell: bash
@@ -23,14 +23,15 @@ jobs:
           git clone --depth 1 https://github.com/ysrg2003/chatgpt-api.git source
           AUTH=$(printf 'hf-deploy:%s' "$HF_TOKEN" | base64 -w0)
           git -c "http.extraheader=Authorization: Basic $AUTH" clone https://huggingface.co/spaces/Yousefsg/chatgpt-api.git space
-          cp source/main.py space/main.py
+          find space -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a source/. space/
           cd space
           git config user.name "ai-provider-router deploy"
           git config user.email "actions@users.noreply.github.com"
-          git add main.py
+          git add -A
           if git diff --cached --quiet; then
-            echo "Space already contains the requested main.py"
+            echo "Space already contains the attached ZIP project"
             exit 0
           fi
-          git commit -m "fix: recover from stuck visual browser jobs"
+          git commit -m "reset: deploy attached ZIP project only"
           git -c "http.extraheader=Authorization: Basic $AUTH" push origin HEAD:main
