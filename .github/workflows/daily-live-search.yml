@@ -44,25 +44,29 @@ jobs:
           import requests
 
           base_url = os.environ["CHATGPT_API_BASE_URL"].rstrip("/")
-          headers = {
-              "Authorization": f"Bearer {os.environ['CHATGPT_API_KEY']}",
-              "Content-Type": "application/json",
-          }
+          secret = os.environ["CHATGPT_API_KEY"].strip()
+          auth_values = [secret, f"Bearer {secret}"] if secret.lower().startswith("bearer ") else [f"Bearer {secret}", secret]
+          headers = {"Content-Type": "application/json"}
           prompt = (
               "ابحث في الويب بحث حي الآن عن أحدث خبر موثوق في الذكاء الاصطناعي. "
               "اذكر عنوان الخبر، تاريخه، ملخصًا قصيرًا، والمصدر مع الرابط. "
               "لا تعتمد على الذاكرة وحدها؛ نفّذ البحث الفعلي قبل الإجابة."
           )
-          response = requests.post(
-              base_url + "/chat/completions",
-              headers=headers,
-              json={
-                  "model": "gpt-4o-mini",
-                  "messages": [{"role": "user", "content": prompt}],
-                  "stream": False,
-              },
-              timeout=600,
-          )
+          response = None
+          for authorization in auth_values:
+              headers["Authorization"] = authorization
+              response = requests.post(
+                  base_url + "/chat/completions",
+                  headers=headers,
+                  json={
+                      "model": "gpt-4o-mini",
+                      "messages": [{"role": "user", "content": prompt}],
+                      "stream": False,
+                  },
+                  timeout=600,
+              )
+              if response.status_code != 401:
+                  break
           response.raise_for_status()
           body = response.json()
           content = body.get("choices", [{}])[0].get("message", {}).get("content", "")
