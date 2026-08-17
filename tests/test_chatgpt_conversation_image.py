@@ -61,6 +61,24 @@ class ChatGPTConversationImageAdapterTests(unittest.TestCase):
         status._content = json.dumps({"status": "done", "response": response}).encode()
         return create, status
 
+    def test_queued_job_tolerates_transient_404(self):
+        create, status = self._job_responses(content="Recovered image job")
+        missing = requests.Response()
+        missing.status_code = 404
+        missing._content = b'{"error":{"message":"Job not found"}}'
+        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=create), patch(
+            "ai_router.providers.chatgpt_conversation_image.requests.get", side_effect=[missing, status]
+        ) as get:
+            result = ChatGPTConversationImageAdapter("https://uploaded.example", poll_interval_seconds=0).complete_interaction_text(
+                model="chatgpt-conversation",
+                secret="local-secret",
+                system_prompt="",
+                user_prompt="recover this job",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["text"], "Recovered image job")
+        self.assertEqual(get.call_count, 2)
+
     def test_extracts_text_from_queued_job(self):
         create, status = self._job_responses()
         with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=create) as post, patch(

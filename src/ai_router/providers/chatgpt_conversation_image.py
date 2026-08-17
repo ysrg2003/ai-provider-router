@@ -172,6 +172,12 @@ class ChatGPTConversationImageAdapter:
             except requests.RequestException as exc:
                 raise ProviderError(str(exc), error_class="transient") from exc
             status_body = self._body(status_response)
+            if status_response.status_code == 404:
+                # HF Space/container restarts can briefly expose a fresh worker
+                # between POST and GET. Keep polling within the same deadline;
+                # SQLite normally makes this window unnecessary.
+                time.sleep(min(self.poll_interval_seconds, max(0.0, deadline - time.monotonic())))
+                continue
             if status_response.status_code >= 400:
                 raise self._http_error(status_response.status_code, status_body)
             state = str(status_body.get("status") or "").lower()
