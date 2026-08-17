@@ -39,6 +39,7 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_SPACE_REPO: Yousefsg/chatgpt-api
+          SPACE_DEPLOY_REV: ${{ github.sha }}
         run: |
           python -m pip install --quiet huggingface_hub
           python scripts/restart_hf_space.py
