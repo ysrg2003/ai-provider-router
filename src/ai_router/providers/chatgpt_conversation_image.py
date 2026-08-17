@@ -93,6 +93,9 @@ class ChatGPTConversationImageAdapter:
             ) from exc
         image = self._first_image_from_body(body, content)
         if image is None:
+            text = self._message_text(body)
+            if text and any(marker in text.lower() for marker in ("free plan", "image generation", "limit", "quota", "too many requests")):
+                raise ProviderError(text[:1200], error_class="quota", retryable=True)
             raise ProviderError(
                 "chatgpt conversation returned no image",
                 error_class="invalid_or_unknown",

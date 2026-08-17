@@ -140,6 +140,24 @@ class ChatGPTConversationImageAdapterTests(unittest.TestCase):
                 timeout_seconds=30,
             )
 
+    def test_image_quota_text_is_classified_as_quota(self):
+        create = requests.Response()
+        create.status_code = 200
+        create._content = b'{"job_id":"image-job-quota","status":"queued"}'
+        status = requests.Response()
+        status.status_code = 200
+        status._content = b'{"status":"done","response":{"choices":[{"message":{"content":"You have hit the Free plan limit for image generations."}}]}}'
+        with patch("ai_router.providers.chatgpt_conversation_image.requests.post", return_value=create), patch(
+            "ai_router.providers.chatgpt_conversation_image.requests.get", return_value=status
+        ), self.assertRaisesRegex(ProviderError, "Free plan limit") as raised:
+            ChatGPTConversationImageAdapter("https://uploaded.example", poll_interval_seconds=0).generate_image(
+                model="chatgpt-conversation",
+                secret="local-secret",
+                prompt="generate an image",
+                timeout_seconds=30,
+            )
+        self.assertEqual(raised.exception.error_class, "quota")
+
     def test_auth_error_is_non_retryable(self):
         response = requests.Response()
         response.status_code = 401
