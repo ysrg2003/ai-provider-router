@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import time
 from typing import Any
 
 import requests
@@ -87,16 +88,28 @@ class ChatGPTSpaceAdapter:
                 {"type": "text", "text": prompt},
                 {"type": "image_url", "image_url": {"url": f"data:{image_mime_type};base64,{image_data}"}},
             ]
-        body = self._post(
-            model=model,
-            secret=secret,
-            messages=[{"role": "user", "content": user_content}],
-            timeout_seconds=max(timeout_seconds, 240),
-            tools=tools,
-        )
-        images = body.get("images") or []
-        if not isinstance(images, list):
-            images = []
+        body: dict[str, Any] = {}
+        images: list[Any] = []
+        for attempt in range(3):
+            body = self._post(
+                model=model,
+                secret=secret,
+                messages=[{"role": "user", "content": user_content}],
+                timeout_seconds=max(timeout_seconds, 540),
+                tools=tools,
+            )
+            raw_images = body.get("images") or []
+            images = raw_images if isinstance(raw_images, list) else []
+            if images:
+                break
+            response_text = self._text_from_body(body)
+            lowered = response_text.lower()
+            if "free plan limit" in lowered or "image generations requests" in lowered or "limit resets" in lowered:
+                raise ProviderError("ChatGPT Space image generation quota is exhausted", error_class="quota", status_code=429, retryable=False)
+            if attempt < 2:
+                time.sleep(20)
+        if not images:
+            raise ProviderError("ChatGPT Space returned no downloadable image data after 3 attempts", error_class="transient")
         first = next((item for item in images if isinstance(item, dict) and item.get("data_url")), None)
         if first:
             data_url = str(first["data_url"])

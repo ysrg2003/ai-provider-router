@@ -54,6 +54,39 @@ class ChatGPTSpaceAdapterTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer secret")
         self.assertEqual(post.call_args.kwargs["json"]["messages"][0]["content"], "ابحث في الويب بحث حي: ما آخر موديل؟")
 
+    def test_image_retries_when_first_response_has_no_images(self):
+        adapter = ChatGPTSpaceAdapter("https://space.example")
+        empty = FakeResponse({"choices": [{"message": {"content": "still generating"}}]})
+        success = FakeResponse({
+            "choices": [{"message": {"content": "done"}}],
+            "images": [{"data_url": "data:image/png;base64,aW1hZ2U="}],
+        })
+        with patch("ai_router.providers.chatgpt_space.requests.post", side_effect=[empty, success]) as post, patch("ai_router.providers.chatgpt_space.time.sleep") as sleep:
+            result = adapter.generate_image(
+                model="gpt-4o-mini",
+                secret="secret",
+                prompt="draw a cat",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["data_base64"], "aW1hZ2U=")
+        self.assertEqual(post.call_count, 2)
+        sleep.assert_called_once_with(20)
+        self.assertEqual(post.call_args_list[0].kwargs["timeout"], 540)
+
+    def test_image_quota_response_is_terminal(self):
+        adapter = ChatGPTSpaceAdapter("https://space.example")
+        response = FakeResponse({"choices": [{"message": {"content": "You've hit the Free plan limit for image generations requests."}}]})
+        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response), patch("ai_router.providers.chatgpt_space.time.sleep") as sleep:
+            with self.assertRaisesRegex(Exception, "quota") as raised:
+                adapter.generate_image(
+                    model="gpt-4o-mini",
+                    secret="secret",
+                    prompt="draw a cat",
+                    timeout_seconds=30,
+                )
+        self.assertEqual(raised.exception.error_class, "quota")
+        sleep.assert_not_called()
+
     def test_image_src_fallback_is_downloaded(self):
         adapter = ChatGPTSpaceAdapter("https://space.example")
         response = FakeResponse({
