@@ -803,7 +803,7 @@ ai-router --config-dir config --state-db /tmp/chatgpt-router.db \
   --user "generate image of wise stikman read book in libary"
 ```
 
-أثبت الاختبار الحي الحالي نجاح النص والبحث والصورة عبر router. التوثيق الكامل، بما في ذلك ترتيب replicas، Secrets، فحص الجاهزية، حدود المهلة، وتوليد الصور، موجود في [docs/chatgpt-space.md](docs/chatgpt-space.md). كما أن `vendors/chatgpt-api/` نسخة مطابقة لمصدر `chatgpt-api` وآخر release، دون `.git` أو أسرار.
+أثبت الاختبار الحي الحالي نجاح النص والبحث والصورة عبر router. ابدأ بـ **[دليل تكامل ChatGPT الكامل](docs/chatgpt-integration-guide.md)**، ثم راجع [دليل ChatGPT Space التشغيلي](docs/chatgpt-space.md) للتفاصيل المتخصصة. يشمل الدليلان ترتيب replicas، كل Secrets وVariables، طريقة الحصول عليها، فحص الجاهزية، حدود المهلة، التدوير والإلغاء، توليد الصور، GitHub Actions، واستكشاف الأخطاء. كما أن `vendors/chatgpt-api/` نسخة مطابقة لمصدر `chatgpt-api` وآخر release، دون `.git` أو أسرار.
 
 # القسم الثالث عشر: كيف تعرف أن النظام يعمل؟
 

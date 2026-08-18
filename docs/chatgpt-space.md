@@ -1,5 +1,7 @@
 # تكامل ChatGPT Spaces مع ai-provider-router
 
+للمسار المبتدئ الكامل من إعداد Hugging Face وSecrets وCookies إلى استخدام router، راجع **[دليل تكامل ChatGPT الكامل](chatgpt-integration-guide.md)**. هذا الملف مرجع تشغيلي متخصص للـreplicas والـroutes والاختبارات.
+
 ## الغرض
 
 يستخدم `ai-provider-router` ثلاث نسخ مستقلة من خدمة `chatgpt-api` كمصادر أولى مرتبة لمسارات النص والبحث الحي وتوليد الصور. الاتصال بين router وSpaces يتم عبر HTTP فقط؛ لا تُنسخ Cookies أو جلسة Playwright إلى router، وتبقى Cookies داخل إعدادات Hugging Face لكل Space.
