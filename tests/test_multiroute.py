@@ -120,7 +120,7 @@ class ChatGPTSpaceAdapterTests(unittest.TestCase):
             "choices": [{"message": {"content": "done"}}],
             "images": [{"data_url": "data:image/png;base64,aW1hZ2U=", "alt": "Generated image"}],
         })
-        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response):
+        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response) as post:
             result = adapter.generate_image(
                 model="gpt-4o-mini",
                 secret="secret",
@@ -130,6 +130,7 @@ class ChatGPTSpaceAdapterTests(unittest.TestCase):
         self.assertEqual(result.payload["output_type"], "image")
         self.assertEqual(result.payload["data_base64"], "aW1hZ2U=")
         self.assertEqual(result.payload["mime_type"], "image/png")
+        self.assertNotIn("stream", post.call_args.kwargs["json"])
 
 
 class GeminiMultimodalAdapterTests(unittest.TestCase):

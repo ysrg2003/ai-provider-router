@@ -110,7 +110,7 @@ class ChatGPTSpaceAdapter:
             if attempt < 2:
                 time.sleep(20)
         if not images:
-            raise ProviderError("ChatGPT Space returned no downloadable image data after 3 attempts", error_class="transient")
+            raise ProviderError("ChatGPT Space returned no generated image data after 3 attempts", error_class="invalid_or_unknown", retryable=False)
         first = next((item for item in images if item.get("data_url")), None)
         if first:
             data_url = str(first["data_url"])
@@ -173,7 +173,7 @@ class ChatGPTSpaceAdapter:
         timeout_seconds: int,
         tools: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        payload: dict[str, Any] = {"model": model, "messages": messages, "stream": False}
+        payload: dict[str, Any] = {"model": model, "messages": messages}
         if tools:
             payload["tools"] = tools
         try:
