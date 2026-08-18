@@ -54,12 +54,17 @@ class ChatGPTSpaceAdapterTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer secret")
         self.assertEqual(post.call_args.kwargs["json"]["messages"][0]["content"], "ابحث في الويب بحث حي: ما آخر موديل؟")
 
+    def test_image_candidate_filter_rejects_favicon(self):
+        adapter = ChatGPTSpaceAdapter("https://space.example")
+        self.assertFalse(adapter._is_generated_image({"src": "https://www.google.com/s2/favicons?domain=example.com", "alt": ""}))
+        self.assertTrue(adapter._is_generated_image({"src": "https://chatgpt.com/backend-api/estuary/content?id=file_123", "alt": "Generated image"}))
+
     def test_image_retries_when_first_response_has_no_images(self):
         adapter = ChatGPTSpaceAdapter("https://space.example")
         empty = FakeResponse({"choices": [{"message": {"content": "still generating"}}]})
         success = FakeResponse({
             "choices": [{"message": {"content": "done"}}],
-            "images": [{"data_url": "data:image/png;base64,aW1hZ2U="}],
+            "images": [{"data_url": "data:image/png;base64,aW1hZ2U=", "alt": "Generated image"}],
         })
         with patch("ai_router.providers.chatgpt_space.requests.post", side_effect=[empty, success]) as post, patch("ai_router.providers.chatgpt_space.time.sleep") as sleep:
             result = adapter.generate_image(
@@ -91,7 +96,7 @@ class ChatGPTSpaceAdapterTests(unittest.TestCase):
         adapter = ChatGPTSpaceAdapter("https://space.example")
         response = FakeResponse({
             "choices": [{"message": {"content": "done"}}],
-            "images": [{"src": "https://cdn.example/image.png"}],
+            "images": [{"src": "https://cdn.example/image.png", "alt": "Generated image"}],
         })
         download = FakeResponse({})
         download.content = b"png-bytes"
@@ -113,7 +118,7 @@ class ChatGPTSpaceAdapterTests(unittest.TestCase):
         adapter = ChatGPTSpaceAdapter("https://space.example")
         response = FakeResponse({
             "choices": [{"message": {"content": "done"}}],
-            "images": [{"data_url": "data:image/png;base64,aW1hZ2U="}],
+            "images": [{"data_url": "data:image/png;base64,aW1hZ2U=", "alt": "Generated image"}],
         })
         with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response):
             result = adapter.generate_image(

@@ -99,7 +99,8 @@ class ChatGPTSpaceAdapter:
                 tools=tools,
             )
             raw_images = body.get("images") or []
-            images = raw_images if isinstance(raw_images, list) else []
+            candidates = raw_images if isinstance(raw_images, list) else []
+            images = [item for item in candidates if isinstance(item, dict) and self._is_generated_image(item)]
             if images:
                 break
             response_text = self._text_from_body(body)
@@ -110,7 +111,7 @@ class ChatGPTSpaceAdapter:
                 time.sleep(20)
         if not images:
             raise ProviderError("ChatGPT Space returned no downloadable image data after 3 attempts", error_class="transient")
-        first = next((item for item in images if isinstance(item, dict) and item.get("data_url")), None)
+        first = next((item for item in images if item.get("data_url")), None)
         if first:
             data_url = str(first["data_url"])
             try:
@@ -120,7 +121,7 @@ class ChatGPTSpaceAdapter:
             except (ValueError, TypeError) as exc:
                 raise ProviderError("ChatGPT Space returned malformed image data", error_class="invalid_or_unknown", retryable=False) from exc
         else:
-            first = next((item for item in images if isinstance(item, dict) and item.get("src")), None)
+            first = next((item for item in images if item.get("src")), None)
             if not first:
                 raise ProviderError("ChatGPT Space returned no downloadable image data", error_class="invalid_or_unknown", retryable=False)
             encoded, mime_type = self._download_src(str(first["src"]), secret=secret, timeout_seconds=timeout_seconds)
@@ -134,6 +135,16 @@ class ChatGPTSpaceAdapter:
             },
             body.get("usage", {}),
         )
+
+    @staticmethod
+    def _is_generated_image(item: dict[str, Any]) -> bool:
+        src = str(item.get("src", "")).lower()
+        alt = str(item.get("alt", "")).lower()
+        if "generated image" in alt or "generated_image" in alt:
+            return True
+        if src.startswith("blob:"):
+            return True
+        return "backend-api" in src and ("file_" in src or "estuary" in src or "/content" in src)
 
     @staticmethod
     def _download_src(src: str, *, secret: str, timeout_seconds: int) -> tuple[str, str]:
