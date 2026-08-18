@@ -18,15 +18,15 @@
 
 ## التطابق والإصدار
 
-المصدر الحالي في `chatgpt-api` هو commit `5d2667a`، وهو إصدار `v1.2.0-storage-state` الذي يضيف دعم Playwright Storage State الكامل. تم نشر الكود الموحد إلى replica-01 بعد تحديث Secret الخاص بحساب `ben2003`، بينما بقي كل replica مرتبطًا بحساب ChatGPT الخاص به.
+المصدر الحالي في `chatgpt-api` هو commit `0c35f4e`، المبني فوق إصدار `v1.2.0-storage-state`، ويضيف إصلاح image submission ومهلة الصور إلى جانب دعم Playwright Storage State الكامل. تم نشر الكود الموحد إلى replica-01 بعد تحديث Secret الخاص بحساب `ben2003`، بينما بقي كل replica مرتبطًا بحساب ChatGPT الخاص به.
 
 | النسخة | commit أو بصمة التحقق | الملاحظة |
 |---|---|---|
-| `/home/ubuntu/work/chatgpt-api` | `5d2667a` | المصدر المرجعي |
-| `chatgpt-api-replica-01` | `3b6620c` | كود Storage State منشور، مع جلسة ben2003 فقط |
-| `chatgpt-api-replica-02` | `36fc940` | كود Storage State منشور، مع جلسة pn2003 فقط |
-| `chatgpt-api-replica-04` | `1abadb6` | كود Storage State منشور، مع جلسة sg فقط |
-| `vendors/chatgpt-api/` | `380a2815d720bbc524deb84c1467467b50b8c109467534dda604b6590099e4a4` | بصمة محتوى حتمية مطابقة للمصدر، مع استبعاد Git وcache وملفات الأسرار |
+| `/home/ubuntu/work/chatgpt-api` | `0c35f4e` | المصدر المرجعي، إصلاح image submission وtimeout |
+| `chatgpt-api-replica-01` | `fee9268` | إصلاح image submission وtimeout، مع جلسة ben2003 فقط |
+| `chatgpt-api-replica-02` | `aa69567` | إصلاح image submission وtimeout، مع جلسة pn2003 فقط |
+| `chatgpt-api-replica-04` | `41c9a55` | إصلاح image submission وtimeout، مع جلسة sg فقط |
+| `vendors/chatgpt-api/` | قيد التحقق بعد sync commit `0c35f4e` | نسخة المصدر المضمنة دون Git وcache وملفات الأسرار |
 
 توجد فروقات commit طبيعية بين مستودعات Spaces بسبب نشر كل Space في وقت مختلف؛ معيار التطابق التشغيلي هو وجود كود `browser_gateway.py` الحالي وسر Storage State الخاص بالحساب الصحيح، لا نقل جلسة حساب إلى Space أخرى. لا تُحفظ ملفات Storage State في Git أو في `vendors/chatgpt-api/`.
 
@@ -117,11 +117,14 @@ ai-router --config-dir config --state-db /tmp/chatgpt-router-image.db \
 | replica-04 مباشرة — بحث | **نجح HTTP 200** مع إجابة بحث حي ومراجع نصية. |
 | router الحقيقي — نص | **نجح**، وأعاد `router final replica-01 text probe` عبر route `text`. |
 | router الحقيقي — بحث حي | **نجح** عبر route `text_grounded_search`، وأعاد JSON يتضمن الإجابة واسم النموذج، مع إضافة مسار البحث الحي تلقائيًا. يجب التحقق من الادعاءات والروابط خارجيًا قبل اعتمادها كمعلومة نهائية. |
-| router الحقيقي — صورة | **لم يكتمل** في محاولة واحدة فقط: replica-01 لم يعرض image data بعد ثلاث محاولات داخلية، replica-02 أعاد `429` بسبب quota توليد الصور، وreplica-04 أغلق الاتصال بحالة transient؛ انتهى router بـ`AllProvidersFailed`. لم تُكرر المحاولة احترامًا للحصة اليومية. توجد نتيجة سابقة مستقلة موثقة لنجاح توليد PNG عبر replica-04 قبل استنفاد quota، لذلك لا تُفسر هذه النتيجة كفشل مصادقة أو Base URL وحده. |
+| router الحقيقي — صورة قبل الإصلاح | فشل bounded: replica-01 لم يعرض image data، replica-02 أعاد `429` بسبب quota، وreplica-04 انتهى بـ`RemoteDisconnected`/timeout. |
+| السبب الجذري المكتشف | كان `BrowserGateway` داخل Spaces يستخدم مهلة افتراضية `210` ثانية حتى لطلبات الصور، بينما router ينتظر 540 ثانية؛ كما كان fallback يقبل نقر زر الإرسال دون التحقق من أن composer أُرسل فعليًا. سجل replica-04 أكد `assistant_count=0`, `generation_active=false`, و`prompt_count=1` عند timeout. |
+| الإصلاح المنشور | رفع مهلة انتظار الصورة داخليًا إلى 540 ثانية على الأقل، والتحقق من بدء الإرسال/اختفاء prompt بعد Enter وDOM click وmouse click قبل متابعة الانتظار. نُشر إلى Spaces الثلاثة. |
+| router الحقيقي — صورة بعد الإصلاح | **نجح** بحالة `exit=0` عبر route `image`، وأعاد PNG بصيغة `image/png`، حجمها `776,668` بايت وأبعادها `1254×1254` وmode `RGB`. |
 | الاختبارات المحلية | `38` اختبارًا ناجحًا في router، و`9` اختبارات ناجحة في chatgpt-api قبل نشر replica-01. |
 | compileall | ناجح للمصدر والنسخة المضمنة. |
 
-> **الخلاصة التشغيلية:** النص والبحث الحي يعملان في **replica-01 وreplica-02 وreplica-04**، كما يعملان عبر router الحقيقي. ترتيب router يبدأ بـreplica-01 ويستخدم النسختين الثانية والرابعة كـfallback عند الحاجة. اختبار الصورة النهائي بقي منفصلًا: فشل في المحاولة الأخيرة بسبب عدم إرجاع صورة من replica-01، وquota في replica-02، وانقطاع مؤقت في replica-04؛ لا ينبغي إعادة تشغيله حتى تتجدد الحصة أو يتوفر اختبار منفصل مصرح به.
+> **الخلاصة التشغيلية:** النص والبحث الحي يعملان في **replica-01 وreplica-02 وreplica-04**، كما يعملان عبر router الحقيقي. وبعد إصلاح مهلة الصور والتحقق من نجاح زر الإرسال، نجح توليد صورة عبر router الحقيقي وأعاد PNG صالحة بأبعاد `1254×1254`. تبقى quota ChatGPT الخاصة بكل حساب حدًا خارجيًا مستقلًا؛ عند ظهور `429` لا يعيد router الطلب بلا حدود.
 
 ## أسرار Spaces
 
