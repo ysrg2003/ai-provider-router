@@ -45,6 +45,40 @@
 
 مسارات النص والبحث لا تستخدم HTML أو image extraction. مسار الصورة فقط يقبل `images[].data_url` أو `images[].src` بعد التحقق من أنها صورة مولدة، ويرفض favicon وavatar والصور القديمة.
 
+### Base URLs: مكانها الصحيح في router
+
+على عكس `chatgpt-api`، فإن `ai-provider-router` عميل يتصل بالـSpaces؛ لذلك يحتاج إلى معرفة عناوينها. هذه العناوين **ليست Secrets**، وتُضبط كـVariables مستقلة، واحد لكل replica:
+
+```dotenv
+CHATGPT_API_REPLICA_01_BASE_URL=https://OWNER-REPLICA-01.hf.space
+CHATGPT_API_REPLICA_02_BASE_URL=https://OWNER-REPLICA-02.hf.space
+CHATGPT_API_BASE_URL=https://OWNER-REPLICA-04.hf.space
+```
+
+يقرأ router المتغير إذا كان موجودًا، وإلا يستخدم `base_url` الافتراضي المطابق في `config/providers.json`. يجب أن تكون القيمة origin فقط دون `/v1` أو `/v1/chat/completions`:
+
+```text
+صحيح: https://OWNER-SPACE.hf.space
+خطأ:   https://OWNER-SPACE.hf.space/v1/chat/completions
+```
+
+| القيمة | مكانها |
+|---|---|
+| `API_SECRET_KEY` | Secret داخل Space المقابلة |
+| `CHATGPT_COOKIES_NETSCAPE` | Secret داخل Space فقط |
+| `CHATGPT_API_REPLICA_01_BASE_URL` | Variable في router |
+| `CHATGPT_API_REPLICA_02_BASE_URL` | Variable في router |
+| `CHATGPT_API_BASE_URL` | Variable في router |
+| `CHATGPT_API_SECRET_KEY` | Secret في router، ويطابق `API_SECRET_KEY` في Space |
+
+فحص العناوين لا يحتاج إلى Secret:
+
+```bash
+for url in "$CHATGPT_API_REPLICA_01_BASE_URL" "$CHATGPT_API_REPLICA_02_BASE_URL" "$CHATGPT_API_BASE_URL"; do
+  curl -fsS "$url/health"
+done
+```
+
 ## 4. جرد الملفات
 
 | الملف | الوظيفة |
