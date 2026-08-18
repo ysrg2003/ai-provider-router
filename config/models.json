@@ -1172,6 +1172,22 @@
   "output_routes": {
     "text": [
       {
+        "provider": "chatgpt_space_replica_01",
+        "model": "gpt-4o-mini",
+        "method": "interaction_text",
+        "input_types": ["text"],
+        "output_types": ["text"],
+        "enabled": true
+      },
+      {
+        "provider": "chatgpt_space_replica_02",
+        "model": "gpt-4o-mini",
+        "method": "interaction_text",
+        "input_types": ["text"],
+        "output_types": ["text"],
+        "enabled": true
+      },
+      {
         "provider": "chatgpt_space",
         "model": "gpt-4o-mini",
         "method": "interaction_text",
@@ -1577,6 +1593,24 @@
     ],
     "text_grounded_search": [
       {
+        "provider": "chatgpt_space_replica_01",
+        "model": "gpt-4o-mini",
+        "method": "interaction_text",
+        "input_types": ["text"],
+        "output_types": ["text"],
+        "enabled": true,
+        "tools": ["search"]
+      },
+      {
+        "provider": "chatgpt_space_replica_02",
+        "model": "gpt-4o-mini",
+        "method": "interaction_text",
+        "input_types": ["text"],
+        "output_types": ["text"],
+        "enabled": true,
+        "tools": ["search"]
+      },
+      {
         "provider": "chatgpt_space",
         "model": "gpt-4o-mini",
         "method": "interaction_text",
@@ -1668,6 +1702,22 @@
       }
     ],
     "image": [
+      {
+        "provider": "chatgpt_space_replica_01",
+        "model": "gpt-4o-mini",
+        "method": "image",
+        "input_types": ["text", "image"],
+        "output_types": ["image", "text"],
+        "enabled": true
+      },
+      {
+        "provider": "chatgpt_space_replica_02",
+        "model": "gpt-4o-mini",
+        "method": "image",
+        "input_types": ["text", "image"],
+        "output_types": ["image", "text"],
+        "enabled": true
+      },
       {
         "provider": "chatgpt_space",
         "model": "gpt-4o-mini",
@@ -1961,6 +2011,24 @@
     ],
     "video_generation": [],
     "image_grounded_search": [
+      {
+        "provider": "chatgpt_space_replica_01",
+        "model": "gpt-4o-mini",
+        "method": "image",
+        "input_types": ["text", "image"],
+        "output_types": ["image", "text"],
+        "enabled": true,
+        "tools": ["search"]
+      },
+      {
+        "provider": "chatgpt_space_replica_02",
+        "model": "gpt-4o-mini",
+        "method": "image",
+        "input_types": ["text", "image"],
+        "output_types": ["image", "text"],
+        "enabled": true,
+        "tools": ["search"]
+      },
       {
         "provider": "chatgpt_space",
         "model": "gpt-4o-mini",

@@ -1,13 +1,31 @@
 {
   "providers": [
     {
+      "id": "chatgpt_space_replica_01",
+      "kind": "chatgpt_space",
+      "enabled": true,
+      "base_url": "https://yousefsg-chatgpt-api-replica-01.hf.space",
+      "base_url_env": "CHATGPT_API_REPLICA_01_BASE_URL",
+      "key_pool": "chatgpt_space_default",
+      "default_timeout_seconds": 540
+    },
+    {
+      "id": "chatgpt_space_replica_02",
+      "kind": "chatgpt_space",
+      "enabled": true,
+      "base_url": "https://yousefsg-chatgpt-api-replica-02.hf.space",
+      "base_url_env": "CHATGPT_API_REPLICA_02_BASE_URL",
+      "key_pool": "chatgpt_space_default",
+      "default_timeout_seconds": 540
+    },
+    {
       "id": "chatgpt_space",
       "kind": "chatgpt_space",
       "enabled": true,
-      "base_url": "https://yousefsg-chatgpt-api.hf.space",
+      "base_url": "https://yousefsg-chatgpt-api-replica-04.hf.space",
       "base_url_env": "CHATGPT_API_BASE_URL",
       "key_pool": "chatgpt_space_default",
-      "default_timeout_seconds": 300
+      "default_timeout_seconds": 540
     },
     {
       "id": "google_gemini",

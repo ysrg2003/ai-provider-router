@@ -30,7 +30,11 @@ class ChatGPTSpaceAdapter:
         if system_prompt.strip():
             messages.append({"role": "system", "content": system_prompt.strip()})
         effective_prompt = user_prompt
-        if tools and any(str(tool.get("type", "")).lower() == "search" or str(tool.get("name", "")).lower() == "search" for tool in tools):
+        if tools and any(
+            str(tool.get("type", "")).lower() in {"search", "google_search", "web_search_preview"}
+            or str(tool.get("name", "")).lower() == "search"
+            for tool in tools
+        ):
             if "ابحث في الويب بحث حي:" not in effective_prompt and "live web search:" not in effective_prompt.lower():
                 effective_prompt = f"ابحث في الويب بحث حي: {effective_prompt}"
         messages.append({"role": "user", "content": effective_prompt})

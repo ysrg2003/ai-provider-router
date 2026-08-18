@@ -47,7 +47,7 @@ class ChatGPTSpaceAdapterTests(unittest.TestCase):
                 system_prompt="",
                 user_prompt="ما آخر موديل؟",
                 timeout_seconds=300,
-                tools=[{"type": "search"}],
+                tools=[{"type": "google_search"}],
             )
         self.assertEqual(result.payload["text"], "grounded")
         self.assertEqual(post.call_args.args[0], "https://space.example/v1/chat/completions")
@@ -217,7 +217,10 @@ class RouterRoutePlanTests(unittest.TestCase):
             video_plan = router.route_plan(user_prompt="توليد فيديو سينمائي")
             self.assertEqual(image_plan["output_type"], "image")
             self.assertEqual(image_plan["route"], "image")
-            self.assertEqual(image_plan["models"][0]["provider"], "chatgpt_space")
+            self.assertEqual(
+                [item["provider"] for item in image_plan["models"][:3]],
+                ["chatgpt_space_replica_01", "chatgpt_space_replica_02", "chatgpt_space"],
+            )
             self.assertEqual(image_plan["models"][0]["model"], "gpt-4o-mini")
             self.assertEqual(image_plan["models"][0]["input_types"], ["text", "image"])
             self.assertEqual(image_plan["models"][0]["output_types"], ["image", "text"])
@@ -225,7 +228,10 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(audio_plan["models"][0]["input_types"], ["text"])
             self.assertEqual(audio_plan["models"][0]["output_types"], ["audio"])
             self.assertEqual(search_plan["route"], "text_grounded_search")
-            self.assertEqual(search_plan["models"][0]["provider"], "chatgpt_space")
+            self.assertEqual(
+                [item["provider"] for item in search_plan["models"][:3]],
+                ["chatgpt_space_replica_01", "chatgpt_space_replica_02", "chatgpt_space"],
+            )
             self.assertEqual(search_plan["models"][0]["tools"], ["search"])
             self.assertEqual(live_plan["output_type"], "live")
             self.assertEqual(video_plan["output_type"], "video_generation")
@@ -235,32 +241,32 @@ class RouterRoutePlanTests(unittest.TestCase):
         import os
 
         with tempfile.TemporaryDirectory() as temp:
-            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = '[{"id":"image-key","key":"secret","project":"p1"}]'
+            os.environ["AI_ROUTER_CHATGPT_KEYS_JSON"] = '[{"id":"image-key","key":"secret","project":"p1"}]'
             try:
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
                 with patch.object(
-                    router.adapters["google_gemini"],
+                    router.adapters["chatgpt_space_replica_01"],
                     "generate_image",
                     return_value=ProviderResponse({"output_type": "image", "data_base64": "aW1hZ2U="}, {}),
                 ) as generate:
                     result = router.complete_auto(user_prompt="أنشئ صورة لقطة")
                 self.assertEqual(result["route"], "image")
                 self.assertEqual(result["intent"], "image")
-                self.assertEqual(generate.call_args.kwargs["model"], "gemini-3-pro-image")
+                self.assertEqual(generate.call_args.kwargs["model"], "gpt-4o-mini")
 
                 router.close()
             finally:
-                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+                os.environ.pop("AI_ROUTER_CHATGPT_KEYS_JSON", None)
 
     def test_complete_auto_passes_grounding_tool(self):
         import os
 
         with tempfile.TemporaryDirectory() as temp:
-            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = '[{"id":"search-key","key":"secret","project":"p1"}]'
+            os.environ["AI_ROUTER_CHATGPT_KEYS_JSON"] = '[{"id":"search-key","key":"secret","project":"p1"}]'
             try:
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
                 with patch.object(
-                    router.adapters["google_gemini"],
+                    router.adapters["chatgpt_space_replica_01"],
                     "complete_interaction_text",
                     return_value=ProviderResponse({"output_type": "text", "text": "grounded"}, {}),
                 ) as complete:
@@ -269,7 +275,7 @@ class RouterRoutePlanTests(unittest.TestCase):
                 self.assertEqual(complete.call_args.kwargs["tools"], [{"type": "google_search"}])
                 router.close()
             finally:
-                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+                os.environ.pop("AI_ROUTER_CHATGPT_KEYS_JSON", None)
 
     def test_summary_exposes_output_routes_without_secrets(self):
         with tempfile.TemporaryDirectory() as temp:

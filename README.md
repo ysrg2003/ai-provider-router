@@ -21,7 +21,7 @@
 
 > الفكرة الأساسية: عدّل الملفات الموجودة داخل `config/` لتغيير المزود أو النموذج أو الترتيب أو مجموعة المفاتيح، ولا تعدّل المشروع الذي يستعمل المدير.
 
-> **حالة التحقق الأخيرة:** نجحت 37 اختبارًا محليًا، وأصبح `chatgpt_space` أول provider لمسارات النص والبحث الحي والصورة. نجح اختبار النص الحي، ووصل اختبار البحث الحي إلى Space. أثبت التشغيل السابق في GitHub Actions أن Space يعيد الصورة، بينما كشفت المحاولة اللاحقة اختلاف المهلة وإعادة المحاولة؛ لذلك أصبح adapter يستخدم مهلة 540 ثانية وثلاث محاولات محدودة، ولا يعتبر الرد النصي صورة. راجع [توثيق ChatGPT Space](docs/chatgpt-space.md) للتشغيل والتشخيص.
+> **حالة التحقق الأخيرة:** نجحت 38 اختبارًا محليًا، وأصبح ChatGPT بثلاث replicas مرتبة أولًا في مسارات النص والبحث الحي والصورة. نجح اختبار النص والبحث الحي، ونجح اختبار الصورة عبر router وأعاد PNG بحجم 2,054,465 بايت وأبعاد 1199×1312. راجع [توثيق ChatGPT Space](docs/chatgpt-space.md) للتشغيل والتشخيص.
 
 ---
 
@@ -780,30 +780,30 @@ git ls-files .env
 
 للتفاصيل القابلة لإعادة الإنتاج، راجع [دليل التشغيل](docs/operations.md) و[كتالوج النماذج والحدود](docs/model-catalog.md). يحتوي دليل التشغيل على روابط GitHub Actions وتقارير smoke المنزوعة الحساسية، ولا يحتوي قيم المفاتيح.
 
-# تكامل ChatGPT Space كمصدر أول
+# تكامل ChatGPT Spaces كمصدر أول
 
-أُضيفت خدمة `chatgpt-api` المنشورة على Hugging Face كـprovider مستقل اسمه `chatgpt_space`. لا يحتاج هذا التكامل إلى Cookies أو Playwright داخل الراوتر؛ فهو يستدعي endpoint HTTP المتوافق مع OpenAI عبر `POST /v1/chat/completions`، ويقرأ Secret من البيئة فقط.
-
-تحتاج إلى إعداد:
+يستخدم router ثلاث نسخ مستقلة من `chatgpt-api` المنشورة على Hugging Face كأول مصادر HTTP لمسارات `text` و`text_grounded_search` و`image` و`image_grounded_search`. الترتيب هو `replica-01` ثم `replica-02` ثم `replica-04`. لا يحتاج router إلى Cookies أو Playwright محليًا؛ فهو يستدعي `POST /v1/chat/completions` ويقرأ Secret من البيئة فقط.
 
 ```dotenv
-CHATGPT_API_BASE_URL=https://yousefsg-chatgpt-api.hf.space
+CHATGPT_API_BASE_URL=https://yousefsg-chatgpt-api-replica-04.hf.space
+CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
+CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
 CHATGPT_API_SECRET_KEY=ضع_المفتاح_الحقيقي_هنا
 ```
 
-يضع `config/models.json` ChatGPT في مقدمة routes الخاصة بـ`text` و`text_grounded_search` و`image` و`image_grounded_search`. في مسار البحث يضيف adapter تلقائيًا العبارة `ابحث في الويب بحث حي:`، وفي مسار الصورة يطبع `data_base64` فقط عندما تعيد Space صورة قابلة للتنزيل في `images[].data_url` أو `images[].src`.
+في البحث يضيف adapter العبارة `ابحث في الويب بحث حي:` عند وصول أداة `google_search`. وفي الصور يعيد `data_base64` فقط عندما تعيد Space صورة مولدة قابلة للتنزيل في `images[].data_url` أو `images[].src`، ويرفض favicon والصور القديمة.
 
 للتجربة:
 
 ```bash
 CHATGPT_API_SECRET_KEY=ضع_المفتاح_هنا \
 ai-router --config-dir config --state-db /tmp/chatgpt-router.db \
-  call-auto --output-type text --grounding search \
-  --system "أجب بالعربية مع روابط المصادر." \
-  --user "ما آخر أخبار نماذج الذكاء الاصطناعي؟"
+  call-auto --output-type image \
+  --operation replica_image \
+  --user "generate image of wise stikman read book in libary"
 ```
 
-التوثيق الكامل، بما في ذلك تدوير المفاتيح، فحص الجاهزية، توليد الصور، حدود المهلة، ومراجعة الأسرار، موجود في [docs/chatgpt-space.md](docs/chatgpt-space.md). كما توجد نسخة مستقلة من ملفات الخدمة في `vendors/chatgpt-api/` دون `.git` أو النسخة المتداخلة من Space.
+أثبت الاختبار الحي الحالي نجاح النص والبحث والصورة عبر router. التوثيق الكامل، بما في ذلك ترتيب replicas، Secrets، فحص الجاهزية، حدود المهلة، وتوليد الصور، موجود في [docs/chatgpt-space.md](docs/chatgpt-space.md). كما أن `vendors/chatgpt-api/` نسخة مطابقة لمصدر `chatgpt-api` وآخر release، دون `.git` أو أسرار.
 
 # القسم الثالث عشر: كيف تعرف أن النظام يعمل؟
 
