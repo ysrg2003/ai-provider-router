@@ -18,22 +18,17 @@
 
 ## التطابق والإصدار
 
-تمت مقارنة hash محتوى الملفات، مع استبعاد `.git` وملفات cache:
+المصدر الحالي في `chatgpt-api` هو commit `5d2667a`، وهو إصدار `v1.2.0-storage-state` الذي يضيف دعم Playwright Storage State الكامل. تم نشر الكود الموحد إلى replica-01 بعد تحديث Secret الخاص بحساب `ben2003`، بينما بقي كل replica مرتبطًا بحساب ChatGPT الخاص به.
 
-| النسخة | SHA لمحتوى الملفات |
-|---|---|
-| `/home/ubuntu/work/chatgpt-api` | `7520671815fa14b8bd32f1e3621d23b7325c92e110342f13a69c427cee4a4213` |
-| `chatgpt-api-replica-01` | مطابق |
-| `chatgpt-api-replica-02` | مطابق |
-| `chatgpt-api-replica-04` | مطابق |
+| النسخة | commit أو بصمة التحقق | الملاحظة |
+|---|---|---|
+| `/home/ubuntu/work/chatgpt-api` | `5d2667a` | المصدر المرجعي |
+| `chatgpt-api-replica-01` | `3b6620c` | كود Storage State منشور، مع جلسة ben2003 فقط |
+| `chatgpt-api-replica-02` | `36fc940` | كود Storage State منشور، مع جلسة pn2003 فقط |
+| `chatgpt-api-replica-04` | `1abadb6` | كود Storage State منشور، مع جلسة sg فقط |
+| `vendors/chatgpt-api/` | `380a2815d720bbc524deb84c1467467b50b8c109467534dda604b6590099e4a4` | بصمة محتوى حتمية مطابقة للمصدر، مع استبعاد Git وcache وملفات الأسرار |
 
-كذلك يطابق commit المصدر المحلي commit `main` في GitHub وcommit وسم الإصدار `v1.1.2-image-boundary-docs`:
-
-```text
-5a7ae0d84b59457d13a4e974e95e88f43e6ae025
-```
-
-أما `vendors/chatgpt-api/` في router فقد أُعيدت مزامنته مع المصدر الحالي، دون `.git` أو ملفات أسرار.
+توجد فروقات commit طبيعية بين مستودعات Spaces بسبب نشر كل Space في وقت مختلف؛ معيار التطابق التشغيلي هو وجود كود `browser_gateway.py` الحالي وسر Storage State الخاص بالحساب الصحيح، لا نقل جلسة حساب إلى Space أخرى. لا تُحفظ ملفات Storage State في Git أو في `vendors/chatgpt-api/`.
 
 ## قاعدة فصل المسارات
 
@@ -110,19 +105,31 @@ ai-router --config-dir config --state-db /tmp/chatgpt-router-image.db \
 
 ## نتيجة الاختبار الحي الحالي
 
-| الاختبار | النتيجة |
+أُجريت اختبارات النص والبحث عبر المسار الحقيقي للـrouter باستخدام `config/providers.json` و`config/models.json` كما هما، ومن دون `CHATGPT_API_BASE_URL_OVERRIDE` أو أي override مؤقت. كما اختُبر replica-01 مباشرة بعد نشر Storage State الخاص بحساب `ben2003`.
+
+| الاختبار | النتيجة الفعلية |
 |---|---|
-| النص عبر router | نجح، وأعاد `نجح اختبار router مع replicas` عبر route `text` |
-| البحث الحي عبر router | نجح HTTP وroute `text_grounded_search`، وأضاف prefix البحث الحي؛ يجب التحقق من صحة الادعاءات والروابط خارجياً قبل الاعتماد عليها |
-| الصورة عبر router | نجحت عبر route `image`، وأعاد router PNG بصيغة `image/png`، حجمه `2,054,465` بايت وأبعاده `1199×1312` |
-| الاختبارات المحلية | `38` اختبارًا ناجحًا |
-| compileall | ناجح للمصدر والنسخة المضمنة |
+| replica-01 مباشرة — نص | **نجح HTTP 200** وأعاد `replica-01 storage state text probe` من endpoint `v1/chat/completions`. |
+| replica-01 مباشرة — بحث | **نجح HTTP 200** مع إجابة بحث حي ومراجع نصية. |
+| router الحقيقي — نص | **نجح**، وأعاد `router final replica-01 text probe` عبر route `text`. |
+| router الحقيقي — بحث حي | **نجح** عبر route `text_grounded_search`، وأعاد JSON يتضمن الإجابة واسم النموذج، مع إضافة مسار البحث الحي تلقائيًا. يجب التحقق من الادعاءات والروابط خارجيًا قبل اعتمادها كمعلومة نهائية. |
+| router الحقيقي — صورة | **لم يكتمل** في محاولة واحدة فقط: replica-01 لم يعرض image data بعد ثلاث محاولات داخلية، replica-02 أعاد `429` بسبب quota توليد الصور، وreplica-04 أغلق الاتصال بحالة transient؛ انتهى router بـ`AllProvidersFailed`. لم تُكرر المحاولة احترامًا للحصة اليومية. توجد نتيجة سابقة مستقلة موثقة لنجاح توليد PNG عبر replica-04 قبل استنفاد quota، لذلك لا تُفسر هذه النتيجة كفشل مصادقة أو Base URL وحده. |
+| الاختبارات المحلية | `38` اختبارًا ناجحًا في router، و`9` اختبارات ناجحة في chatgpt-api قبل نشر replica-01. |
+| compileall | ناجح للمصدر والنسخة المضمنة. |
+
+> **الخلاصة التشغيلية:** النص والبحث الحي يعملان عبر router الحقيقي بعد توحيد Storage State في replica-01. اختبار الصورة النهائي كان bounded مرة واحدة، وفشل بسبب مزيج من عدم إرجاع صورة من أول replica، quota في replica-02، وانقطاع مؤقت في replica-04؛ لا ينبغي إعادة تشغيله حتى تتجدد الحصة أو يتوفر اختبار منفصل مصرح به.
 
 ## أسرار Spaces
 
 `API_SECRET_KEY` يحمي endpoint HTTP؛ يرسله المستهلك في `Authorization: Bearer ...`. `CHATGPT_COOKIES_NETSCAPE` يسجل جلسة ChatGPT Web داخل Space فقط، ولا يجب نسخه إلى router أو Git. Hugging Face Access Token مخصص لإدارة Hub ورفع الملفات، وليس بديلًا عن `API_SECRET_KEY`.
 
-قيم Secrets write-only في Hugging Face؛ يمكن التحقق من أسماء المفاتيح فقط، لا قراءة قيمها. عند تغيير Cookies أو Secret، تعيد Hugging Face تشغيل Space تلقائيًا. يجب تدوير Cookies وAPI keys إذا ظهرت في سجل أو محادثة.
+### `CHATGPT_STORAGE_STATE_JSON` — جلسة Playwright الكاملة
+
+هذا Secret اختياري عالي الحساسية، ويُستخدم داخل `chatgpt-api` عندما لا تكفي Netscape Cookies بسبب Cloudflare أو `session expired`. يجب أن يكون JSON كاملًا بصيغة Playwright Storage State، وأن يخص حساب ChatGPT الموجود في Space نفسها. في هذا النشر، يستخدم `replica-01` جلسة `ben2003` فقط، و`replica-02` جلسة `pn2003` فقط، و`replica-04` جلسة `sg` فقط. لا تضع هذا Secret في router أو `AI_ROUTER_CHATGPT_KEYS_JSON`، ولا تخلط جلسة حساب مع Space أخرى.
+
+للحصول عليه، سجّل الدخول يدويًا بالحساب المقصود داخل Chrome/Playwright، صدّر Storage State من السياق المصادق، ثم خزّنه في Hugging Face Space عبر **Settings → Repository secrets and variables → Secrets** بالاسم الدقيق `CHATGPT_STORAGE_STATE_JSON`. لا تطبع JSON في الطرفية، ولا ترفقه في commit أو issue أو سجل CI. نجاحه يُقاس بعودة `/health` إلى `ready: true` ثم نجاح طلب نص مباشر؛ ظهور `session expired` يعني أن الجلسة انتهت ويجب تصدير جلسة جديدة للحساب نفسه.
+
+قيم Secrets write-only في Hugging Face؛ يمكن التحقق من أسماء المفاتيح فقط، لا قراءة قيمها. عند تغيير Cookies أو Storage State أو Secret، تعيد Hugging Face تشغيل Space تلقائيًا. يجب تدوير Cookies وStorage State وAPI keys فورًا إذا ظهرت في سجل أو محادثة، ثم تحديث Space أو router بالقيمة الجديدة واختبار health دون طباعة السر.
 
 ## فحوص التشغيل والأمن
 
