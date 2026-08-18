@@ -23,6 +23,7 @@ LOGGER = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class BrowserSettings:
     cookies_netscape: str
+    storage_state_json: str
     profile_path: str
     headless: bool
     request_timeout_seconds: float
@@ -79,48 +80,80 @@ class BrowserGateway:
     async def start(self) -> None:
         if self.ready:
             return
-        if not self.settings.cookies_netscape.strip():
-            self.startup_error = "CHATGPT_COOKIES_NETSCAPE is not configured"
-            LOGGER.error("Browser unavailable: ChatGPT cookie secret is missing")
-            return
+        storage_state: dict[str, Any] | None = None
+        storage_state_text = self.settings.storage_state_json.strip()
+        if storage_state_text:
+            try:
+                parsed_state = json.loads(storage_state_text)
+                if not isinstance(parsed_state, dict) or not isinstance(parsed_state.get("cookies", []), list):
+                    raise ValueError("storage state must be a JSON object with a cookies array")
+                storage_state = parsed_state
+            except Exception as exc:
+                self.startup_error = f"CHATGPT_STORAGE_STATE_JSON is invalid: {self._safe_error(exc)}"
+                LOGGER.error("Browser unavailable: storage state secret is invalid")
+                return
 
         cookies = parse_netscape_cookies(self.settings.cookies_netscape)
-        if not cookies:
-            self.startup_error = "CHATGPT_COOKIES_NETSCAPE contains no valid cookies"
-            LOGGER.error("Browser unavailable: cookie secret contains no valid entries")
+        if storage_state is None and not cookies:
+            self.startup_error = "CHATGPT_COOKIES_NETSCAPE or CHATGPT_STORAGE_STATE_JSON is required"
+            LOGGER.error("Browser unavailable: no session state secret is configured")
             return
 
         try:
             self.playwright = await async_playwright().start()
-            self.browser = await self.playwright.chromium.launch(
-                headless=self.settings.headless,
-                args=[
-                    "--disable-blink-features=AutomationControlled",
-                    "--no-sandbox",
-                    "--disable-gpu",
-                    "--disable-dev-shm-usage",
-                    "--disable-setuid-sandbox",
-                ],
+            launch_args = [
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-gpu",
+                "--disable-dev-shm-usage",
+                "--disable-setuid-sandbox",
+            ]
+            user_agent = (
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
             )
-            self.context = await self.browser.new_context(
-                user_agent=(
-                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-                ),
-                viewport={"width": 1440, "height": 900},
-            )
+            if storage_state is not None:
+                self.browser = await self.playwright.chromium.launch(
+                    headless=self.settings.headless,
+                    args=launch_args,
+                )
+                self.context = await self.browser.new_context(
+                    storage_state=storage_state,
+                    user_agent=user_agent,
+                    viewport={"width": 1440, "height": 900},
+                )
+            elif self.settings.profile_path:
+                os.makedirs(self.settings.profile_path, exist_ok=True)
+                self.context = await self.playwright.chromium.launch_persistent_context(
+                    user_data_dir=self.settings.profile_path,
+                    headless=self.settings.headless,
+                    args=launch_args,
+                    user_agent=user_agent,
+                    viewport={"width": 1440, "height": 900},
+                )
+                self.browser = None
+            else:
+                self.browser = await self.playwright.chromium.launch(
+                    headless=self.settings.headless,
+                    args=launch_args,
+                )
+                self.context = await self.browser.new_context(
+                    user_agent=user_agent,
+                    viewport={"width": 1440, "height": 900},
+                )
             await self.context.add_init_script(
                 "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
             )
-            accepted = 0
-            for cookie in cookies:
-                try:
-                    await self.context.add_cookies([cookie])
-                    accepted += 1
-                except Exception:
-                    LOGGER.warning("Skipped one invalid cookie entry")
-            if accepted == 0:
-                raise RuntimeError("No cookie entries could be loaded")
+            accepted = len(storage_state.get("cookies", [])) if storage_state is not None else 0
+            if storage_state is None:
+                for cookie in cookies:
+                    try:
+                        await self.context.add_cookies([cookie])
+                        accepted += 1
+                    except Exception:
+                        LOGGER.warning("Skipped one invalid cookie entry")
+                if accepted == 0:
+                    raise RuntimeError("No cookie entries could be loaded")
 
             self.page = await self.context.new_page()
             self.page.set_default_timeout(5_000)
@@ -153,7 +186,7 @@ class BrowserGateway:
                 LOGGER.debug("Ignoring browser cleanup error", exc_info=True)
         if self.playwright is not None:
             try:
-                self.playwright.stop()
+                await self.playwright.stop()
             except Exception:
                 LOGGER.debug("Ignoring Playwright cleanup error", exc_info=True)
         self.context = None
@@ -181,12 +214,58 @@ class BrowserGateway:
                     count = await locator.count()
                     for index in range(count):
                         candidate = locator.nth(index)
-                        if await candidate.is_visible():
-                            return candidate
+                        classes = (await candidate.get_attribute("class") or "").lower()
+                        if "fallbacktextarea" in classes or "fallback-textarea" in classes:
+                            # ChatGPT's fallback editor is present in the DOM but is
+                            # not interactive when the rich editor is active.
+                            continue
+                        if not await candidate.is_visible() or not await candidate.is_editable():
+                            continue
+                        try:
+                            box = await candidate.bounding_box()
+                            if not box or box["width"] < 4 or box["height"] < 4:
+                                continue
+                            # Some ChatGPT shells mark the real, visible ProseMirror
+                            # editor as aria-hidden=true. Visibility, editability, and
+                            # non-zero geometry are stronger interaction signals.
+                            await candidate.scroll_into_view_if_needed(timeout=1_000)
+                        except Exception:
+                            continue
+                        return candidate
                 except Exception:
                     continue
             await asyncio.sleep(0.5)
         return None
+
+    async def _input_diagnostics(self) -> str:
+        if self.page is None:
+            return "page=none"
+        parts = [f"url={self.page.url}"]
+        try:
+            parts.append(f"title={(await self.page.title())[:80]}")
+        except Exception:
+            parts.append("title=unavailable")
+        for selector in ("#prompt-textarea", "textarea", 'div[contenteditable="true"]'):
+            try:
+                locator = self.page.locator(selector)
+                count = await locator.count()
+                entries = []
+                for index in range(min(count, 3)):
+                    candidate = locator.nth(index)
+                    try:
+                        hidden = (await candidate.get_attribute("aria-hidden") or "").lower()
+                        classes = (await candidate.get_attribute("class") or "")[:80]
+                        visible = await candidate.is_visible()
+                        editable = await candidate.is_editable()
+                        box = await candidate.bounding_box()
+                        geometry = "none" if not box else f"{int(box['width'])}x{int(box['height'])}"
+                        entries.append(f"{index}:hidden={hidden},class={classes},visible={visible},editable={editable},box={geometry}")
+                    except Exception:
+                        entries.append(f"{index}:inspect=error")
+                parts.append(f"{selector}:count={count}[{' | '.join(entries)}]")
+            except Exception:
+                parts.append(f"{selector}:count=error")
+        return " ".join(parts)
 
     async def new_chat(self) -> dict[str, Any]:
         async with self.lock:
@@ -207,16 +286,114 @@ class BrowserGateway:
             if not self.ready or self.page is None:
                 return {"success": False, "error": self.startup_error or "Browser is not ready"}
             try:
-                input_box = await self.find_input(15)
-                if input_box is None:
-                    raise RuntimeError("Could not find ChatGPT input")
                 previous_count = await self._assistant_count()
                 previous_text = await self._latest_assistant_text()
                 previous_image_count = await self._image_count() if capture_images else 0
-                await input_box.click()
-                await input_box.fill("")
-                await input_box.fill(prompt)
-                await input_box.press("Enter")
+                submitted = False
+                interaction_error = ""
+                for attempt in range(2):
+                    input_box = await self.find_input(10)
+                    if input_box is None and self.page is not None:
+                        try:
+                            await self.page.reload(wait_until="domcontentloaded", timeout=45_000)
+                        except Exception:
+                            await self.page.goto("https://chatgpt.com/", wait_until="domcontentloaded", timeout=45_000)
+                        input_box = await self.find_input(12)
+                    if input_box is None:
+                        continue
+                    try:
+                        try:
+                            await input_box.click(timeout=8_000)
+                        except Exception:
+                            await input_box.click(timeout=8_000, force=True)
+                        tag_name = await input_box.evaluate("(el) => el.tagName.toLowerCase()")
+                        if tag_name == "div":
+                            # First use Playwright's contenteditable-aware fill so the
+                            # site's React/ProseMirror state receives a real input event.
+                            try:
+                                await input_box.fill(prompt, timeout=8_000)
+                            except Exception:
+                                await input_box.press_sequentially(prompt, delay=5, timeout=12_000)
+                            current_content = await input_box.evaluate(
+                                "(el) => String(el.innerText ?? el.textContent ?? '')"
+                            )
+                            if current_content.strip() != prompt.strip():
+                                await input_box.press_sequentially(prompt, delay=5, timeout=12_000)
+                            # Explicitly notify the editor even when its accessibility
+                            # wrapper is marked aria-hidden by the ChatGPT shell.
+                            await input_box.dispatch_event(
+                                "input", {"inputType": "insertText", "data": prompt}
+                            )
+                        else:
+                            await input_box.fill(prompt, timeout=8_000)
+                        await asyncio.sleep(0.2)
+                        # ChatGPT's ProseMirror composer is most reliably submitted by
+                        # the real keyboard path. Try the same Enter action a user would
+                        # perform before falling back to the explicit send button.
+                        await input_box.focus()
+                        await self.page.keyboard.press("Enter", delay=20)
+                        await asyncio.sleep(1.2)
+                        enter_started_generation = await self._generation_active()
+                        enter_created_assistant = await self._assistant_count() > previous_count
+                        if enter_started_generation or enter_created_assistant:
+                            LOGGER.info(
+                                "ChatGPT prompt submitted with Enter; generation=%s assistant_count_increased=%s",
+                                enter_started_generation,
+                                enter_created_assistant,
+                            )
+                        else:
+                            send_button = self.page.locator(
+                                '#composer-submit-button, '
+                                'button[data-testid="send-button"], '
+                                'button[aria-label*="Send prompt" i], '
+                                'button[aria-label="Send" i], '
+                                'button[aria-label*="إرسال" i]'
+                            )
+                            sent_by_button = False
+                            for send_index in range(await send_button.count()):
+                                candidate_send = send_button.nth(send_index)
+                                if await candidate_send.is_visible() and await candidate_send.is_enabled():
+                                    try:
+                                        await candidate_send.click(timeout=8_000)
+                                    except Exception:
+                                        await candidate_send.click(timeout=8_000, force=True)
+                                    await asyncio.sleep(1.0)
+                                    # A Playwright locator click can complete without
+                                    # triggering this shell's real user-gesture path.
+                                    # Repeat through the page mouse at the visible button
+                                    # center only when no generation/assistant signal began.
+                                    if not await self._generation_active() and await self._assistant_count() <= previous_count:
+                                        try:
+                                            button_box = await candidate_send.bounding_box()
+                                            if button_box:
+                                                await self.page.mouse.click(
+                                                    button_box["x"] + button_box["width"] / 2,
+                                                    button_box["y"] + button_box["height"] / 2,
+                                                )
+                                                await asyncio.sleep(1.0)
+                                                LOGGER.info("ChatGPT send fallback repeated with page mouse click")
+                                        except Exception as mouse_exc:
+                                            LOGGER.debug("Page mouse send fallback failed: %s", self._safe_error(mouse_exc))
+                                    sent_by_button = True
+                                    LOGGER.info("ChatGPT prompt submitted with explicit send button fallback")
+                                    break
+                            if not sent_by_button:
+                                LOGGER.warning("Enter produced no generation signal and no enabled send button was found")
+                        submitted = True
+                        break
+                    except Exception as exc:
+                        interaction_error = self._safe_error(exc)[:240]
+                        if attempt == 0 and self.page is not None:
+                            try:
+                                await self.page.reload(wait_until="domcontentloaded", timeout=45_000)
+                            except Exception:
+                                pass
+                if not submitted:
+                    diagnostic = await self._input_diagnostics()
+                    if interaction_error:
+                        diagnostic += f" interaction={interaction_error}"
+                    LOGGER.warning("ChatGPT input interaction unavailable: %s", diagnostic)
+                    raise RuntimeError(f"Could not interact with ChatGPT input ({diagnostic})")
                 self.last_request_at = time.time()
 
                 response_text, images = await self._wait_for_response(
@@ -269,7 +446,47 @@ class BrowserGateway:
             await asyncio.sleep(1)
         if last_text or last_images:
             return last_text.strip(), last_images
-        raise TimeoutError("ChatGPT response did not stabilize before timeout")
+        diagnostic = await self._response_diagnostics()
+        raise TimeoutError(f"ChatGPT response did not stabilize before timeout ({diagnostic})")
+
+    async def _response_diagnostics(self) -> str:
+        if self.page is None:
+            return "page=none"
+        parts = []
+        for selector in ('[data-message-author-role="assistant"]', "main article", "main"):
+            try:
+                locator = self.page.locator(selector)
+                count = await locator.count()
+                lengths = []
+                for index in range(min(count, 3)):
+                    try:
+                        lengths.append(str(len(await locator.nth(index).inner_text(timeout=2_000))))
+                    except Exception:
+                        lengths.append("error")
+                parts.append(f"{selector}:count={count},lengths={','.join(lengths)}")
+            except Exception:
+                parts.append(f"{selector}:error")
+        parts.append(f"generation_active={await self._generation_active()}")
+        try:
+            input_box = self.page.locator("#prompt-textarea")
+            input_count = await input_box.count()
+            input_lengths = []
+            for index in range(min(input_count, 2)):
+                input_lengths.append(str(len(await input_box.nth(index).evaluate("(el) => String(el.value ?? el.innerText ?? el.textContent ?? '')"))))
+            parts.append(f"prompt_count={input_count},prompt_lengths={','.join(input_lengths)}")
+        except Exception:
+            parts.append("prompt_diagnostic=error")
+        try:
+            send_buttons = self.page.locator("#composer-submit-button")
+            send_count = await send_buttons.count()
+            send_states = []
+            for index in range(min(send_count, 2)):
+                button = send_buttons.nth(index)
+                send_states.append(f"{await button.is_visible()}/{await button.is_enabled()}")
+            parts.append(f"send_button_count={send_count},send_states={','.join(send_states)}")
+        except Exception:
+            parts.append("send_button_diagnostic=error")
+        return " ".join(parts)
 
     async def _generation_active(self) -> bool:
         if self.page is None:
@@ -443,7 +660,8 @@ class BrowserGateway:
 def browser_settings_from_env() -> BrowserSettings:
     return BrowserSettings(
         cookies_netscape=os.getenv("CHATGPT_COOKIES_NETSCAPE", ""),
-        profile_path=os.getenv("CHATGPT_PROFILE_PATH", ""),
+        storage_state_json=os.getenv("CHATGPT_STORAGE_STATE_JSON", ""),
+        profile_path=os.getenv("CHATGPT_PROFILE_PATH", "/tmp/chatgpt-profile"),
         headless=os.getenv("CHATGPT_HEADLESS", "true").lower() in {"1", "true", "yes"},
         request_timeout_seconds=float(os.getenv("CHATGPT_REQUEST_TIMEOUT", "210")),
         ready_timeout_seconds=float(os.getenv("CHATGPT_READY_TIMEOUT", "180")),

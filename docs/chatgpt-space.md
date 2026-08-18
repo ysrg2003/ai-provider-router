@@ -4,7 +4,9 @@
 
 ## الغرض
 
-يستخدم `ai-provider-router` ثلاث نسخ مستقلة من خدمة `chatgpt-api` كمصادر أولى مرتبة لمسارات النص والبحث الحي وتوليد الصور. الاتصال بين router وSpaces يتم عبر HTTP فقط؛ لا تُنسخ Cookies أو جلسة Playwright إلى router، وتبقى Cookies داخل إعدادات Hugging Face لكل Space.
+يستخدم `ai-provider-router` ثلاث نسخ مستقلة من خدمة `chatgpt-api` كمصادر أولى مرتبة لمسارات النص والبحث الحي وتوليد الصور. الاتصال بين router وSpaces يتم عبر HTTP فقط؛ لا تُنسخ Cookies أو جلسة Playwright أو `CHATGPT_STORAGE_STATE_JSON` إلى router، وتبقى حالة الجلسة داخل إعدادات Hugging Face لكل Space.
+
+عند فشل Netscape Cookies بسبب Cloudflare أو `session expired`، يمكن لـ`chatgpt-api` استخدام Secret اختياري باسم `CHATGPT_STORAGE_STATE_JSON`. هذا Secret يخص الحساب والجلسة داخل Space بعينها؛ لا يُوضع في `ai-provider-router` ولا في `AI_ROUTER_CHATGPT_KEYS_JSON`. إذا وُجد Storage State صالح، يتغلب على `CHATGPT_COOKIES_NETSCAPE` داخل تلك Space فقط. يجب اختبار كل حساب على حدة، لأن نقل Storage State الخاص بـ`sg` إلى replica أخرى يربطها بحساب sg.
 
 | الترتيب | Provider ID | Space | Base URL |
 |---:|---|---|---|
@@ -57,7 +59,7 @@ AI_ROUTER_CHATGPT_KEYS_JSON=[]
 
 القيمة الافتراضية موجودة في `config/providers.json`، ولذلك لا يلزم وضع Base URLs في `.env` إلا عند الحاجة إلى تبديلها. لا تحفظ `.env` في Git.
 
-يستخدم كل Provider مجموعة المفاتيح نفسها `chatgpt_space_default`. يستطيع router قراءة Secret واحد من `CHATGPT_API_SECRET_KEY` أو مصفوفة مرتبة من `AI_ROUTER_CHATGPT_KEYS_JSON`. في الإنتاج، يجب أن تكون قيمة كل Secret مساوية لـ`API_SECRET_KEY` في Space الهدف.
+يستخدم كل Provider مجموعة المفاتيح نفسها `chatgpt_space_default`. يستطيع router قراءة Secret واحد من `CHATGPT_API_SECRET_KEY` أو مصفوفة مرتبة من `AI_ROUTER_CHATGPT_KEYS_JSON`. في الإنتاج، يجب أن تكون قيمة كل Secret مساوية لـ`API_SECRET_KEY` في Space الهدف. أما `CHATGPT_STORAGE_STATE_JSON` و`CHATGPT_COOKIES_NETSCAPE` فهما Secrets داخل Space فقط، ولا يعرف router محتواهما.
 
 ## ترتيب routes
 

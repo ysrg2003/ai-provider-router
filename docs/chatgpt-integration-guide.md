@@ -459,7 +459,13 @@ assert payload["text"]
 4. أضف Base URLs كـVariables فقط إذا أردت override؛ لا تحتاج إلى وضعها كSecrets.
 5. شغّل workflow bounded، ثم افحص artifact/JSON لا اللون الأخضر وحده.
 
-GitHub يوضح أن Secrets تُستخدم عبر context `secrets` داخل workflow، ولا تُمرر من forked workflows عادةً [3]. لا تضع Cookie session في workflow إلا بعد مراجعة أمنية صريحة؛ الأفضل أن تظل داخل Spaces.
+GitHub يوضح أن Secrets تُستخدم عبر context `secrets` داخل workflow، ولا تُمرر من forked workflows عادةً [3]. لا تضع Cookie session أو `CHATGPT_STORAGE_STATE_JSON` في workflow إلا بعد مراجعة أمنية صريحة؛ الأفضل أن تظل داخل Space الحساب المطابق لها. router يحتاج فقط `CHATGPT_API_SECRET_KEY` أو key pool، ولا يحتاج Cookies أو Storage State.
+
+### Storage State عند فشل Netscape Cookies
+
+إذا ظهرت `Just a moment...` أو `Your session has expired` داخل Space رغم أن Chrome الحي يعمل، صدّر Playwright Storage State من Profile اختباري صالح وضعه في Secret `CHATGPT_STORAGE_STATE_JSON` داخل **Space نفسها**. إذا كان Storage State صالحًا، يستخدمه `chatgpt-api` بدل `CHATGPT_COOKIES_NETSCAPE`. لا تضع هذا JSON في `ai-provider-router`، ولا تشارك State حساب `sg` مع `pn2003` أو `ben2003`؛ لكل replica حساب وجلسة منفصلان.
+
+يجب إثبات النجاح بطلب نص يعيد Assistant response، لا بمجرد ظهور composer. بعد نجاح النص يمكن اختبار البحث، أما اختبار الصورة فيستهلك حصة ChatGPT اليومية وقد يفشل بـ429 حتى عندما تكون الخدمة والجلسة سليمتين.
 
 ## 19. الاختبارات
 
@@ -486,6 +492,8 @@ python -m json.tool config/models.json >/dev/null
 | كل replicas تعيد 401 | خطأ مشترك في key pool | تحقق من JSON/fallback وSecret names |
 | `/health` 503 | Space يبني أو Chromium/Cookies غير جاهزة | افتح runtime/logs ثم أعد التشغيل |
 | `Locator.click` timeout | Cookie منتهية أو واجهة ChatGPT غير متوقعة | حدّث Cookies وأعد تشغيل Space |
+| `Just a moment...` أو `session expired` | Netscape Cookies لا تحمل Session State كاملة | صدّر Storage State من Profile اختباري صالح، وضعه في `CHATGPT_STORAGE_STATE_JSON` داخل Space المطابقة للحساب |
+| `CHATGPT_STORAGE_STATE_JSON is invalid` | Secret ليس JSON صالحًا أو قُص أثناء اللصق | أعد التصدير والصق JSON كاملًا، ولا تضعه في Variable أو Git |
 | `You've hit the Free plan limit` | حد ChatGPT Web، غالبًا خاص بالصور | انتظر reset أو استخدم حسابًا يملك الحصة؛ لا تعدّل API key فقط |
 | `images=[]` | لا توجد صورة مولدة بعد أو تم رفض asset | انتظر/أعد المحاولة أو راجع Space مباشرة |
 | نص البحث بلا مصادر موثوقة | رد النموذج غير كافٍ للتحقق | افحص الروابط خارجيًا، ولا تعتمد على أسماء أو تواريخ غير موثقة |
