@@ -56,6 +56,21 @@ class OpenRouterAdapterTests(unittest.TestCase):
             self.assertEqual(len(complete_route.call_args.kwargs["specs"]), 16)
             router.close()
 
+    def test_openrouter_json_pool_uses_documented_environment_name(self):
+        previous = os.environ.get("AI_ROUTER_OPENROUTER_KEYS_JSON")
+        os.environ["AI_ROUTER_OPENROUTER_KEYS_JSON"] = '[{"id":"or-test","key":"placeholder-openrouter-key"}]'
+        try:
+            with tempfile.TemporaryDirectory() as temp:
+                router = AIRouter(config_dir=ROOT / "config", state_db=Path(temp) / "router.db")
+                keys = router.config.keys_for("openrouter")
+                self.assertEqual([(key.key_id, key.secret) for key in keys], [("or-test", "placeholder-openrouter-key")])
+                router.close()
+        finally:
+            if previous is None:
+                os.environ.pop("AI_ROUTER_OPENROUTER_KEYS_JSON", None)
+            else:
+                os.environ["AI_ROUTER_OPENROUTER_KEYS_JSON"] = previous
+
     def test_openrouter_single_token_fallback_is_loaded(self):
         previous = os.environ.get("OPENROUTER_API_KEY")
         os.environ["OPENROUTER_API_KEY"] = "placeholder-openrouter-key"

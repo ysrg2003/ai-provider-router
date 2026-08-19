@@ -4,6 +4,17 @@
 
 ## خريطة سريعة
 
+> **قاعدة الربط:** أسماء المتغيرات لا تُقرأ عشوائيًا من كل الملفات؛ `config/key_pools.json` يحدد pool واسم البيئة، `src/ai_router/config.py` يحمّل القيمة ويفك JSON، `src/ai_router/router.py` يمررها إلى adapter، و`.github/workflows/*.yml` يحقن Secrets في live jobs. ابحث عن الاسم في هذه الملفات عند التشخيص، ولا تعدّل القيمة داخل JSON config.
+
+| المجموعة | تعريف الاسم | القراءة البرمجية | الاستخدام الخارجي |
+|---|---|---|---|
+| ChatGPT | `config/key_pools.json` → `chatgpt_space_default` | `RouterConfig.keys_for()` → `ChatGPTSpaceAdapter` | `chatgpt-spaces-functional.yml` أو `.env` |
+| Gemini | `config/key_pools.json` → `gemini_default` | `RouterConfig.keys_for()` → `GeminiAdapter` | `live-smoke.yml` أو `.env` |
+| Hugging Face | `config/key_pools.json` → `huggingface_default` | `RouterConfig.keys_for()` → `OpenAICompatibleAdapter` | `live-smoke.yml` أو `.env` |
+| OpenRouter | `config/key_pools.json` → `openrouter_default` | `RouterConfig.keys_for()` → `OpenAICompatibleAdapter` | `live-smoke.yml` أو `.env` |
+| NVIDIA | `config/key_pools.json` → `nvidia_default` | `RouterConfig.keys_for()` → `OpenAICompatibleAdapter` | `live-smoke.yml` و`nvidia-functional.yml` |
+| Base URLs/state | `.env.example` و`config/providers.json` | `RouterConfig.load()` و`RouterStore` | CLI، Docker، GitHub Variables |
+
 | الاسم | التصنيف | مطلوب؟ | يقرأه | مكانه الآمن |
 |---|---|---|---|---|
 | `CHATGPT_API_SECRET_KEY` | secret | اختياري إذا كان ChatGPT route مطلوبًا | `chatgpt_space_default` | local `.env` أو GitHub Secret |
@@ -199,7 +210,7 @@
 
 1. سجّل الدخول إلى OpenRouter.
 2. افتح صفحة Keys وأنشئ key محدودًا.
-3. خزّنه كـ`OPENROUTER_API_KEY` أو JSON pool.
+3. خزّنه كـ`OPENROUTER_API_KEY` أو JSON array في `AI_ROUTER_OPENROUTER_KEYS_JSON`.
 4. شغّل text smoke محدودًا وتحقق من route.
 
 **Safe placeholder and format:** `OPENROUTER_API_KEY=sk-or-<key>`.

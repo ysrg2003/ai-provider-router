@@ -1,180 +1,221 @@
-# AI_CONTEXT.md
+# AI_CONTEXT.md — ai-provider-router
 
 ## 1. الهوية والحدود
 
-`ai-provider-router` هو **موجّه JSON متعدد المزودين** مكتوب بـPython 3.11+؛ يستقبل طلبًا واحدًا، يختار route حسب نوع المخرج والـgrounding، ثم يجرّب providers وmodels وkeys بالترتيب، ويسجل النجاح والفشل وحالة التدوير في SQLite. وصف المشروع الرسمي موجود في [`pyproject.toml`](pyproject.toml) وشرح الاستخدام للمبتدئ في [`README.md`](README.md).
+`ai-provider-router` مشروع Python 3.11+ يقدم مكتبة وCLI لتوجيه طلبات JSON إلى عدة مزودي ذكاء اصطناعي. يختار route أو chain، يمر على model/provider/key بالترتيب، يطبق fallback محدودًا، ويسجل cooldown وcursor وحالة النجاح أو الفشل في SQLite.
 
-المشروع **ليس** model server ولا مخزنًا للمفاتيح، ولا ينفذ تلقائيًا كل endpoint في كتالوج خارجي. هو orchestration layer: يملك config، adapters، fallback، cooldown، وحالة rotation، بينما تملك كل خدمة خارجية inference الفعلي وquota والـauthentication.
+المشروع لا يستضيف النماذج ولا ينشئ API keys ولا يضمن توفر كل model خارجي. `route-plan` تخطيط محلي لا يثبت صحة provider؛ البرهان الخارجي هو response أو artifact حقيقي. يستخدم المشروع حاليًا ChatGPT replica-01 وreplica-02 وGemini وHugging Face وOpenRouter وNVIDIA.
 
-> **القاعدة الذهبية:** عدّل `config/` لإضافة provider/model/order عندما تكون طبقة adapter موجودة، ولا تضع أي secret أو cookie أو Storage State في Git أو في هذا الملف.
+المرجع المنشور الأخير هو `v1.2.27-default-all-providers`، وآخر commit موثق في router هو `c5e5a28`. لا توجد Secrets أو Cookies أو Storage State في المستودع.
 
-## 2. النتيجة الأولى القابلة للتحقق
+## 2. القاعدة الذهبية وطريقة القراءة
 
-بعد clone وتثبيت dependencies، شغّل:
+ابدأ دائمًا بـ`project-documentation/README.md` للمسار المبتدئ، ثم [`docs/credentials.md`](docs/credentials.md) للأسرار، ثم `config/` للعقود، ثم `src/ai_router/router.py` للتنفيذ، ثم `tests/` لإثبات السلوك.
+
+> إذا لم يحدد المستخدم `providers` أو `exclude_providers`، فالوضع الافتراضي هو استخدام **كل providers المتاحة** وفق ترتيب route الحالي.
+
+قبل أي تعديل:
+
+1. اقرأ `pyproject.toml` و`.env.example` و`config/*.json`.
+2. افحص entrypoint `src/ai_router/cli/main.py` وorchestration في `src/ai_router/router.py`.
+3. حدّد provider/model/method والعقد المطلوب.
+4. أضف regression test قبل تغيير route أو adapter.
+5. لا تعدّل Secret أو Cookie أو Storage State داخل Git.
+6. شغّل JSON validation و`compileall` وunit tests و`git diff --check`.
+
+## 3. النتيجة الأولى القابلة للتشغيل
+
+من جذر clone:
 
 ```bash
-python3 -m compileall -q src tests
-python3 -m unittest discover -s tests -v
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e .
+cp .env.example .env
+ai-router --config-dir config --state-db /tmp/router.db summary
+ai-router --config-dir config --state-db /tmp/router.db route-plan \
+  --output-type text --user "اكتب إجابة قصيرة"
 ```
 
-النتيجة المثبتة الحالية في router: **47 اختبارًا ناجحًا**، إضافة إلى **13 اختبارًا** في مستودع chatgpt-api المصدر. لتشغيل طلب حقيقي، انسخ [`.env.example`](.env.example)، أضف secret لمزود واحد على الأقل، ثم استخدم:
+`summary` يثبت تحميل config مع redaction. `route-plan` لا يرسل network request. بعد وضع Secret مزود واحد، يكون أول live call:
 
 ```bash
-export PYTHONPATH=src
-python3 -m ai_router.cli.main \
-  --config-dir config \
-  --state-db /tmp/ai-router.db \
-  call-auto \
-  --output-type text \
-  --operation first_run \
-  --user 'Return exactly: router works'
+ai-router --config-dir config --state-db /tmp/router.db \
+  call-auto --output-type text --operation first_smoke \
+  --user "Return exactly: router works"
 ```
 
-`call-auto` يعيد JSON؛ الحقلان `route` و`intent` يثبتان route المختار. لا تعتبر نجاح progress أو تهيئة config دليلًا على live API success؛ يجب أن يظهر response فعلي أو artifact صالح.
+## 4. طرق الاستخدام والتكامل
 
-## 3. خريطة الملفات والطبقات
+### GitHub Actions
 
-| الطبقة | الملفات | المسؤولية والعقد |
+المسار الموصى به للتشغيل المتكرر هو checkout router في workflow مستهلك وتثبيت tag محدد، ثم وضع Secrets في **Settings → Secrets and variables → Actions → Secrets**. توجد workflows جاهزة:
+
+| workflow | الغرض |
+|---|---|
+| `.github/workflows/test.yml` | compileall و52 unit tests وsummary offline |
+| `.github/workflows/live-smoke.yml` | bounded live smoke يدوي |
+| `.github/workflows/capability-audit.yml` | تدقيق model/provider/method |
+| `.github/workflows/nvidia-functional.yml` | فحص NVIDIA models |
+| `.github/workflows/chatgpt-spaces-functional.yml` | اختبار ChatGPT replica-01 وreplica-02 |
+
+لا تطبع Secrets أو Authorization headers أو base64 في artifacts. ابدأ بسيناريو واحد، ولا تستخدم `all` قبل مراجعة quota.
+
+### التشغيل المحلي
+
+استخدم `.venv` و`.env` غير المتعقب. SQLite default هو `data/ai_router.db`، وللتجارب استخدم `/tmp/router.db`. لا تشارك DB بين workers متوازية بلا locking أو state contract.
+
+### Docker
+
+`Dockerfile` الجذري يبني CLI فقط. `.dockerignore` يمنع `.env` وDB وartifacts من الصورة. استخدم:
+
+```bash
+docker build -t ai-provider-router:local .
+docker run --rm --env-file .env -v "$PWD/data:/app/data" \
+  ai-provider-router:local --config-dir config \
+  --state-db /app/data/ai_router.db route-plan \
+  --output-type text --user "اكتب إجابة قصيرة"
+```
+
+لا يوجد Docker daemon مثبت في بيئة التوثيق الحالية؛ تحقق من build في CI أو جهاز Docker فعلي.
+
+### Python API
+
+الواجهة العامة الأساسية هي `AIRouter` من `ai_router`. أهم methods هي `summary` و`route_plan` و`complete_auto` و`complete_json` و`complete_video_json` و`translate_text`. أغلق router في `finally` لحفظ SQLite checkpoint.
+
+```python
+from ai_router import AIRouter
+
+router = AIRouter(config_dir="config", state_db="/tmp/host-router.db")
+try:
+    payload = router.complete_auto(
+        user_prompt="اكتب إجابة قصيرة",
+        output_type="text",
+        providers=["huggingface", "openrouter", "nvidia"],
+        operation="host_smoke",
+    )
+finally:
+    router.close()
+```
+
+إذا كان host بلغة أخرى، استخدم CLI subprocess واحترم exit code وJSON stdout. HTTP service boundary غير مضمن في هذا المستودع؛ إضافته proposal منفصل.
+
+## 5. الأسرار والمتغيرات
+
+المصدر التفصيلي لكل قيمة هو [`docs/credentials.md`](docs/credentials.md). لا تنقل قيمة حقيقية إلى AI_CONTEXT.
+
+| الاسم | النوع | يقرأه | الوظيفة |
+|---|---|---|---|
+| `CHATGPT_API_SECRET_KEY` | Secret | `chatgpt_space_default` fallback | مصادقة HTTP مع ChatGPT Space |
+| `AI_ROUTER_CHATGPT_KEYS_JSON` | Secret JSON | `chatgpt_space_default` | key pool مرتب |
+| `AI_ROUTER_GEMINI_KEYS_JSON` | Secret JSON | `gemini_default` | Gemini API keys |
+| `AI_ROUTER_HF_KEYS_JSON` / `HF_TOKEN` | Secret | `huggingface_default` | Hugging Face keys/fallback |
+| `AI_ROUTER_OPENROUTER_KEYS_JSON` / `OPENROUTER_API_KEY` | Secret | `openrouter_default` | OpenRouter keys/fallback |
+| `NVIDIA_API_KEYS_JSON` / `NVIDIA_API_KEY` | Secret | `nvidia_default` | NVIDIA keys/fallback |
+| `CHATGPT_API_REPLICA_01_BASE_URL` | Variable | `providers.json` | override Space-01 URL |
+| `CHATGPT_API_REPLICA_02_BASE_URL` | Variable | `providers.json` | override Space-02 URL |
+| `AI_ROUTER_CONFIG_DIR` | Variable | CLI/environment | config directory، default `config` |
+| `AI_ROUTER_STATE_DB` | Variable | CLI/environment | SQLite path، default `data/ai_router.db` |
+
+`RouterConfig.keys_for()` يقبل JSON arrays وwrapper objects وfield aliases، ويطبق fallback المفرد حسب `config/key_pools.json`. `public_summary()` يعرض counts وnames فقط، لا values.
+
+## 6. خريطة الملفات والطبقات
+
+| الطبقة | الملفات | المسؤولية |
 |---|---|---|
-| CLI | [`src/ai_router/cli/main.py`](src/ai_router/cli/main.py) | أوامر `summary` و`call-json` و`route-plan` و`call-auto`; يطبع JSON ويغلق router في `finally`. |
-| Discovery/intent | [`src/ai_router/intent.py`](src/ai_router/intent.py) | يكتشف `text`, `image`, `audio`, `embedding`, `video_analysis`, `video_generation`, `live` و`search/maps` من markers، مع أولوية `output_type` الصريح. |
-| Config | [`src/ai_router/config.py`](src/ai_router/config.py), [`config/providers.json`](config/providers.json), [`config/models.json`](config/models.json), [`config/key_pools.json`](config/key_pools.json), [`config/policies.json`](config/policies.json) | تحميل providers وchains وroutes وkeys وcooldowns، وتطبيق `base_url_env`، والتحقق من المراجع. |
-| Orchestration | [`src/ai_router/router.py`](src/ai_router/router.py) | يحل route، يبني tools، يمر على model/key، يستدعي adapter، ويسجل success/failure ويحرّك cursor. |
-| Adapter contract | [`src/ai_router/providers/base.py`](src/ai_router/providers/base.py) | `ProviderResponse` و`ProviderError` والعقود العامة للـadapters. |
-| OpenAI-compatible | [`src/ai_router/providers/openai_compatible.py`](src/ai_router/providers/openai_compatible.py) | POST إلى `/chat/completions`، JSON parsing، وclassification لأخطاء HTTP؛ يستخدمه Hugging Face وOpenRouter وNVIDIA. |
-| Gemini | [`src/ai_router/providers/gemini.py`](src/ai_router/providers/gemini.py) | JSON text، grounded interactions، image، TTS، embedding، وvideo analysis حسب method. |
-| ChatGPT Spaces | [`src/ai_router/providers/chatgpt_space.py`](src/ai_router/providers/chatgpt_space.py) | text/search prefix، explicit `output_type=image`، image capture، quota detection، data-url/src/url fallback، ومحاولتان كحد أقصى للصور. |
-| Persistence | [`src/ai_router/store.py`](src/ai_router/store.py) | SQLite tables لحالات provider، calls، rotation، وper-key model cursor؛ WAL/checkpoint وحالة تبقى بعد restart. |
-| Tools | [`src/ai_router/tools.py`](src/ai_router/tools.py) | يبني tools للبحث والخرائط عندما يطلبها route. |
-| Examples/automation | [`examples/one_request.py`](examples/one_request.py), [`scripts/live_smoke.py`](scripts/live_smoke.py), [`.github/workflows/test.yml`](.github/workflows/test.yml), [`.github/workflows/live-smoke.yml`](.github/workflows/live-smoke.yml) | تشغيل محلي، live smoke محدود، سيناريو `nvidia`، CI offline، وworkflow يدوي يرفع artifact منقحًا لمدة 7 أيام. |
-| Documentation | [`docs/operations.md`](docs/operations.md), [`docs/nvidia-free.md`](docs/nvidia-free.md), [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md), [`docs/credentials.md`](docs/credentials.md) | التشغيل، الأسرار، NVIDIA، والترتيب والتحقيقات. |
+| Package/entrypoint | `pyproject.toml`, `src/ai_router/__init__.py` | metadata و`ai-router` executable |
+| CLI | `src/ai_router/cli/main.py` | parse args وتشغيل summary/route/call |
+| Orchestration | `src/ai_router/router.py` | intent، route، filters، fallback، retries |
+| Rules | `src/ai_router/intent.py`, `tools.py` | output type وgrounding tools |
+| Config | `src/ai_router/config.py`, `config/*.json` | providers/models/keys/policies |
+| Contracts | `src/ai_router/providers/base.py` | ProviderResponse وProviderError وadapter interface |
+| Adapters | `src/ai_router/providers/gemini.py`, `openai_compatible.py`, `chatgpt_space.py` | outbound API methods |
+| Persistence | `src/ai_router/store.py` | SQLite cursor/cooldown/stats |
+| Scripts | `scripts/*.py` | live smoke، capability audit، functional tests |
+| Tests | `tests/*.py` | regression والعقود والـcatalog |
+| Automation | `.github/workflows/*.yml` | offline CI وmanual live jobs |
+| Documentation | `README.md`, `docs/`, `project-documentation/` | beginner/ops/engineering docs |
+| Vendor | `vendors/chatgpt-api/` | source snapshot مضمن، دون Secrets |
 
-## 4. العقود والبيانات والإعداد
+## 7. config والعقود
 
-### ProviderSpec
+`config/providers.json` يعرّف provider ID وkind وbase URL وkey pool وtimeout. providers الحالية هي ChatGPT replica-01/02 و`google_gemini` و`huggingface` و`openrouter` و`nvidia`.
 
-كل provider في `config/providers.json` يملك `id`, `kind`, `enabled`, `base_url`، وربما `base_url_env`, `key_pool`, و`default_timeout_seconds`. الأنواع الحية هي `chatgpt_space`, `gemini_rest`, و`openai_compatible`. إضافة kind جديد تتطلب adapter وتسجيله في constructor داخل `AIRouter`.
+`config/models.json` يضم `model_chains` و`output_routes`. كل `ModelSpec` يملك provider/model/method/input_types/output_types وtools وresponse-format flags. `config/key_pools.json` يربط pool بمتغيرات البيئة وfallback وrotation. `config/policies.json` يحدد max attempts وbackoff وcooldowns.
 
-### ModelSpec وroutes
+لا تعدّل `.env` لتغيير ترتيب models؛ عدّل `config/models.json` ثم أضف test وrelease note. Base URL override غير سري، أما API keys فهي Secrets.
 
-`config/models.json` يعرّف `model_chains` للتدوير العام، و`output_routes` للتوجيه حسب المخرج، و`reference_catalog` للمصادر والـsnapshots. كل row يحدد provider/model/method/input_types/output_types/tools و`supports_response_format` و`enabled`. route لا يثبت أن endpoint متاح دائمًا؛ availability وquota خارجية.
-
-الترتيب الحالي المهم هو: ChatGPT Spaces أولًا في text/search/image، ثم Gemini/Hugging Face/OpenRouter وفق route، وNVIDIA بعد OpenRouter في السلاسل العامة. سلسلة `nvidia_free` تحتوي **12 نموذجًا نصيًا عامًا** بعد الاختبار الوظيفي، بترتيب [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md). Riva مصنف ترجمة متخصصة وله الآن `output_routes.translation` مستقل مع `method=translation` وraw-text contract، بينما Llama Vision وLlama 8B أُخرجا من عقد JSON العام. catalog NVIDIA الكامل يحتوي 57 نتيجة في [`config/nvidia_free_catalog.json`](config/nvidia_free_catalog.json)، لكن غير المؤكد أو المتخصص يبقى خارج routes العامة.
-
-### KeySpec والسرية
-
-`RouterConfig.keys_for()` يقبل JSON array أو single-token fallback، وwrapper keys مثل `keys/items/entries`، وaliases مثل `key/api_key/token/secret/value`. المفاتيح تُمرر إلى adapter ولا تُعاد في `public_summary()`. الأسماء ومكان الحصول والتدوير والإلغاء موثقة في [`docs/credentials.md`](docs/credentials.md).
-
-### ProviderResponse وProviderError
-
-الـadapter يعيد payload JSON وusage إن وُجد. `ProviderError` يحمل `error_class`, `status_code`, و`retryable`. التصنيفات التشغيلية الأساسية هي `auth`, `quota`, `transient`, و`invalid_or_unknown`. router يسجلها ثم يقرر cooldown وcursor advancement؛ لا يخفي الخطأ النهائي إذا فشلت كل المحاولات، بل يرفع `AllProvidersFailed`.
-
-## 5. دورة البيانات وحالة التدوير
+## 8. دورة البيانات
 
 ```text
-CLI input
-  -> detect_intent(output_type/markers/grounding)
-  -> resolve output route or explicit model chain
-  -> build search/maps tools when applicable
-  -> iterate provider -> model -> ordered keys
-  -> skip cooling key/model
-  -> adapter request
-  -> parse ProviderResponse or ProviderError
-  -> record SQLite success/failure and usage
-  -> advance per-key model cursor on failure
-  -> return payload + route + intent
-     OR raise AllProvidersFailed
+CLI أو Python input
+  -> detect_intent أو output_type صريح
+  -> resolve route/chain
+  -> providers allowlist/denylist
+  -> capability/model filtering
+  -> key ordering + SQLite cooldown/cursor
+  -> adapter bounded outbound call
+  -> ProviderResponse أو ProviderError
+  -> success payload + route/intent metadata
+  -> JSON أو media artifact
 ```
 
-حالة SQLite ليست cache عابرة. `RouterStore` يملك provider state وprovider calls وrotation state وkey/model cursor؛ الـcursor مركب من provider وchain وkey وproject، لذلك يمكن لكل key أن يستأنف من موضعه بعد فشل سابق، وتبقى الحالة بعد restart. `cooldown` يمنع إعادة استخدام key/model المتعطل قبل انتهاء المدة. المسح المقصود للـstate يتم باختيار state DB جديد، مثل `/tmp/new-router.db`، وليس بتعديل config.
+عند `ProviderError` يسجل store الخطأ ويطبّق cooldown حسب error class، ثم ينتقل إلى المرشح التالي إذا سمحت retry policy. `AllProvidersFailed` terminal بعد استهلاك المحاولات. لا ينبغي retry عملية image generation بلا حدود بسبب quota.
 
-## 6. سلوك المخرجات والقدرات
+## 9. provider selection
 
-| output type | الحالة الحالية | المالك |
-|---|---|---|
-| `text` | executable، مع fallback متعدد providers | `complete_json`/`_complete_route` |
-| `text` + `search/maps` | executable عندما يملك spec أداة grounding؛ ChatGPT adapter يضيف search prefix حسب contract | `tools.py`, `chatgpt_space.py`, Gemini interactions |
-| `image` | executable عبر ChatGPT/Gemini routes؛ NVIDIA غير مضاف لأن Free Endpoint ليس دليل image generation | `chatgpt_space.py`, `gemini.py` |
-| `audio`/TTS | executable عبر Gemini route الحالي | `gemini.py` |
-| `embedding` | executable عبر Gemini route؛ لا ترسل NVIDIA embedding إلى text route | `gemini.py` |
-| `video_analysis` | plan/executable فقط عندما يوجد `video_uri` وadapter داعم | `complete_video_json`, Gemini |
-| `video_generation` | route plan يرفض التنفيذ الحالي باعتباره asynchronous Veo job غير موصل | `complete_auto` |
-| `live` | `prepare_live_session()` يعيد plan فقط؛ لا HTTP request | `prepare_live_session()` |
+يقبل CLI `--providers` كـallowlist و`--exclude-providers` كـdenylist. aliases: `gemini`/`google_gemini`، `hf`/`huggingface`، `openrouter`، `nvidia`، و`chatgpt`.
 
-## 7. Providers الحالية والـfallback
+عند غياب الخيارين يستخدم جميع providers. يرفض router unknown alias، overlap بين القائمتين، أو عدم بقاء model مناسب. الاختبار الأساسي في `tests/test_router.py`.
 
-| provider | kind | key pool | timeout | ملاحظة تحقق |
-|---|---|---|---:|---|
-| ChatGPT replica 01/02 | `chatgpt_space` | `chatgpt_space_default` | 540s | في live smoke الأخير نجح text/search في 01 و02. أرسلنا صورة واحدة فقط لكل نسخة؛ كلاهما أعاد HTTP 200 مع `images=[]` ورسالة Free plan image quota، لذلك image=deferred until quota reset. يوجد دليل تاريخي سابق على PNG صالح من 02. كل Space له Storage State خاص خارج Git. |
-| Gemini | `gemini_rest` | `gemini_default` | 180s | يدعم مسارات multimodal إضافية. |
-| Hugging Face | `openai_compatible` | `huggingface_default` | 90s | fallback token `HF_TOKEN`. |
-| OpenRouter | `openai_compatible` | `openrouter_default` | 120s | catalog مجاني مستقل. |
-| NVIDIA | `openai_compatible` | `nvidia_default` | 120s | 12 نموذجًا نصيًا عامًا في routes بعد OpenRouter؛ Riva في `output_routes.translation`، وVision/Llama 8B غير موثوقين لعقد JSON العام. |
+## 10. المسارات والقدرات
 
-## 8. الأخطاء والإصلاحات المثبتة
+| output | التنفيذ الحالي |
+|---|---|
+| `text` | route عام متعدد providers |
+| `text_grounded_search` / maps | عندما يملك spec tool المناسب |
+| `image` | Gemini وChatGPT routes؛ quota خارجية |
+| `audio` | Gemini TTS |
+| `embedding` | Gemini embedding |
+| `translation` | NVIDIA Riva raw-text |
+| `video_analysis` | يحتاج `video_uri` وadapter |
+| `video_generation` | route/plan مؤجل؛ لا async Veo adapter |
+| `live` | WebSocket plan فقط |
 
-- `401/403`: افحص secret واسم pool والـbase URL؛ لا تعالجها بإعادة الطلب بلا تغيير.
-- `429`: quota/rate limit؛ يسجل router cooldown وينتقل إلى key/model/provider التالي.
-- `408/409/425/5xx` أو `RemoteDisconnected`: transient؛ تحقق من timeout وhealth ثم اسمح بالـfallback المحدود. في ChatGPT Spaces، recovery يفتح محادثة جديدة فعليًا ويعيد الطلب مرة واحدة فقط؛ إذا ظهر login control، fail-fast يعيد re-authentication بدل انتظار timeout.
-- JSON غير صالح أو response فارغ: `invalid_or_unknown`؛ راجع method وpayload وmodel capability.
-- ChatGPT image: أرسل router `output_type=image` صراحة، ويقبل data_url/src/url، مع حد محاولتين. extraction في المصدر أضيف له `image_dom` redacted، وفحص الصور للصورة فقط يمتد إلى `body` ويستخدم أبعاد العرض عند غياب `naturalWidth`. في آخر live smoke، أعادت 01 و02 HTTP 200 مع `images=[]` ورسالة Free plan image quota؛ لا تُوصف الصورة كناجحة حتى reset الحصة، مع الاحتفاظ بالدليل التاريخي على PNG صالح من 02.
-- NVIDIA: الكتالوج العام 57، وظهر 30 مرشحًا في اختبار `/v1/models` السابق. الاختباران الوظيفيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211) اختبرا النماذج بسؤال معرفة ومسألة استدلال؛ نجحت النماذج العامة الـ12 بعد إعادة اختبار transient، ونجحت Riva في ترجمة مباشرة، بينما أخرج Vision وLlama 8B بسبب عقد JSON غير مناسب. واجه GLM quota مؤقتًا ثم نجح في الجولة اللاحقة.
+Capability audit الحالي يفرّق بين live passed وfailed وroute-only. لا تعمم نجاح provider على كل model أو method.
 
-## 9. الاختبارات وبوابات release
+## 11. الاختبارات والفشل والاستعادة
 
-الاختبار offline الرئيسي:
+بوابة الإصدار المحلية:
 
 ```bash
-python3 -m compileall -q src tests
+python3 -m json.tool config/providers.json >/dev/null
+python3 -m json.tool config/models.json >/dev/null
+python3 -m compileall -q src scripts tests vendors/chatgpt-api
 python3 -m unittest discover -s tests -v
+git diff --check
 ```
 
-الاختبارات عالية القيمة في [`tests/test_multiroute.py`](tests/test_multiroute.py) و[`tests/test_router.py`](tests/test_router.py) و[`tests/test_model_catalog.py`](tests/test_model_catalog.py) و[`tests/test_nvidia.py`](tests/test_nvidia.py). وهي تثبت intent، search prefix، image filtering/retry/data-url، Gemini payloads، state cursor، secret redaction، ترتيب OpenRouter/NVIDIA، وعدم دخول NVIDIA إلى image route.
+الأخطاء المهمة: `401/403` credential أو permissions؛ `400/404` model أو method؛ `429` quota/rate limit؛ `503/timeout` availability أو session؛ `AllProvidersFailed` انتهاء candidates. استخدم SQLite DB مؤقتة أثناء التشخيص، وسجل provider/model/status/error class دون Secret.
 
-لـlive smoke استخدم workflow يدويًا أو `scripts/live_smoke.py`؛ workflow يحقن Gemini/HF/OpenRouter/NVIDIA من GitHub Secrets فقط، ويقبل scenarios مثل `nvidia` و`translation`. live test ليس جزءًا من CI offline؛ سجّل status/model/route والأحجام فقط، ولا تسجل base64 أو headers أو prompts الحساسة. لتدقيق كل النماذج استخدم [`scripts/capability_audit.py`](scripts/capability_audit.py) وworkflow [`capability-audit.yml`](.github/workflows/capability-audit.yml): جرد 82 سجلًا فريدًا، نفذ 57 probe حيًا، وسجل 25 route-only للصور والصوت والفيديو والـlive والـmethods المتخصصة.
+## 12. بروتوكول التعديل والإصدار
 
-## 10. اختيار providers لكل طلب
+عند إضافة provider: عدّل config، أضف adapter إن كان contract مختلفًا، أضف model metadata، اكتب offline mock tests، ثم bounded live smoke. عند تعديل route: حدّث `config/models.json` وtests وdocs. عند تعديل Secret semantics: حدّث `.env.example` و`docs/credentials.md` وGitHub workflow.
 
-يقبل router وCLI `providers` كـallowlist و`exclude_providers` كـdenylist على مستوى الطلب. **عند غياب الخيارين يستخدم جميع providers المتاحة افتراضيًا** وفق ترتيب route. aliases الحالية هي `gemini`/`google_gemini` و`hf`/`huggingface` و`openrouter` و`nvidia` و`chatgpt`. تمر الفلاتر عبر `route_plan`, `complete_auto`, `complete_json`, `complete_video_json`, و`translate_text`، وتحافظ على ترتيب models داخل provider المسموح.
+قبل release، افحص الأسرار والروابط، شغّل suite كاملة، افصل live deferred عن passed، ثم اكتب release notes تذكر ما اختُبر وما لم يُختبر.
 
-يوقف router الطلب إذا كان provider موجودًا في القائمتين، أو alias غير معروف، أو لم يبق model مناسب للمسار. عدم تمرير الفلاتر يحافظ على السلوك السابق. هذه الميزة لا تنشئ credentials ولا تتجاوز quota أو capability contract.
+## 13. الحالة الحالية والمراجع
 
-أمثلة CLI موثقة في [`project-documentation/configuration-guide.md`](project-documentation/configuration-guide.md#اختيار-providers-لكل-طلب) وREADME؛ الاختبارات في `tests/test_router.py` تثبت allowlist وdenylist والتعارض والقائمة الفارغة.
+آخر release موثق هو `v1.2.27-default-all-providers`. أحدث قرار: عدم تمرير provider filters يعني كل providers، مع إمكانية allowlist/denylist لكل طلب. آخر live ChatGPT text/search مثبت في replica-01 وreplica-02؛ image قد يتوقف بسبب ChatGPT Free-plan quota.
 
-## 11. بروتوكول تعديل المشروع
+القراءة التالية: [`project-documentation/README.md`](project-documentation/README.md)، ثم [`docs/credentials.md`](docs/credentials.md)، ثم [`project-documentation/troubleshooting.md`](project-documentation/troubleshooting.md)، ثم الكود والاختبارات.
 
-قبل تعديل provider أو model:
+## References
 
-1. حدّد هل المطلوب route موجود أم adapter جديد.
-2. اقرأ `config.py` و`router.py` و`base.py` والـadapter المقابل.
-3. أضف أو عدّل config دون secrets.
-4. اكتب regression test يثبت request shape والـfallback وترتيب route.
-5. شغّل JSON validation و`compileall` و47 router tests و14 source tests و`git diff --check` وفحص secrets.
-6. إن كان التكامل خارجيًا، نفّذ live smoke محدودًا فقط بعد توفير credential، وسجّل deferred عندما لا يكون متاحًا.
-7. حدث docs وAI_CONTEXT ثم commit/release مع ملاحظة ما تم اختباره وما بقي غير مؤكد.
-
-لإضافة provider جديد: أضف ProviderSpec وkey pool وadapter method، ثم اربط `kind` في `AIRouter.__init__`, صنّف HTTP errors، أضف route/model specs، واكتب test offline قبل أي live call. لا تستخدم OpenAI-compatible adapter لنموذج يتطلب payload مختلفًا لمجرد أن عنوانه يشبه `/v1`.
-
-## 11. الحالة الحالية والقدرات المؤجلة
-
-**Verified:** 46 unit tests، catalog NVIDIA 57، اختباران وظيفيان حقيقيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211)؛ نجحت النماذج العامة الـ12 في سؤال معرفة ومسألة استدلال بعد إعادة فحص transient، ونجحت Riva في اختبار ترجمة متخصص. بعد إضافة المفتاح الجديد إلى GitHub Secrets، نجح أيضًا تشغيل smoke رقم [`32217577979`](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) على route=`nvidia_free`.
-
-**Verified:** أضيف `translation route` مستقل واختُبر حيًا في [32220367894](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220367894) بالمفتاح الجديد؛ route=`translation` وoutput_type=`translation` وRiva أعاد نصًا غير فارغ.
-
-**Capability audit:** التشغيل الكامل [32220522226](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220522226) فحص 82 سجلًا فريدًا، نفذ 57 live probes، وسجل 47 passed و10 failed و25 route-only. إعادة الاختبار المستهدف [32220960460](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220960460) فرّقت بين quota/transient و404/400 وعقد JSON غير المناسب. التفاصيل في [`project-documentation/capability-audit.md`](project-documentation/capability-audit.md).
-
-**Current checkpoint:** المصدر الحالي `2ac0d0e`، وrouter الحالي `e8725d1` قبل تقرير live smoke، وHF replica-01 الحالي `d2c5bee`. أضيف bounded recovery، فتح New chat فعليًا، diagnostics redacted، وتمييز auth control المرئي، fail-fast عند login marker، ثم image DOM diagnostics redacted وتوسيع استخراج الصور إلى `body` للصورة فقط. نجحت 47 اختبارات router و14 اختبارًا في المصدر. في live smoke الأخير نجح text/search في 01 و02؛ أرسلنا صورة واحدة فقط لكل نسخة، وأعادتا HTTP 200 مع `images=[]` ورسالة ChatGPT Free plan image quota، لذا image verification deferred حتى reset. يوجد دليل تاريخي سابق على PNG صالح من 02. التقرير الجديد في [`project-documentation/live-test-report-2026-08-19.md`](project-documentation/live-test-report-2026-08-19.md)، والـartifacts في [`project-documentation/live-verification-2026-08-19`](project-documentation/live-verification-2026-08-19)، ونقطة الاستعادة في [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md)، والتفاصيل في [`project-documentation/chatgpt-generation-recovery.md`](project-documentation/chatgpt-generation-recovery.md) و[`project-documentation/chatgpt-spaces.md`](project-documentation/chatgpt-spaces.md).
-
-**Deferred:** البحث الحي عبر NVIDIA لأن adapter الحالي لا يرسل search tool، والقدرات المتخصصة للصورة والصوت والفيديو والـlive عندما لا يملك provider adapter مناسبًا. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
-
-## 12. المراجع
-
-- [`README.md`](README.md) — المسار المبتدئ والتشغيل.
-- [`docs/credentials.md`](docs/credentials.md) — credential cards والتدوير والإلغاء.
-- [`docs/operations.md`](docs/operations.md) — التشغيل وGitHub Actions/live smoke.
-- [`docs/nvidia-free.md`](docs/nvidia-free.md) — NVIDIA catalog والسياسة.
-- [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md) — ترتيب النماذج الناجحة.
-- [`project-documentation/capability-audit.md`](project-documentation/capability-audit.md) — تدقيق جميع النماذج وتصنيف route-only/live.
-- [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md) — نقطة الاستعادة الحالية ونتائج ChatGPT Spaces.
-- [`config/nvidia_free_catalog.json`](config/nvidia_free_catalog.json) — evidence snapshot وlive status.
-- [`tests/test_multiroute.py`](tests/test_multiroute.py) و[`tests/test_router.py`](tests/test_router.py) — contracts السلوكية.
+[1]: [project-documentation/README.md](project-documentation/README.md) — دليل البدء المرتب.
+[2]: [docs/credentials.md](docs/credentials.md) — بطاقات الأسرار والمتغيرات.
+[3]: [config/providers.json](config/providers.json) و[config/models.json](config/models.json) — سجل providers وroutes.
+[4]: [src/ai_router/router.py](src/ai_router/router.py) و[src/ai_router/config.py](src/ai_router/config.py) — orchestration وconfig semantics.
+[5]: [tests/test_router.py](tests/test_router.py) و[tests/test_model_catalog.py](tests/test_model_catalog.py) — بوابات regression.
+[6]: [GitHub Actions secrets documentation](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions) — تخزين Secrets في GitHub.
+[7]: [Dockerfile reference](https://docs.docker.com/reference/dockerfile/) — بناء الصورة وتشغيلها.
