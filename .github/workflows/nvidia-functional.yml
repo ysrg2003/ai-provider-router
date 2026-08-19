@@ -8,6 +8,11 @@ on:
         required: true
         default: "3"
         type: string
+      models:
+        description: "Optional comma-separated model IDs; empty means all active models"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -37,6 +42,7 @@ jobs:
           NVIDIA_API_KEYS_JSON: ${{ secrets.NVIDIA_API_KEYS_JSON }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           NVIDIA_FUNCTIONAL_WORKERS: ${{ inputs.workers }}
+          NVIDIA_FUNCTIONAL_MODELS: ${{ inputs.models }}
         run: |
           set -euo pipefail
           test -n "${NVIDIA_API_KEYS_JSON}${NVIDIA_API_KEY}"

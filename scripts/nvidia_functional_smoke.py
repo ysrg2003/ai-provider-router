@@ -74,7 +74,13 @@ def main() -> int:
     if not keys:
         print(json.dumps({"status": "blocked", "reason": "NVIDIA key is not configured"}))
         return 2
-    models = [spec.model for spec in config.model_chain("nvidia_free")]
+    all_models = [spec.model for spec in config.model_chain("nvidia_free")]
+    requested = [item.strip() for item in os.getenv("NVIDIA_FUNCTIONAL_MODELS", "").split(",") if item.strip()]
+    unknown = sorted(set(requested) - set(all_models))
+    if unknown:
+        print(json.dumps({"status": "blocked", "reason": "Unknown NVIDIA model selection", "unknown_models": unknown}))
+        return 2
+    models = [model for model in all_models if not requested or model in requested]
     adapter = OpenAICompatibleAdapter("nvidia", config.providers["nvidia"].base_url)
     max_workers = max(1, min(int(os.getenv("NVIDIA_FUNCTIONAL_WORKERS", "3")), 3))
     results: list[dict[str, Any]] = []
@@ -88,6 +94,7 @@ def main() -> int:
         "status": "completed",
         "test_type": "functional_text",
         "models_tested": len(results),
+        "model_filter": requested or "all_active_nvidia_free",
         "models_passed_both_prompts": passed,
         "prompts": ["factual_knowledge_arabic", "arithmetic_reasoning_arabic"],
         "search_test": {"status": "not_supported_by_nvidia_adapter", "reason": "No search tool is sent to the NVIDIA OpenAI-compatible endpoint."},
