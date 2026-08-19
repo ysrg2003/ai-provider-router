@@ -60,3 +60,9 @@ Logs الحية لـreplica-04 أثبتت أن الإصلاح يعمل فعلي�
 ولمنع الانتظار غير الضروري، يفحص gateway هذا المؤشر قبل إرسال prompt. إذا ظهر login control، يعيد `ChatGPT session requires re-authentication; visible auth control detected` فورًا. تحقق مباشر أعاد HTTP 503 خلال 2.88 ثانية بدل timeout يقارب 268 ثانية. هذا يحل مشكلة التشغيل والـretry storm، لكنه لا يُنشئ جلسة ChatGPT صالحة نيابة عن صاحب الحساب.
 
 آخر حالة إثباتية هي **6/9 passed** في workflow 32245401088: text/search/image نجحت في replica-01 وreplica-02، بينما replica-04 فشلت بالـsession signal. اختبار text/search محدود لاحق [32247225620](https://github.com/ysrg2003/ai-provider-router/actions/runs/32247225620) فشل قبل fail-fast، ولا ينبغي إعادة طلب الصور الآن.
+
+## التحقق النهائي من replica-01 — quota لا extraction
+
+بعد نشر إصلاح DOM-order-independent ثم image DOM diagnostics والتوسيع إلى `body` مع أبعاد العرض، أُجريت محاولة صورة واحدة إلى replica-01 فقط. أعاد الخادم HTTP 200، لكن `images=[]`، وكان نص `choices[0].message.content` هو رسالة ChatGPT Free plan image-generation limit مع مدة reset متبقية. هذا يثبت أن الطلب الأخير لم يصل إلى مرحلة إنشاء asset قابل للاستخراج؛ لذلك لا يصح نسبته إلى `_extract_images()` أو إلى router contract.
+
+الإصلاحات الحالية تظل صحيحة كتحسينات دفاعية: طلبات النص والبحث لا تفحص HTML، وطلبات الصورة فقط تجمع مصادر الصور السابقة وتستبعدها بالمصدر، وتفحص `body` وتقبل الأبعاد المعروضة عند غياب `naturalWidth`. يجب تأجيل الحكم الحي على هذه الإضافة إلى ما بعد reset، مع محاولة واحدة فقط والتحقق من `images[].data_url` وbytes الفعلية. السجل القابل لإعادة المراجعة هو [`replica-01-image-final-verification-2026-08-19.md`](replica-01-image-final-verification-2026-08-19.md).

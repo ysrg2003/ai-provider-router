@@ -105,7 +105,7 @@ CLI input
 
 | provider | kind | key pool | timeout | ملاحظة تحقق |
 |---|---|---|---:|---|
-| ChatGPT replica 01/02/04 | `chatgpt_space` | `chatgpt_space_default` | 540s | بعد remediation: text/search/image نجحت في 01/02؛ replica-04، رغم أنها مخصصة لحساب sg، تُظهر زر login مرئيًا حقيقيًا بحجم 68.2×36 وتفشل بإشارة re-authentication سريعة. كل Space له Storage State خاص خارج Git. |
+| ChatGPT replica 01/02/04 | `chatgpt_space` | `chatgpt_space_default` | 540s | text/search مثبتان في 01/02؛ صورة 02 موثقة بPNG صالح، أما 01 فآخر تحقق أعاد HTTP 200 مع `images=[]` ورسالة Free plan image quota بعد نشر extraction fix، لذلك image=deferred until quota reset. replica-04 تُظهر زر login مرئيًا حقيقيًا بحجم 68.2×36 وتفشل بإشارة re-authentication سريعة. كل Space له Storage State خاص خارج Git. |
 | Gemini | `gemini_rest` | `gemini_default` | 180s | يدعم مسارات multimodal إضافية. |
 | Hugging Face | `openai_compatible` | `huggingface_default` | 90s | fallback token `HF_TOKEN`. |
 | OpenRouter | `openai_compatible` | `openrouter_default` | 120s | catalog مجاني مستقل. |
@@ -117,7 +117,7 @@ CLI input
 - `429`: quota/rate limit؛ يسجل router cooldown وينتقل إلى key/model/provider التالي.
 - `408/409/425/5xx` أو `RemoteDisconnected`: transient؛ تحقق من timeout وhealth ثم اسمح بالـfallback المحدود. في ChatGPT Spaces، recovery يفتح محادثة جديدة فعليًا ويعيد الطلب مرة واحدة فقط؛ إذا ظهر login control، fail-fast يعيد re-authentication بدل انتظار timeout.
 - JSON غير صالح أو response فارغ: `invalid_or_unknown`؛ راجع method وpayload وmodel capability.
-- ChatGPT image: أرسل router `output_type=image` صراحة، وقبل data_url/src/url، وحدّ محاولات الصورة باثنتين؛ نجحت PNG حيًا في replica-01 وreplica-02 في workflow 32245401088.
+- ChatGPT image: أرسل router `output_type=image` صراحة، ويقبل data_url/src/url، مع حد محاولتين. extraction في المصدر أضيف له `image_dom` redacted، وفحص الصور للصورة فقط يمتد إلى `body` ويستخدم أبعاد العرض عند غياب `naturalWidth`. replica-02 لها PNG حي موثق؛ replica-01 آخر تحقق فيها `images=[]` مع رسالة Free plan image quota، لذا لا تُوصف كصورة ناجحة حتى reset الحصة.
 - NVIDIA: الكتالوج العام 57، وظهر 30 مرشحًا في اختبار `/v1/models` السابق. الاختباران الوظيفيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211) اختبرا النماذج بسؤال معرفة ومسألة استدلال؛ نجحت النماذج العامة الـ12 بعد إعادة اختبار transient، ونجحت Riva في ترجمة مباشرة، بينما أخرج Vision وLlama 8B بسبب عقد JSON غير مناسب. واجه GLM quota مؤقتًا ثم نجح في الجولة اللاحقة.
 
 ## 9. الاختبارات وبوابات release
@@ -141,7 +141,7 @@ python3 -m unittest discover -s tests -v
 2. اقرأ `config.py` و`router.py` و`base.py` والـadapter المقابل.
 3. أضف أو عدّل config دون secrets.
 4. اكتب regression test يثبت request shape والـfallback وترتيب route.
-5. شغّل JSON validation و`compileall` و47 router tests و13 source tests و`git diff --check` وفحص secrets.
+5. شغّل JSON validation و`compileall` و47 router tests و14 source tests و`git diff --check` وفحص secrets.
 6. إن كان التكامل خارجيًا، نفّذ live smoke محدودًا فقط بعد توفير credential، وسجّل deferred عندما لا يكون متاحًا.
 7. حدث docs وAI_CONTEXT ثم commit/release مع ملاحظة ما تم اختباره وما بقي غير مؤكد.
 
@@ -155,7 +155,7 @@ python3 -m unittest discover -s tests -v
 
 **Capability audit:** التشغيل الكامل [32220522226](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220522226) فحص 82 سجلًا فريدًا، نفذ 57 live probes، وسجل 47 passed و10 failed و25 route-only. إعادة الاختبار المستهدف [32220960460](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220960460) فرّقت بين quota/transient و404/400 وعقد JSON غير المناسب. التفاصيل في [`project-documentation/capability-audit.md`](project-documentation/capability-audit.md).
 
-**Current checkpoint:** source commits `ed417dd`, `cd18112`, `acbc3cb`, `5f1899d`, `5c34094`، و`eddbfda` أضافت bounded recovery، فتح New chat فعليًا، diagnostics redacted، وتمييز auth control المرئي، وfail-fast عند login marker. نُشرت النسخ إلى Spaces الثلاثة. workflow [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) حقق 6 passed و3 failed: text/search/image نجحت في 01/02، و04 فشل بسبب session auth. الاختبار المحدود [32247225620](https://github.com/ysrg2003/ai-provider-router/actions/runs/32247225620) أكد فشل text/search في 04 قبل fail-fast؛ بعده أعاد طلب واحد HTTP 503 برسالة re-authentication خلال 2.88 ثانية. router main الحالي هو `45d2da0`. نقطة الاستعادة والإجراءات الآمنة في [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md)، والتفاصيل في [`project-documentation/chatgpt-generation-recovery.md`](project-documentation/chatgpt-generation-recovery.md) و[`project-documentation/chatgpt-spaces.md`](project-documentation/chatgpt-spaces.md).
+**Current checkpoint:** المصدر الحالي `2ac0d0e`، وrouter الحالي `1a209bd`، وHF replica-01 الحالي `d2c5bee`. أضيف bounded recovery، فتح New chat فعليًا، diagnostics redacted، وتمييز auth control المرئي، fail-fast عند login marker، ثم image DOM diagnostics redacted وتوسيع استخراج الصور إلى `body` للصورة فقط. نجحت 47 اختبارات router و14 اختبارًا في المصدر. text/search في 01/02 مثبتان؛ صورة 02 مثبتة بPNG صالح؛ أما آخر image request إلى 01 فأعاد HTTP 200 مع `images=[]` ورسالة ChatGPT Free plan image quota، لذا verification للصورة deferred حتى reset. replica-04 تحتاج re-authentication. نقطة الاستعادة والإجراءات الآمنة في [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md)، والدليل النهائي في [`project-documentation/replica-01-image-final-verification-2026-08-19.md`](project-documentation/replica-01-image-final-verification-2026-08-19.md)، والتفاصيل في [`project-documentation/chatgpt-generation-recovery.md`](project-documentation/chatgpt-generation-recovery.md) و[`project-documentation/chatgpt-spaces.md`](project-documentation/chatgpt-spaces.md).
 
 **Deferred:** البحث الحي عبر NVIDIA لأن adapter الحالي لا يرسل search tool، والقدرات المتخصصة للصورة والصوت والفيديو والـlive عندما لا يملك provider adapter مناسبًا. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
 

@@ -161,3 +161,22 @@ Expected success: artifact صورة صالح أو data URL normalized. إذا ظ
 ## تصحيح فرضية حساب sg
 
 أكد المتصفح الحي أن الحساب الظاهر هو `Yousef Sg` على الخطة المجانية، وهو الحساب المقصود لـreplica-04. لكن بعد نشر diagnostics المنقح إلى replica-04، أظهر endpoint عنصرًا حقيقيًا مرئيًا من نوع `button` يحمل `log in`، بحجم `68.2×36`، وليس نصًا مخفيًا أو عنصرًا `aria-hidden`. لذلك فالمشكلة ليست أن الحساب المقصود خطأ؛ بل إن Storage State داخل Space لا يعكس جلسة المتصفح الحي المصادق عليها بالكامل، أو أن جلسة sg داخل Space انتهت جزئيًا. لا ينبغي نسخ Cookies بين البيئتين؛ المطلوب تحديث session state الخاصة بحساب sg داخل replica-04 نفسها.
+
+
+## التحقق النهائي من replica-01 بعد إصلاح استخراج الصور — 2026-08-19
+
+بعد نشر commit `d2c5bee` إلى replica-01 فقط، أصبحت حالة runtime جاهزة، ثم أُجريت محاولة صورة واحدة مبررة للتحقق من الإصلاح. أعاد endpoint HTTP 200، لكن payload النهائي كان يحتوي `images=[]`، بينما احتوى `choices[0].message.content` على رسالة ChatGPT الصريحة:
+
+> You've hit the Free plan limit for image generations requests. You can create more images when the limit resets in 17 hours and 3 minutes.
+
+هذه النتيجة تغيّر تصنيف الفشل السابق من **unknown extraction failure** إلى **quota-confirmed / image not verified**. لم تكن هناك صورة جديدة أو bytes يمكن استخراجها، ولذلك لا يمكن استخدام هذه الجولة للحكم على نجاح extraction بعد reset. لا يوجد سبب لتغيير Base URL أو `API_SECRET_KEY` أو router key pool لمعالجة هذا الخطأ.
+
+| العنصر | النتيجة النهائية |
+|---|---|
+| replica-01 text | passed سابقًا، ولم يُمس في الإصلاح الأخير |
+| replica-01 live search | passed سابقًا، ولم يُمس في الإصلاح الأخير |
+| replica-01 image | quota-confirmed؛ HTTP 200 لكن `images=[]`، وليس نجاح صورة |
+| replica-02 | لم تُلمس في هذه الجولة؛ تظل آخر صورة موثقة PNG صالحًا من 831230 bytes |
+| replica-04 | لم تُلمس؛ ما زالت تحتاج إعادة مصادقة يدوية |
+
+سجل الأدلة التفصيلي موجود في [`replica-01-image-final-verification-2026-08-19.md`](replica-01-image-final-verification-2026-08-19.md). بعد reset، يجب إرسال محاولة صورة واحدة فقط والتحقق من `images[].data_url` وفك base64 وفحص MIME والأبعاد. إذا عادت رسالة quota، يجب الانتظار بدل تكرار الطلب؛ وإذا عادت صورة فعلية مع `images=[]`، عندها فقط تُراجع image DOM diagnostics redacted.
