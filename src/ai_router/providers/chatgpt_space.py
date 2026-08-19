@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 
-from .base import ProviderError, ProviderResponse, url_citations_from_text
+from .base import ProviderError, ProviderResponse, url_citations_from_annotations, url_citations_from_text
 
 
 class ChatGPTSpaceAdapter:
@@ -40,12 +40,17 @@ class ChatGPTSpaceAdapter:
         messages.append({"role": "user", "content": effective_prompt})
         body = self._post(model=model, secret=secret, messages=messages, timeout_seconds=timeout_seconds, tools=tools)
         text = self._text_from_body(body)
+        url_citations = url_citations_from_text(text)
+        structured_nodes = [body.get("annotations"), body.get("citations"), body.get("choices")]
+        for url in url_citations_from_annotations(structured_nodes):
+            if url not in url_citations:
+                url_citations.append(url)
         return ProviderResponse(
             {
                 "output_type": "text",
                 "text": text,
-                "annotations": [],
-                "url_citations": url_citations_from_text(text),
+                "annotations": body.get("annotations", []),
+                "url_citations": url_citations,
                 "images": body.get("images", []),
             },
             body.get("usage", {}),
