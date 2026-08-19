@@ -79,9 +79,19 @@ class ChatGPTSpaceAdapter:
             raise ProviderError("ChatGPT Space returned invalid JSON", error_class="invalid_or_unknown", retryable=False) from exc
         if not isinstance(payload, dict):
             raise ProviderError("ChatGPT Space returned a non-object JSON value", error_class="invalid_or_unknown", retryable=False)
-        payload.setdefault("annotations", response.payload.get("annotations", []))
-        payload.setdefault("url_citations", response.payload.get("url_citations", []))
-        payload.setdefault("provider_text", response.payload.get("text", ""))
+        provider_annotations = response.payload.get("annotations", [])
+        payload_annotations = payload.get("annotations", [])
+        if provider_annotations and payload_annotations:
+            payload["annotations"] = [provider_annotations, payload_annotations]
+        elif provider_annotations:
+            payload["annotations"] = provider_annotations
+        payload_urls = payload.get("url_citations", [])
+        merged_urls: list[str] = []
+        for url in [*response.payload.get("url_citations", []), *(payload_urls if isinstance(payload_urls, list) else [])]:
+            if url not in merged_urls:
+                merged_urls.append(url)
+        payload["url_citations"] = merged_urls
+        payload["provider_text"] = response.payload.get("text", "")
         return ProviderResponse(payload, response.usage)
 
     def generate_image(

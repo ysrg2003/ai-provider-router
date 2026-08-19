@@ -47,7 +47,7 @@ class SearchContractTests(unittest.TestCase):
     def test_chatgpt_complete_json_preserves_search_metadata(self):
         adapter = ChatGPTSpaceAdapter('https://example.invalid')
         adapter._post = lambda **kwargs: {
-            "choices": [{"message": {"content": '{"sources":[{"url":"https://www.nasa.gov/eclipse"}]}'}}],
+            "choices": [{"message": {"content": '{"sources":[{"url":"https://www.nasa.gov/eclipse"}],"url_citations":[]}'}}],
         }
         response = adapter.complete_json(
             model='gpt-4o-mini',
