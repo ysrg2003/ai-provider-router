@@ -169,6 +169,10 @@ The live ChatGPT Library page showed previously generated image assets, includin
 
 Opening `Vivid Blue Star on White.png` in the live Library showed the actual blue-star image preview in a large image canvas. The UI exposed dedicated controls for `تنزيل الصورة` (download), `مشاركة` (share), `إزالة` (remove), aspect-ratio display, and comments. No new generation was started. This is the clearest live reference for the completed-image contract: a finished image is a library asset with a real preview and an explicit download action, not merely an `<img>` found in the unsent composer page.
 
+## Step 26 — definitive sg versus replica-04 session check
+
+The connected live browser visibly showed the signed-in account `Yousef Sg` with the Free plan and an active composer. The refined redacted diagnostics in replica-04, after deployment, showed `ready=true` and `input_visible=true` but also a **real visible `button` labeled `log in`** with a nontrivial bounding box of `68.2×36` pixels. The details contained no hidden/aria-hidden flag and no sensitive values. This proves the earlier `log in` marker was not merely hidden text: the replica-04 Space has a different or partially expired ChatGPT session from the authenticated live sg browser, even though both are intended to represent account sg.
+
 ## Step 18 — live ChatGPT account reconnaissance
 
 The connected live browser opened `https://chatgpt.com/` without sending a prompt. It showed the signed-in `Yousef Sg` Free account, a visible composer textarea, and the send button. No login wall, challenge, or `session expired` page was visible. This is evidence about the live browser account only; it does not prove that replica-04's stored Space session state is valid or equivalent. The rendered sidebar also showed a `دردشة جديدة` control, confirming that the live UI exposes a fresh-chat path; no prompt was submitted and no account state was changed.
