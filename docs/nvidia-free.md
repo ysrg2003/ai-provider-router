@@ -30,22 +30,20 @@ NVIDIA_API_KEYS_JSON=[{"id":"nvidia-key-1","key":"nvapi-REPLACE_ME","project":"d
 
 ## ما يدخل routes العامة
 
-من أصل 57 نتيجة، فُعّل **34 نموذجًا غير deprecated** في `model_chains.nvidia_free`، ثم أُضيفت بعد OpenRouter إلى `default` و`creative` و`cheap` وإلى `output_routes.text` و`output_routes.text_grounded_search`. تشمل القائمة نماذج text وvision-to-text وomni وtranslation التي يمكن تمثيلها عبر JSON Chat Completions.
+من أصل 57 نتيجة، أظهر `/v1/models` لحساب الاختبار 30 نموذجًا من المرشحين النشطين، ثم نجح **15 نموذجًا** في live completion نصي محدود. هذه النماذج الـ15 فقط مفعّلة في `model_chains.nvidia_free`، ثم أُضيفت بعد OpenRouter إلى `default` و`creative` و`cheap` وإلى `output_routes.text` و`output_routes.text_grounded_search`. أما النماذج التي ظهرت للحساب لكنها انتهت بـ400 أو 503 أو timeout أو رد فارغ فبقيت disabled.
 
-النماذج الـ23 الأخرى ما زالت محفوظة في catalog الكامل لكنها لا تدخل route النص العام، لأنها embeddings أو reranking أو moderation أو audio/TTS أو video/3D/autonomous-driving أو image/vision specialized، أو عليها deprecation. عدم إدخالها في route النص لا يعني حذفها؛ بل يمنع إرسال prompt نصي عام إلى endpoint يتطلب payload أو adapter مختلفًا.
+بقية النتائج تبقى محفوظة في catalog الكامل لكنها لا تدخل route النص العام. منها نماذج ظهرت للحساب لكنها أعادت 400 أو 503 أو timeout أو ردًا فارغًا، ومنها نتائج لم تظهر في `/v1/models` وقت الاختبار، ومنها endpoints متخصصة للـembedding أو reranking أو moderation أو audio/TTS أو video/3D أو protein أو image/vision. عدم إدخالها في route النص لا يعني حذفها؛ بل يمنع إرسال prompt نصي عام إلى endpoint يتطلب payload أو adapter مختلفًا.
 
-| الفئة | عدد تقريبي في snapshot | سياسة router |
+| حالة الاختبار | العدد | سياسة router |
 |---|---:|---|
-| Text وreasoning | 21 | مفعلة في routes النصية إذا لم تكن deprecated |
-| Vision/Text وOmni | 12 | مفعلة كمدخل نصي، ولا يعني ذلك أن router يرسل صورًا لها في هذا الإصدار |
-| Translation | 2 | مفعلة في routes النصية |
-| Embedding وrerank والبروتين | 6 | catalog فقط؛ تحتاج routes/normalizers مخصصة |
-| Moderation | 3 | catalog فقط؛ تحتاج route moderation |
-| Audio وTTS | 3 | catalog فقط؛ تحتاج adapter صوت |
-| Video وvideo analysis | 8 | catalog فقط؛ تحتاج route/adapter فيديو |
-| Deprecated entries | 5 | غير مفعلة حتى تحديث/إزالة حالة deprecation |
+| نماذج live-tested الناجحة | 15 | مفعلة في routes النصية بعد OpenRouter |
+| نماذج ظهرت للحساب ولم تنجح | 15 | محفوظة في catalog وdisabled |
+| نماذج غير ظاهرة للحساب وقت الاختبار | 27 | محفوظة في catalog وdisabled |
+| إجمالي catalog | 57 | يتضمن كل Free Endpoint المرصود |
 
-العدد الدقيق والتقسيم القابل للمعالجة محفوظان في `config/nvidia_free_catalog.json`، لأن الكتالوج يتغير باستمرار.
+حالة specialization وdeprecation محفوظة لكل entry داخل catalog. النماذج المتخصصة تحتاج routes/normalizers أو adapters منفصلة قبل تفعيلها، والنماذج التي أعلنت NVIDIA قرب deprecation لا تُفعّل تلقائيًا.
+
+العدد الدقيق، ونتيجة live test لكل نموذج، وسبب الفشل المنقح محفوظة في `config/nvidia_free_catalog.json`. هذا الفصل مهم لأن الكتالوج العام يتغير، كما أن `/v1/models` يختلف حسب الحساب والوقت.
 
 ## الترتيب وfallback
 

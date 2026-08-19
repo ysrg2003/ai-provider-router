@@ -63,7 +63,7 @@ class NvidiaRouterTests(unittest.TestCase):
 
     def test_nvidia_routes_follow_openrouter_and_exclude_image(self):
         models = json.loads((ROOT / 'config' / 'models.json').read_text(encoding='utf-8'))
-        self.assertEqual(len(models['model_chains']['nvidia_free']), 34)
+        self.assertEqual(len(models['model_chains']['nvidia_free']), 15)
         for route_name in ('default', 'creative', 'cheap'):
             entries = models['model_chains'][route_name]
             openrouter_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'openrouter']

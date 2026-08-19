@@ -60,14 +60,15 @@ class ModelCatalogTests(unittest.TestCase):
         self.assertEqual(reference["catalog_file"], "config/nvidia_free_catalog.json")
         self.assertEqual(len(catalog["models"]), 57)
         self.assertEqual(len({item["name"] for item in catalog["models"]}), 57)
-        self.assertEqual(len(reference["active_text_models"]), 34)
+        self.assertEqual(len(reference["active_text_models"]), 15)
         deprecated = {item["api_model"] for item in catalog["models"] if item["deprecated"]}
         self.assertTrue(deprecated.isdisjoint(reference["active_text_models"]))
         self.assertEqual(
             [item["model"] for item in self.models["model_chains"]["nvidia_free"]],
             reference["active_text_models"],
         )
-        self.assertIn("minimaxai/minimax-m3", reference["active_text_models"])
+        self.assertIn("z-ai/glm-5.2", reference["active_text_models"])
+        self.assertNotIn("minimaxai/minimax-m3", reference["active_text_models"])
         self.assertNotIn("nvidia", {item["provider"] for item in self.models["output_routes"]["image"]})
 
     def test_openrouter_free_catalog_and_order_are_present(self):
