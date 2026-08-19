@@ -1,0 +1,33 @@
+{
+  "status": "completed",
+  "spaces": [
+    "chatgpt_space"
+  ],
+  "scenarios": [
+    "text",
+    "search"
+  ],
+  "image_tested": false,
+  "execution_policy": "sequential_per_space_and_scenario",
+  "counts": {
+    "failed": 2
+  },
+  "results": [
+    {
+      "provider": "chatgpt_space",
+      "scenario": "text",
+      "status": "failed",
+      "error_class": "transient",
+      "status_code": null,
+      "duration_seconds": 268.48
+    },
+    {
+      "provider": "chatgpt_space",
+      "scenario": "search",
+      "status": "failed",
+      "error_class": "transient",
+      "status_code": null,
+      "duration_seconds": 268.44
+    }
+  ]
+}

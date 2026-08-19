@@ -149,6 +149,10 @@ After deploying the helper that clicks the rendered `New chat`/`دردشة جد�
 
 The new authorized `/diagnostics/session` endpoint returned `ready=true`, `input_visible=true`, and zero stop controls for all three Spaces. Replica-01 and replica-02 reported no visible login marker. Replica-04 reported `markers["log in"] = true` while still showing a composer and `ready=true`; it had 22 cookies versus 20 in each of the other two Spaces. Only cookie counts/names were inspected; no cookie values, Storage State, prompts, or secrets were returned or stored. This is the strongest current evidence that replica-04's stored session state differs or is partially authenticated, rather than a remaining router image-contract defect.
 
+## Step 21 — fail-fast reauthentication verification
+
+After deploying the fail-fast guard, one text request was sent to replica-04 only. It returned HTTP 503 with `ChatGPT session requires re-authentication; visible auth control detected` in `2.881228` seconds. This replaces the previous 268-second transient timeout behavior with an actionable terminal session signal. No image request was repeated.
+
 ## Step 18 — live ChatGPT account reconnaissance
 
 The connected live browser opened `https://chatgpt.com/` without sending a prompt. It showed the signed-in `Yousef Sg` Free account, a visible composer textarea, and the send button. No login wall, challenge, or `session expired` page was visible. This is evidence about the live browser account only; it does not prove that replica-04's stored Space session state is valid or equivalent. The rendered sidebar also showed a `دردشة جديدة` control, confirming that the live UI exposes a fresh-chat path; no prompt was submitted and no account state was changed.

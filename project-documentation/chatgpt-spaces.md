@@ -135,3 +135,19 @@ Expected success: artifact صورة صالح أو data URL normalized. إذا ظ
 هذه الجولة **لا تثبت نجاحًا كاملًا بعد الإصلاح**. هي تثبت أن الإصلاح نُشر وأنه ينفذ recovery في الحالة المستهدفة، كما تثبت أن replica-01 وreplica-02 ينجحان في text/search، لكنها تكشف فشلين متبقيين مختلفين: image failures في 01/02، وsession/upstream أو stabilization failure مستمر في 04. لا توجد في التقرير رسالة `Free plan limit` أو HTTP 429؛ لا ينبغي إعادة طلب الصور قبل تشخيص logs أو انتظار reset خارجي.
 
 لأدلة المتصفح الحية المنقحة، راجع [`browser-evidence-2026-08-19.md`](browser-evidence-2026-08-19.md). وللتفصيل البرمجي للإصلاح، راجع [`chatgpt-generation-recovery.md`](chatgpt-generation-recovery.md). وللمقارنة التاريخية والإصلاحات، راجع [`../docs/chatgpt-integration-guide.md`](../docs/chatgpt-integration-guide.md) و[`../docs/chatgpt-space.md`](../docs/chatgpt-space.md).
+
+## نتائج remediation اللاحقة
+
+بعد إضافة فتح محادثة جديدة فعليًا عبر رابط `New chat`/`دردشة جديدة`، شُغّل workflow شامل واحد [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) بالتتابع، وكانت النتيجة **6 passed و3 failed**. نجحت text/search/image في replica-01 وreplica-02، بما في ذلك `mime_type=image/png` وimage payload صالح. بقيت replica-04 فاشلة في الأنواع الثلاثة بحالة transient؛ لذلك لم تُكرر الصور بعد هذه الجولة.
+
+| Space | النص | البحث | الصورة | الدليل |
+|---|---|---|---|---|
+| replica-01 | passed | passed | passed | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
+| replica-02 | passed | passed | passed | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
+| replica-04 | failed: transient | failed: transient | failed: transient | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
+
+أُجري بعد ذلك اختبار محدود لـreplica-04 في text/search فقط [32247225620](https://github.com/ysrg2003/ai-provider-router/actions/runs/32247225620)، وفشل كلاهما بعد نحو 268 ثانية. Logs الحية أثبتت أن retry وفتح المحادثة الجديدة يعملان، لكن ChatGPT لا ينتج assistant content في هذه الجلسة.
+
+أُضيف endpoint تشخيص محمي `GET /diagnostics/session`. وهو يعيد إشارات redacted فقط: `ready`، و`input_visible`، وعدد cookies وأسماءها، ووجود login/challenge markers، و`visible_auth_controls`؛ ولا يعيد قيم cookies أو Storage State أو prompts. أظهر التشخيص أن replica-01 وreplica-02 لا تحتويان عناصر auth مرئية، بينما replica-04 أظهرت `visible_auth_controls=["log in"]` مع `ready=true` و`input_visible=true`. هذا يثبت أن replica-04 **جزئية المصادقة أو تحتاج إعادة تسجيل دخول**، وليس أن مشكلة image contract ما زالت في router.
+
+بدل ترك كل طلب replica-04 ينتظر timeout طويلًا، أصبح gateway يوقفه فورًا برسالة `ChatGPT session requires re-authentication; visible auth control detected`. تحقق مباشر واحد أعاد HTTP 503 خلال `2.881228` ثانية، مقابل نحو 268 ثانية سابقًا. هذا إصلاح تشغيلي يمنع الهدر والـretries العمياء، لكنه لا يستطيع تسجيل الدخول إلى حساب ChatGPT الخاص بـreplica-04 تلقائيًا؛ يجب تحديث جلسة ذلك الحساب داخل Space نفسها، مع إبقاء Cookies كل replica مستقلة.

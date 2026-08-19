@@ -2,52 +2,48 @@
 
 ## هوية النقطة
 
-هذه النقطة تحفظ الحالة بعد نشر إصلاح generation recovery إلى Spaces الثلاثة، وفحص Logs الحية، وتشغيل workflow post-fix واحد متسلسل للنص والبحث والصورة. المشروع في لحظة الحفظ على commit `34d0590`، مع تغييرات التوثيق ونسخة vendor التي ستدخل commit التوثيق التالي.
+هذه النقطة تحفظ الحالة بعد إصلاح generation recovery وDOM stabilization وimage contract، ثم تشخيص session state داخل Spaces الثلاثة. أُجريت اختبارات حية محدودة دون تكرار الصور بلا داعٍ. آخر commit منشور في router هو `63e6b33`، وتوجد تغييرات التوثيق الأخيرة محليًا تمهيدًا لcommit/release التالي.
 
 | العنصر | القيمة |
 |---|---|
 | المستودع | `ysrg2003/ai-provider-router` |
 | الفرع | `main` |
-| commit الأساس | `34d0590` — `docs: preserve ChatGPT Spaces checkpoint` |
-| workflow post-fix | [32240146321](https://github.com/ysrg2003/ai-provider-router/actions/runs/32240146321) |
-| artifact المنقح | [`chatgpt-spaces-functional-32240146321.json`](chatgpt-spaces-functional-32240146321.json) |
-| حالة working tree | تغييرات موثقة مقصودة غير ملتزمة بعد: vendor gateway، AI_CONTEXT، browser evidence، chatgpt-spaces، generation-recovery، artifact JSON |
+| آخر router commit منشور | `63e6b33` — `fix: fail fast on ChatGPT reauthentication state` |
+| آخر source commit منشور | `5c34094` — `fix: fail fast when ChatGPT session needs reauthentication` |
+| workflow الشامل | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
+| workflow المحدود لـreplica-04 | [32247225620](https://github.com/ysrg2003/ai-provider-router/actions/runs/32247225620) |
+| artifact الشامل | [`chatgpt-spaces-functional-32245401088.json`](chatgpt-spaces-functional-32245401088.json) |
 
-## نشر HF
+## الحالة المثبتة
 
-| Space | HF commit | post-deploy observation |
+| Space | النص | البحث الحي | الصورة | التفسير |
+|---|---|---|---|---|
+| `chatgpt-api-replica-01` | passed | passed | passed | المسارات الثلاثة نجحت بعد إصلاح output_type/image extraction. |
+| `chatgpt-api-replica-02` | passed | passed | passed | المسارات الثلاثة نجحت بعد إصلاح output_type/image extraction. |
+| `chatgpt-api-replica-04` | re-auth required | re-auth required | لم تُكرر بعد التشخيص | تظهر `visible_auth_controls=["log in"]` رغم `ready=true` و`input_visible=true`. |
+
+النتيجة الإجمالية في workflow الشامل: **6 passed و3 failed**. اختبار text/search المحدود للنسخة 04 فشل قبل fail-fast بعد نحو 268 ثانية. بعد نشر fail-fast، أعاد طلب نص واحد إلى replica-04 HTTP 503 برسالة `ChatGPT session requires re-authentication; visible auth control detected` خلال `2.881228` ثانية، بدل timeout طويل.
+
+## إصلاحات الكود
+
+في `chatgpt-api` المصدر أضيفت bounded fresh-conversation recovery، فتح رابط `New chat` فعليًا مع fallback، قبول assistant text الجديد عند توقف generation، استخراج الصور من data_url/src/url، وendpoint محمي `GET /diagnostics/session` لا يعيد إلا مؤشرات redacted. أضيف أيضًا fail-fast عند ظهور login control.
+
+في router أُرسل `output_type=image` صراحة، وقُبلت أشكال الصور `data_url` و`src` و`url`، وحُدّ retry الصور إلى محاولتين. تمت مزامنة `vendors/chatgpt-api` مع المصدر، ونجحت **47 اختبارات router** و**13 اختبارًا في المصدر**، مع compileall وgit diff check.
+
+## HF deployment commits الأخيرة
+
+| Space | أحدث gateway commit | حالة التشغيل |
 |---|---|---|
-| `chatgpt-api-replica-01` | `85e43bebd060e937e977c9508616e1f59362d66a` | `Running`; gateway ready; loaded 90 cookies |
-| `chatgpt-api-replica-02` | `590fc82202d3a07db0878e2806f3706c59c78176` | `Running`; gateway ready; loaded 92 cookies |
-| `chatgpt-api-replica-04` | `0d139e4fd9d269c2df99a1c392dc2b31ac126f5a` | `Running`; gateway ready; loaded 71 cookies |
+| replica-01 | `f6a5db5fd6b2961bc2d18d05c2cf93c5c84a6e02` | Running/ready |
+| replica-02 | `6ae0e10b74218d469329ac5f71701818d890836e` | Running/ready |
+| replica-04 | `cd675aeadb768112475cdba3f16f5d7ad2dc79ab` | Running/ready؛ session يحتاج re-authentication |
 
-القيم أعلاه هي cookie counts فقط؛ لم تُحفظ Cookie values أو Storage State أو API secrets. ملف token المؤقت حُذف فور انتهاء النشر.
+تم نشر `main.py` الذي يحتوي diagnostics endpoint إلى النسخ الثلاثة أيضًا. لم تُحفظ Cookie values أو Storage State أو API secrets في Git أو artifacts، وحُذفت الملفات المؤقتة بعد النشر.
 
-## النتيجة المثبتة بعد الإصلاح
+## إجراء الاستعادة التالي
 
-| Space | النص | البحث الحي | الصور |
-|---|---|---|---|
-| `chatgpt_space_replica_01` | passed | passed | failed: `503 transient` |
-| `chatgpt_space_replica_02` | passed | passed | failed: `invalid_or_unknown` |
-| `chatgpt_space` / replica-04 | failed: `503 transient` | failed: `503 transient` | failed: `503 transient` |
+لا تنسخ Cookies أو Storage State من replica أخرى. يجب إعادة تسجيل دخول حساب ChatGPT الخاص بـreplica-04 داخل Space نفسها أو تحديث session state الخاصة بها، ثم إعادة تشغيل Space. بعد ظهور `visible_auth_controls=[]` في `/diagnostics/session` يمكن تشغيل text/search مرة واحدة، ثم image مرة واحدة فقط إذا نجح المساران النصي والبحثي.
 
-التقرير الإجمالي هو **4 passed و5 failed**. في Logs الحية ظهر أن replica-04 نفّذ `reloading the browser page` عند بقاء generation نشطًا، ثم انتهى الطلب الجاري بـ503؛ وهذا يثبت نشر وتنفيذ recovery، لا نجاح الطلب الجاري. كما ظهر في replica-01 timeout مختلف مع `generation_active=False` و`main article:count=0`، وهو DOM stabilization failure خارج الحالة الأصلية.
+## الملفات والأدلة
 
-لا توجد في التقرير رسالة `Free plan limit` أو HTTP 429. لذلك لا تُنسب إخفاقات الصور إلى quota دون دليل، ولا تُكرر طلبات الصور قبل تشخيص logs أو انتظار reset خارجي.
-
-## ما لا يجب تغييره عند الاستعادة
-
-لا تغيّر ترتيب providers أو مفاتيح ChatGPT أو Cookies/Storage State استنادًا إلى هذه الجولة وحدها. لا تُسجّل أي API secret أو Cookie أو Storage State في Git. لا تحذف أو تستبدل نتائج الاختبار المنقحة. إذا احتجت العودة إلى commit الأساس فقط:
-
-```bash
-git fetch origin
-git checkout main
-git reset --hard 34d0590
-git clean -fd
-```
-
-الأمر الأخير يحذف الملفات غير المتعقبة؛ نفذه فقط بعد التأكد من عدم وجود ملفات محلية مهمة. للاستعادة الآمنة بعد commit التوثيق، استخدم tag الإصدار بدل reset.
-
-## الأدلة والملفات
-
-التقرير الأحمر المنقح محفوظ في [`chatgpt-spaces-functional-32240146321.json`](chatgpt-spaces-functional-32240146321.json). أدلة المتصفح الحية في [`browser-evidence-2026-08-19.md`](browser-evidence-2026-08-19.md)، وتحليل الإصلاح في [`chatgpt-generation-recovery.md`](chatgpt-generation-recovery.md)، وملخص كل Space في [`chatgpt-spaces.md`](chatgpt-spaces.md). لا تعد هذه النقطة الإصلاح حلًا كاملًا لكل 503؛ بل تحدد بدقة ما تم نشره وما بقي للتحقيق.
+الأدلة الحية المنقحة في [`browser-evidence-2026-08-19.md`](browser-evidence-2026-08-19.md)، وملخص النتائج في [`chatgpt-spaces.md`](chatgpt-spaces.md)، والتحليل البرمجي في [`chatgpt-generation-recovery.md`](chatgpt-generation-recovery.md)، وخطة remediation في [`generation-recovery-remediation-plan.md`](generation-recovery-remediation-plan.md). لا تعتبر هذه النقطة replica-04 ناجحة؛ هي تثبت أن مشكلة الكود والـretry storm عولجت، وأن العائق المتبقي هو session authentication داخل Space.

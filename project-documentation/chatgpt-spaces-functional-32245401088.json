@@ -1,0 +1,105 @@
+{
+  "status": "completed",
+  "spaces": [
+    "chatgpt_space_replica_01",
+    "chatgpt_space_replica_02",
+    "chatgpt_space"
+  ],
+  "scenarios": [
+    "text",
+    "search",
+    "image"
+  ],
+  "image_tested": true,
+  "execution_policy": "sequential_per_space_and_scenario",
+  "counts": {
+    "passed": 6,
+    "failed": 3
+  },
+  "results": [
+    {
+      "provider": "chatgpt_space_replica_01",
+      "scenario": "text",
+      "status": "passed",
+      "output_type": "text",
+      "text_chars": 30,
+      "annotations": 0,
+      "images_in_response": 0,
+      "duration_seconds": 4.46
+    },
+    {
+      "provider": "chatgpt_space_replica_01",
+      "scenario": "search",
+      "status": "passed",
+      "output_type": "text",
+      "text_chars": 109,
+      "annotations": 0,
+      "images_in_response": 0,
+      "duration_seconds": 11.33
+    },
+    {
+      "provider": "chatgpt_space_replica_01",
+      "scenario": "image",
+      "status": "passed",
+      "output_type": "image",
+      "mime_type": "image/png",
+      "image_base64_chars": 1078924,
+      "text_chars": 109,
+      "duration_seconds": 23.97
+    },
+    {
+      "provider": "chatgpt_space_replica_02",
+      "scenario": "text",
+      "status": "passed",
+      "output_type": "text",
+      "text_chars": 30,
+      "annotations": 0,
+      "images_in_response": 0,
+      "duration_seconds": 7.89
+    },
+    {
+      "provider": "chatgpt_space_replica_02",
+      "scenario": "search",
+      "status": "passed",
+      "output_type": "text",
+      "text_chars": 54,
+      "annotations": 0,
+      "images_in_response": 0,
+      "duration_seconds": 17.88
+    },
+    {
+      "provider": "chatgpt_space_replica_02",
+      "scenario": "image",
+      "status": "passed",
+      "output_type": "image",
+      "mime_type": "image/png",
+      "image_base64_chars": 1115116,
+      "text_chars": 54,
+      "duration_seconds": 42.67
+    },
+    {
+      "provider": "chatgpt_space",
+      "scenario": "text",
+      "status": "failed",
+      "error_class": "transient",
+      "status_code": null,
+      "duration_seconds": 260.06
+    },
+    {
+      "provider": "chatgpt_space",
+      "scenario": "search",
+      "status": "failed",
+      "error_class": "transient",
+      "status_code": null,
+      "duration_seconds": 260.39
+    },
+    {
+      "provider": "chatgpt_space",
+      "scenario": "image",
+      "status": "failed",
+      "error_class": "transient",
+      "status_code": null,
+      "duration_seconds": 260.73
+    }
+  ]
+}

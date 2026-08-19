@@ -17,7 +17,7 @@ python3 -m compileall -q src tests
 python3 -m unittest discover -s tests -v
 ```
 
-النتيجة المثبتة الحالية: **46 اختبارًا ناجحًا**. لتشغيل طلب حقيقي، انسخ [`.env.example`](.env.example)، أضف secret لمزود واحد على الأقل، ثم استخدم:
+النتيجة المثبتة الحالية في router: **47 اختبارًا ناجحًا**، إضافة إلى **13 اختبارًا** في مستودع chatgpt-api المصدر. لتشغيل طلب حقيقي، انسخ [`.env.example`](.env.example)، أضف secret لمزود واحد على الأقل، ثم استخدم:
 
 ```bash
 export PYTHONPATH=src
@@ -43,7 +43,7 @@ python3 -m ai_router.cli.main \
 | Adapter contract | [`src/ai_router/providers/base.py`](src/ai_router/providers/base.py) | `ProviderResponse` و`ProviderError` والعقود العامة للـadapters. |
 | OpenAI-compatible | [`src/ai_router/providers/openai_compatible.py`](src/ai_router/providers/openai_compatible.py) | POST إلى `/chat/completions`، JSON parsing، وclassification لأخطاء HTTP؛ يستخدمه Hugging Face وOpenRouter وNVIDIA. |
 | Gemini | [`src/ai_router/providers/gemini.py`](src/ai_router/providers/gemini.py) | JSON text، grounded interactions، image، TTS، embedding، وvideo analysis حسب method. |
-| ChatGPT Spaces | [`src/ai_router/providers/chatgpt_space.py`](src/ai_router/providers/chatgpt_space.py) | text/search prefix، image capture، quota detection، data-url/src fallback، ومهلة الصور الطويلة. |
+| ChatGPT Spaces | [`src/ai_router/providers/chatgpt_space.py`](src/ai_router/providers/chatgpt_space.py) | text/search prefix، explicit `output_type=image`، image capture، quota detection، data-url/src/url fallback، ومحاولتان كحد أقصى للصور. |
 | Persistence | [`src/ai_router/store.py`](src/ai_router/store.py) | SQLite tables لحالات provider، calls، rotation، وper-key model cursor؛ WAL/checkpoint وحالة تبقى بعد restart. |
 | Tools | [`src/ai_router/tools.py`](src/ai_router/tools.py) | يبني tools للبحث والخرائط عندما يطلبها route. |
 | Examples/automation | [`examples/one_request.py`](examples/one_request.py), [`scripts/live_smoke.py`](scripts/live_smoke.py), [`.github/workflows/test.yml`](.github/workflows/test.yml), [`.github/workflows/live-smoke.yml`](.github/workflows/live-smoke.yml) | تشغيل محلي، live smoke محدود، سيناريو `nvidia`، CI offline، وworkflow يدوي يرفع artifact منقحًا لمدة 7 أيام. |
@@ -105,7 +105,7 @@ CLI input
 
 | provider | kind | key pool | timeout | ملاحظة تحقق |
 |---|---|---|---:|---|
-| ChatGPT replica 01/02/04 | `chatgpt_space` | `chatgpt_space_default` | 540s | بعد نشر generation recovery: text/search نجحا في 01/02؛ image فشل في 01/02؛ 04 فشل في الأنواع الثلاثة. كل Space له Storage State خاص خارج Git. |
+| ChatGPT replica 01/02/04 | `chatgpt_space` | `chatgpt_space_default` | 540s | بعد remediation: text/search/image نجحت في 01/02؛ replica-04 تُظهر login control وتفشل بإشارة re-authentication سريعة. كل Space له Storage State خاص خارج Git. |
 | Gemini | `gemini_rest` | `gemini_default` | 180s | يدعم مسارات multimodal إضافية. |
 | Hugging Face | `openai_compatible` | `huggingface_default` | 90s | fallback token `HF_TOKEN`. |
 | OpenRouter | `openai_compatible` | `openrouter_default` | 120s | catalog مجاني مستقل. |
@@ -115,9 +115,9 @@ CLI input
 
 - `401/403`: افحص secret واسم pool والـbase URL؛ لا تعالجها بإعادة الطلب بلا تغيير.
 - `429`: quota/rate limit؛ يسجل router cooldown وينتقل إلى key/model/provider التالي.
-- `408/409/425/5xx` أو `RemoteDisconnected`: transient؛ تحقق من timeout وhealth ثم اسمح بالـfallback المحدود. في ChatGPT Spaces، recovery المنشور يعالج stale active generation قبل الطلب التالي، لكنه لا يحل بالضرورة timeout الجاري أو DOM stabilization عندما تكون `generation_active=False`.
+- `408/409/425/5xx` أو `RemoteDisconnected`: transient؛ تحقق من timeout وhealth ثم اسمح بالـfallback المحدود. في ChatGPT Spaces، recovery يفتح محادثة جديدة فعليًا ويعيد الطلب مرة واحدة فقط؛ إذا ظهر login control، fail-fast يعيد re-authentication بدل انتظار timeout.
 - JSON غير صالح أو response فارغ: `invalid_or_unknown`؛ راجع method وpayload وmodel capability.
-- ChatGPT image: كان السبب المؤكد مهلة 210s والتحقق الضعيف من نجاح الإرسال؛ الإصلاح رفع مهلة الصورة إلى 540s والتحقق من بدء generation، ونجح PNG حيًا.
+- ChatGPT image: أرسل router `output_type=image` صراحة، وقبل data_url/src/url، وحدّ محاولات الصورة باثنتين؛ نجحت PNG حيًا في replica-01 وreplica-02 في workflow 32245401088.
 - NVIDIA: الكتالوج العام 57، وظهر 30 مرشحًا في اختبار `/v1/models` السابق. الاختباران الوظيفيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211) اختبرا النماذج بسؤال معرفة ومسألة استدلال؛ نجحت النماذج العامة الـ12 بعد إعادة اختبار transient، ونجحت Riva في ترجمة مباشرة، بينما أخرج Vision وLlama 8B بسبب عقد JSON غير مناسب. واجه GLM quota مؤقتًا ثم نجح في الجولة اللاحقة.
 
 ## 9. الاختبارات وبوابات release
@@ -141,7 +141,7 @@ python3 -m unittest discover -s tests -v
 2. اقرأ `config.py` و`router.py` و`base.py` والـadapter المقابل.
 3. أضف أو عدّل config دون secrets.
 4. اكتب regression test يثبت request shape والـfallback وترتيب route.
-5. شغّل JSON validation و`compileall` و46 unit tests و`git diff --check` وفحص secrets.
+5. شغّل JSON validation و`compileall` و47 router tests و13 source tests و`git diff --check` وفحص secrets.
 6. إن كان التكامل خارجيًا، نفّذ live smoke محدودًا فقط بعد توفير credential، وسجّل deferred عندما لا يكون متاحًا.
 7. حدث docs وAI_CONTEXT ثم commit/release مع ملاحظة ما تم اختباره وما بقي غير مؤكد.
 
@@ -155,7 +155,7 @@ python3 -m unittest discover -s tests -v
 
 **Capability audit:** التشغيل الكامل [32220522226](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220522226) فحص 82 سجلًا فريدًا، نفذ 57 live probes، وسجل 47 passed و10 failed و25 route-only. إعادة الاختبار المستهدف [32220960460](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220960460) فرّقت بين quota/transient و404/400 وعقد JSON غير المناسب. التفاصيل في [`project-documentation/capability-audit.md`](project-documentation/capability-audit.md).
 
-**Current checkpoint:** نُشر generation recovery إلى Spaces الثلاثة في HF commits `85e43be` (01)، `590fc82` (02)، و`0d139e4` (04)، ثم اكتمل workflow post-fix [32240146321](https://github.com/ysrg2003/ai-provider-router/actions/runs/32240146321) بنتيجة 4 passed و5 failed. text/search نجحا في 01/02؛ image فشل في 01/02؛ 04 فشل في text/search/image بـ503. Logs 04 أثبتت تنفيذ reload recovery، لكن الإصلاح يهيئ الطلب التالي ولا يضمن الطلب الجاري، كما ظهرت في 01 حالة DOM stabilization مختلفة مع `generation_active=False`. نقطة الاستعادة والإجراءات الآمنة في [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md)، والتفاصيل في [`project-documentation/chatgpt-generation-recovery.md`](project-documentation/chatgpt-generation-recovery.md) و[`project-documentation/chatgpt-spaces.md`](project-documentation/chatgpt-spaces.md).
+**Current checkpoint:** source commits `ed417dd`, `cd18112`, `acbc3cb`, `5f1899d`, و`5c34094` أضافت bounded recovery، فتح New chat فعليًا، diagnostics redacted، وfail-fast عند login marker. نُشرت النسخ إلى Spaces الثلاثة. workflow [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) حقق 6 passed و3 failed: text/search/image نجحت في 01/02، و04 فشل بسبب session auth. الاختبار المحدود [32247225620](https://github.com/ysrg2003/ai-provider-router/actions/runs/32247225620) أكد فشل text/search في 04 قبل fail-fast؛ بعده أعاد طلب واحد HTTP 503 برسالة re-authentication خلال 2.88 ثانية. router main الحالي هو commit `63e6b33`. نقطة الاستعادة والإجراءات الآمنة في [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md)، والتفاصيل في [`project-documentation/chatgpt-generation-recovery.md`](project-documentation/chatgpt-generation-recovery.md) و[`project-documentation/chatgpt-spaces.md`](project-documentation/chatgpt-spaces.md).
 
 **Deferred:** البحث الحي عبر NVIDIA لأن adapter الحالي لا يرسل search tool، والقدرات المتخصصة للصورة والصوت والفيديو والـlive عندما لا يملك provider adapter مناسبًا. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
 
