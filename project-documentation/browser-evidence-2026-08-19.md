@@ -173,6 +173,12 @@ Opening `Vivid Blue Star on White.png` in the live Library showed the actual blu
 
 The connected live browser visibly showed the signed-in account `Yousef Sg` with the Free plan and an active composer. The refined redacted diagnostics in replica-04, after deployment, showed `ready=true` and `input_visible=true` but also a **real visible `button` labeled `log in`** with a nontrivial bounding box of `68.2×36` pixels. The details contained no hidden/aria-hidden flag and no sensitive values. This proves the earlier `log in` marker was not merely hidden text: the replica-04 Space has a different or partially expired ChatGPT session from the authenticated live sg browser, even though both are intended to represent account sg.
 
+## Step 27 — independent image byte verification (one request per replica)
+
+A separate image-only workflow [32251162719](https://github.com/ysrg2003/ai-provider-router/actions/runs/32251162719) ran exactly one image scenario per replica-01 and replica-02. Its redacted artifact reported `2 passed`, `output_type=image`, `mime_type=image/png`, and large non-empty Base64 lengths for both.
+
+A direct independent HTTP verification then sent one image request to each Space and decoded the returned data without retrying. Replica-02 returned `status_code=200` with a `data_url`; decoding produced a real PNG (`831230` bytes, `1254×1254`, valid PNG signature). Replica-01 returned `status_code=200` and the prompt submission completed, but the response contained no usable image bytes in the direct contract inspection. Its live Logs showed `generation=True assistant_count_increased=True` and HTTP 200, but no evidence of a returned downloadable image in that response. Therefore the strict byte-level result is **replica-02 verified; replica-01 not independently verified as fetched**, despite the earlier harness pass. No additional image request was sent after this discrepancy.
+
 ## Step 18 — live ChatGPT account reconnaissance
 
 The connected live browser opened `https://chatgpt.com/` without sending a prompt. It showed the signed-in `Yousef Sg` Free account, a visible composer textarea, and the send button. No login wall, challenge, or `session expired` page was visible. This is evidence about the live browser account only; it does not prove that replica-04's stored Space session state is valid or equivalent. The rendered sidebar also showed a `دردشة جديدة` control, confirming that the live UI exposes a fresh-chat path; no prompt was submitted and no account state was changed.

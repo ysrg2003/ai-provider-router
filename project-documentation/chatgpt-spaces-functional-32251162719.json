@@ -1,0 +1,37 @@
+{
+  "status": "completed",
+  "spaces": [
+    "chatgpt_space_replica_01",
+    "chatgpt_space_replica_02"
+  ],
+  "scenarios": [
+    "image"
+  ],
+  "image_tested": true,
+  "execution_policy": "sequential_per_space_and_scenario",
+  "counts": {
+    "passed": 2
+  },
+  "results": [
+    {
+      "provider": "chatgpt_space_replica_01",
+      "scenario": "image",
+      "status": "passed",
+      "output_type": "image",
+      "mime_type": "image/png",
+      "image_base64_chars": 1140364,
+      "text_chars": 0,
+      "duration_seconds": 34.71
+    },
+    {
+      "provider": "chatgpt_space_replica_02",
+      "scenario": "image",
+      "status": "passed",
+      "output_type": "image",
+      "mime_type": "image/png",
+      "image_base64_chars": 1141872,
+      "text_chars": 0,
+      "duration_seconds": 29.87
+    }
+  ]
+}
