@@ -1,0 +1,54 @@
+name: ChatGPT Spaces functional tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_images:
+        description: "Run image generation probes (quota-consuming)"
+        required: true
+        default: "true"
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chatgpt-spaces-functional-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  spaces:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run direct per-Space functional tests
+        env:
+          AI_ROUTER_CHATGPT_KEYS_JSON: ${{ secrets.AI_ROUTER_CHATGPT_KEYS_JSON }}
+          CHATGPT_API_SECRET_KEY: ${{ secrets.CHATGPT_API_SECRET_KEY }}
+          CHATGPT_SPACES_TEST_IMAGES: ${{ inputs.test_images }}
+          CHATGPT_SPACES_STATE_DB: /tmp/chatgpt-spaces-functional.db
+        run: |
+          set -euo pipefail
+          test -n "${AI_ROUTER_CHATGPT_KEYS_JSON}${CHATGPT_API_SECRET_KEY}"
+          mkdir -p artifacts
+          PYTHONPATH=src python scripts/chatgpt_spaces_functional.py > artifacts/chatgpt-spaces-functional.json
+          grep -q '"status": "completed"' artifacts/chatgpt-spaces-functional.json
+
+      - name: Upload redacted report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chatgpt-spaces-functional-${{ github.run_id }}
+          path: artifacts/chatgpt-spaces-functional.json
+          retention-days: 14
