@@ -105,7 +105,7 @@ CLI input
 
 | provider | kind | key pool | timeout | ملاحظة تحقق |
 |---|---|---|---:|---|
-| ChatGPT replica 01/02/04 | `chatgpt_space` | `chatgpt_space_default` | 540s | النص والبحث والصورة عبر router موثقة؛ كل Space له Storage State خاص خارج Git. |
+| ChatGPT replica 01/02/04 | `chatgpt_space` | `chatgpt_space_default` | 540s | بعد نشر generation recovery: text/search نجحا في 01/02؛ image فشل في 01/02؛ 04 فشل في الأنواع الثلاثة. كل Space له Storage State خاص خارج Git. |
 | Gemini | `gemini_rest` | `gemini_default` | 180s | يدعم مسارات multimodal إضافية. |
 | Hugging Face | `openai_compatible` | `huggingface_default` | 90s | fallback token `HF_TOKEN`. |
 | OpenRouter | `openai_compatible` | `openrouter_default` | 120s | catalog مجاني مستقل. |
@@ -115,7 +115,7 @@ CLI input
 
 - `401/403`: افحص secret واسم pool والـbase URL؛ لا تعالجها بإعادة الطلب بلا تغيير.
 - `429`: quota/rate limit؛ يسجل router cooldown وينتقل إلى key/model/provider التالي.
-- `408/409/425/5xx` أو `RemoteDisconnected`: transient؛ تحقق من timeout وhealth ثم اسمح بالـfallback المحدود.
+- `408/409/425/5xx` أو `RemoteDisconnected`: transient؛ تحقق من timeout وhealth ثم اسمح بالـfallback المحدود. في ChatGPT Spaces، recovery المنشور يعالج stale active generation قبل الطلب التالي، لكنه لا يحل بالضرورة timeout الجاري أو DOM stabilization عندما تكون `generation_active=False`.
 - JSON غير صالح أو response فارغ: `invalid_or_unknown`؛ راجع method وpayload وmodel capability.
 - ChatGPT image: كان السبب المؤكد مهلة 210s والتحقق الضعيف من نجاح الإرسال؛ الإصلاح رفع مهلة الصورة إلى 540s والتحقق من بدء generation، ونجح PNG حيًا.
 - NVIDIA: الكتالوج العام 57، وظهر 30 مرشحًا في اختبار `/v1/models` السابق. الاختباران الوظيفيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211) اختبرا النماذج بسؤال معرفة ومسألة استدلال؛ نجحت النماذج العامة الـ12 بعد إعادة اختبار transient، ونجحت Riva في ترجمة مباشرة، بينما أخرج Vision وLlama 8B بسبب عقد JSON غير مناسب. واجه GLM quota مؤقتًا ثم نجح في الجولة اللاحقة.
@@ -155,7 +155,7 @@ python3 -m unittest discover -s tests -v
 
 **Capability audit:** التشغيل الكامل [32220522226](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220522226) فحص 82 سجلًا فريدًا، نفذ 57 live probes، وسجل 47 passed و10 failed و25 route-only. إعادة الاختبار المستهدف [32220960460](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220960460) فرّقت بين quota/transient و404/400 وعقد JSON غير المناسب. التفاصيل في [`project-documentation/capability-audit.md`](project-documentation/capability-audit.md).
 
-**Current checkpoint:** آخر commit موثق للحالة الحالية هو `b21c9cf`. بعد اختبار ChatGPT Spaces، نجح النص والبحث في replica-01 وreplica-02، وفشلت الصور في الثلاث بـ503، وفشل replica-04 في الأنواع الثلاثة بـ503. نقطة الاستعادة والإجراءات الآمنة في [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md).
+**Current checkpoint:** نُشر generation recovery إلى Spaces الثلاثة في HF commits `85e43be` (01)، `590fc82` (02)، و`0d139e4` (04)، ثم اكتمل workflow post-fix [32240146321](https://github.com/ysrg2003/ai-provider-router/actions/runs/32240146321) بنتيجة 4 passed و5 failed. text/search نجحا في 01/02؛ image فشل في 01/02؛ 04 فشل في text/search/image بـ503. Logs 04 أثبتت تنفيذ reload recovery، لكن الإصلاح يهيئ الطلب التالي ولا يضمن الطلب الجاري، كما ظهرت في 01 حالة DOM stabilization مختلفة مع `generation_active=False`. نقطة الاستعادة والإجراءات الآمنة في [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md)، والتفاصيل في [`project-documentation/chatgpt-generation-recovery.md`](project-documentation/chatgpt-generation-recovery.md) و[`project-documentation/chatgpt-spaces.md`](project-documentation/chatgpt-spaces.md).
 
 **Deferred:** البحث الحي عبر NVIDIA لأن adapter الحالي لا يرسل search tool، والقدرات المتخصصة للصورة والصوت والفيديو والـlive عندما لا يملك provider adapter مناسبًا. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
 

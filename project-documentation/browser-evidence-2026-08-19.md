@@ -1,0 +1,126 @@
+# Browser evidence — 2026-08-19
+
+## Scope
+
+This evidence log records observations from My Browser only. No Cookies, Storage State, API keys, Authorization headers, or personal account data are stored here.
+
+## Step 1 — replica-01 public root
+
+URL: `https://yousefsg-chatgpt-api-replica-01.hf.space/`
+
+Observed response in the live browser:
+
+```json
+{"status":"running","ready":true,"service":"chatgpt-web-api","health":"/health","error":null}
+```
+
+Interpretation: the public runtime advertises `running=true` and `ready=true`; this is evidence for the HTTP service root only. It does not prove the internal ChatGPT browser/session path works. Browser screenshot upload failed twice, so no screenshot image is claimed for this step. The page HTML was saved by the browser at `/home/ubuntu/upload/yousefsg-chatgpt-api-replica-01.hf.space__1787122630239.html` for passive inspection only.
+
+## Step 2 — replica-02 public root
+
+URL: `https://yousefsg-chatgpt-api-replica-02.hf.space/`
+
+Observed response:
+
+```json
+{"status":"running","ready":true,"service":"chatgpt-web-api","health":"/health","error":null}
+```
+
+Interpretation: replica-02 has the same public runtime status as replica-01. This does not prove the ChatGPT browser/session path. Browser screenshot upload failed for this page as well; the browser saved passive HTML at `/home/ubuntu/upload/yousefsg-chatgpt-api-replica-02.hf.space__1787122664152.html`.
+
+## Step 3 — replica-04 public root
+
+URL: `https://yousefsg-chatgpt-api-replica-04.hf.space/`
+
+Observed response:
+
+```json
+{"status":"running","ready":true,"service":"chatgpt-web-api","health":"/health","error":null}
+```
+
+Interpretation: replica-04 also advertises a healthy public runtime root. This conflicts with the API test result of HTTP 503 on `/v1/chat/completions`, which narrows the problem to an internal request path such as browser/session/upstream handling rather than the public HTTP process itself. Browser screenshot upload failed again; passive HTML was saved at `/home/ubuntu/upload/yousefsg-chatgpt-api-replica-04.hf.space__1787122696742.html`.
+
+## Step 4 — replica-04 Swagger UI
+
+URL: `https://yousefsg-chatgpt-api-replica-04.hf.space/docs`
+
+The live browser rendered Swagger UI titled `ChatGPT Web API 1.0.0 OAS 3.1`. The visible operations were:
+
+- `GET /`
+- `GET /health`
+- `GET /status`
+- `GET /v1/models`
+- `POST /new-chat`
+- `POST /v1/chat/completions`
+- `POST /v1/responses`
+
+This is evidence that the API application and its OpenAPI surface are loaded. The browser screenshot was visually captured for this step, but the browser tool did not provide a downloadable screenshot path. No endpoint was executed from Swagger and no secret was entered.
+
+## Step 5 — replica-04 `/status` without Authorization
+
+URL: `https://yousefsg-chatgpt-api-replica-04.hf.space/status`
+
+The live browser displayed:
+
+```json
+{"error":{"message":"Invalid API Key","type":"authentication_error"}}
+```
+
+Interpretation: `/status` is protected and the browser request did not include the Space API secret. This is expected authentication behavior and is not proof that the internal ChatGPT session is invalid. No key was entered into the browser and no screenshot file was uploaded by the browser tool for this step.
+
+## Step 6 — replica-04 Hugging Face Container Logs via live browser
+
+The live browser opened the Hugging Face Space page and the Logs tab for `Yousefsg/chatgpt-api-replica-04`. The Space UI showed `Running`, and the visible logs showed the following redacted operational pattern:
+
+```text
+INFO: ChatGPT browser gateway is ready; loaded 71 cookies
+INFO: ChatGPT prompt submitted with explicit send button fallback
+ERROR: ChatGPT request failed
+TimeoutError: ChatGPT response did not stabilize before timeout (... assistant count=1, lengths=0 ... main article count=0 ... generation_active=True ... send_button_count=1, send_states=True/True)
+INFO: POST /v1/chat/completions ... 503 Service Unavailable
+INFO: ChatGPT prompt submitted with Enter; generation=True assistant_count_increased=False
+ERROR: ChatGPT request failed
+TimeoutError: ChatGPT response did not stabilize before timeout (... assistant count=1, lengths=0 ... generation_active=True ...)
+```
+
+Interpretation: this is the first direct root-cause evidence for the 503. The Space process and browser gateway initialize, but ChatGPT remains in a generation state without assistant content becoming available or stabilizing; the gateway then maps its timeout to HTTP 503. This is not an API-key rejection and not an image-quota message. The log also shows the gateway loaded 71 cookies, but no cookie values or Storage State were copied into this repository.
+
+The live browser screenshot visibly showed the Hugging Face Logs panel with the timeout traceback and repeated `POST /v1/chat/completions 503 Service Unavailable` lines. The screenshot upload path was not provided by the browser tool, so the visual evidence is represented by the browser capture and this redacted transcript.
+
+## Step 7 — deployment of generation recovery
+
+After source verification, `browser_gateway.py` with generation recovery was uploaded to the three Hugging Face Spaces using the authorized HF session/API path. The redacted deployment results were:
+
+| Space | HF commit | post-deploy public state |
+|---|---|---|
+| `Yousefsg/chatgpt-api-replica-01` | `85e43bebd060e937e977c9508616e1f59362d66a` | root and `/health` returned `running=true, ready=true` |
+| `Yousefsg/chatgpt-api-replica-02` | `590fc82202d3a07db0878e2806f3706c59c78176` | root and `/health` returned `running=true, ready=true` |
+| `Yousefsg/chatgpt-api-replica-04` | `0d139e4fd9d269c2df99a1c392dc2b31ac126f5a` | root and `/health` returned `running=true, ready=true` |
+
+The temporary token file was deleted immediately after upload. No token, Cookie, Storage State, or Authorization header was written to the repository or evidence log.
+
+## Step 8 — live post-deploy log inspection (replica-04)
+
+The live Hugging Face Space page showed `Running`, and its Logs panel showed a fresh application startup at `2026-08-19 09:51:23`. The gateway reported `ChatGPT browser gateway is ready; loaded 71 cookies`. The health/root probes returned HTTP 200. No stale-generation timeout, `generation_active=True`, or startup error appeared in the visible post-deploy log window. The panel also contained unrelated automated probes for common secret paths and `/api/predict`; those returned 404 and do not indicate an application failure.
+
+The live browser screenshot captured this state in the session: Space `chatgpt-api-replica-04`, status `Running`, Logs panel open, fresh startup, gateway ready, and HTTP 200 health/root requests.
+
+## Step 9 — live post-deploy log inspection (replica-01)
+
+The live Space page showed `Running`. Its Logs panel showed a fresh application startup at `2026-08-19 09:51:20`, followed by `ChatGPT browser gateway is ready; loaded 90 cookies`. Root and health probes returned HTTP 200. No stale-generation timeout or gateway startup error appeared in the visible post-deploy log window. The live browser capture showed the Space status and Logs panel; cookie values were not displayed or persisted.
+
+## Step 10 — live post-deploy log inspection (replica-02)
+
+The live Space page showed `Running`. Its Logs panel showed a fresh application startup at `2026-08-19 09:51:20`, followed by `ChatGPT browser gateway is ready; loaded 92 cookies`. Root and health probes returned HTTP 200. No stale-generation timeout or gateway startup error appeared in the visible post-deploy log window. The live browser capture showed the Space status and Logs panel; cookie values were not displayed or persisted.
+
+## Step 11 — live functional-test evidence (replica-02)
+
+While GitHub Action `32240146321` was running, the live replica-02 Logs panel showed five `POST /v1/chat/completions` requests returning HTTP 200 between `10:00:20` and `10:05:04`. The gateway messages showed `assistant_count_increased=True` on two requests and `assistant_count_increased=False` on three requests, but all five HTTP requests completed with 200 and no timeout/503 line was visible. This confirms the recovery path prevents the previous stale-generation failure from being converted into HTTP 503 for these requests; response-level pass/fail remains determined by the redacted GitHub artifact.
+
+## Step 12 — live functional-test evidence (replica-01)
+
+During the same GitHub Action, the live replica-01 Logs panel showed two successful `POST /v1/chat/completions` requests returning HTTP 200 at `09:56:22` and `09:56:36`. A later request at `10:00:14` returned HTTP 503 after a timeout diagnostic with `generation_active=False`, assistant count `3`, non-empty assistant lengths, and `main article:count=0`. This is a different failure signature from the original stale active-generation case: the page was no longer actively generating, but the response stabilizer did not accept the DOM state. The recovery patch addresses stale active generations; this new log evidence must be separated from the original root cause rather than misclassified as a complete fix.
+
+## Step 13 — live functional-test evidence (replica-04)
+
+The live replica-04 Logs panel showed the recovery code executing: at `10:09:09` it logged `WARNING ChatGPT generation remained active; reloading the browser page`. The following request still timed out at `10:09:13` with assistant count `1`, length `0`, `generation_active=True`, and returned HTTP 503. A later prompt submission was logged at `10:09:41`. This proves the deployed recovery code is present and active, but it does not guarantee that the same in-flight request will succeed; the current request can still hit the existing stabilization timeout before the recovery is applied to the next request.

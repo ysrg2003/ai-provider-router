@@ -122,4 +122,16 @@ Expected success: artifact صورة صالح أو data URL normalized. إذا ظ
 
 لا تسجل cookies، Storage State، Authorization، prompts حساسة، أو base64 image في GitHub Actions artifacts. عند تسريب API secret غيّره في Space ثم في router. عند تسريب session state، ألغِ جلسة ChatGPT وأصدر state جديدة؛ لا يكفي تدوير `CHATGPT_API_SECRET_KEY`. قبل release افحص `git diff --check` وsecret patterns و`git ls-files` للتأكد من عدم وجود cookie files.
 
-للمقارنة التاريخية والإصلاحات، راجع [`../docs/chatgpt-integration-guide.md`](../docs/chatgpt-integration-guide.md) و[`../docs/chatgpt-space.md`](../docs/chatgpt-space.md).
+## نتائج ما بعد نشر generation recovery
+
+نُشر `browser_gateway.py` المصحح إلى Spaces الثلاثة، ثم شُغّل workflow واحد متسلسل [32240146321](https://github.com/ysrg2003/ai-provider-router/actions/runs/32240146321) مع text وlive search وimage مرة واحدة لكل Space. التقرير الأحمر المنقح محفوظ في [`chatgpt-spaces-functional-32240146321.json`](chatgpt-spaces-functional-32240146321.json). النتيجة الإجمالية: **4 passed و5 failed**.
+
+| Space | النص | البحث الحي | الصورة | تفسير مختصر |
+|---|---|---|---|---|
+| replica-01 | passed | passed | failed: transient 503 | المساران النصي والبحثي نجحا؛ فشل طلب الصورة بعد 212.19s دون رسالة quota في التقرير. |
+| replica-02 | passed | passed | failed: invalid_or_unknown | المساران النصي والبحثي نجحا؛ فشل image payload/contract بعد 269.85s، ويحتاج تفاصيل Space logs أو artifact أعمق قبل نسبته إلى quota. |
+| replica-04 | failed: transient 503 | failed: transient 503 | failed: transient 503 | كل السيناريوهات فشلت بعد نحو 240–248s؛ Logs الحية أثبتت أن recovery نفّذ reload عند بقاء generation نشطًا، لكن الطلب الجاري نفسه انتهى timeout. |
+
+هذه الجولة **لا تثبت نجاحًا كاملًا بعد الإصلاح**. هي تثبت أن الإصلاح نُشر وأنه ينفذ recovery في الحالة المستهدفة، كما تثبت أن replica-01 وreplica-02 ينجحان في text/search، لكنها تكشف فشلين متبقيين مختلفين: image failures في 01/02، وsession/upstream أو stabilization failure مستمر في 04. لا توجد في التقرير رسالة `Free plan limit` أو HTTP 429؛ لا ينبغي إعادة طلب الصور قبل تشخيص logs أو انتظار reset خارجي.
+
+لأدلة المتصفح الحية المنقحة، راجع [`browser-evidence-2026-08-19.md`](browser-evidence-2026-08-19.md). وللتفصيل البرمجي للإصلاح، راجع [`chatgpt-generation-recovery.md`](chatgpt-generation-recovery.md). وللمقارنة التاريخية والإصلاحات، راجع [`../docs/chatgpt-integration-guide.md`](../docs/chatgpt-integration-guide.md) و[`../docs/chatgpt-space.md`](../docs/chatgpt-space.md).
