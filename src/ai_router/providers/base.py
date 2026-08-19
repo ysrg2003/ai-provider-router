@@ -13,7 +13,13 @@ def url_citations_from_text(text: str) -> list[str]:
     seen: set[str] = set()
     result: list[str] = []
     raw_text = str(text or "")
-    variants = (raw_text, raw_text.replace("\\/", "/"), raw_text.replace("\\u002F", "/"))
+    variants = (
+        raw_text,
+        raw_text.replace("\\\\/", "/"),
+        raw_text.replace("\\/", "/"),
+        raw_text.replace("\\\\u002F", "/"),
+        raw_text.replace("\\u002F", "/"),
+    )
     for variant in variants:
         for raw in _URL_RE.findall(variant):
             url = raw.rstrip(".,;:!?)]}\\\"")
