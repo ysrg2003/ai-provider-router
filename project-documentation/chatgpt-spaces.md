@@ -88,6 +88,20 @@ Expected result: response grounded عندما ينجح ChatGPT search-capable sp
 
 Expected success: artifact صورة صالح أو data URL normalized. إذا ظهرت رسالة `Free plan limit` فهي quota خارجية؛ لا تصلحها بتدوير ChatGPT API keys. إذا ظهر timeout، راجع Space logs وDOM/session state، ثم لا تعاود الطلب إلا بعد التأكد من أن generation لم يكتمل خلفيًا.
 
+## آخر اختبار مباشر لكل Space
+
+شغّل workflow [`../.github/workflows/chatgpt-spaces-functional.yml`](../.github/workflows/chatgpt-spaces-functional.yml) بالتنفيذ التسلسلي في [run 32222693459](https://github.com/ysrg2003/ai-provider-router/actions/runs/32222693459). كانت النتيجة: النص والبحث نجحا في `chatgpt_space_replica_01` و`chatgpt_space_replica_02`، بينما فشل اختبار الصورة فيهما بـHTTP 503. أما `chatgpt_space`، وهو replica-04، ففشل النص والبحث والصورة كلها بـHTTP 503. لا توجد في التقرير رسالة `Free plan limit` أو `429`، لذلك هذه الجولة لا تشير إلى استنفاد quota؛ الأقرب أنها مشكلة runtime أو browser/session state داخل الـSpace أو upstream ChatGPT.
+
+أعيد اختبار replica-04 منفردًا في النص والبحث فقط بعد أن أعادت endpoints العامة `/` و`/health` و`/docs` HTTP 200، في [run 32224351325](https://github.com/ysrg2003/ai-provider-router/actions/runs/32224351325). بقي النص والبحث عند HTTP 503 بعد نحو 223 ثانية لكل طلب. هذا يفصل المشكلة عن image quota ويثبت أن replica-04 يحتاج فحص logs وStorage State وsession/challenge وتهيئة المتصفح داخل Space قبل تعديل router.
+
+| Space | النص | البحث | الصورة | الدليل |
+|---|---|---|---|---|
+| replica-01 | نجح | نجح | 503 transient | [32222693459](https://github.com/ysrg2003/ai-provider-router/actions/runs/32222693459) |
+| replica-02 | نجح | نجح | 503 transient | [32222693459](https://github.com/ysrg2003/ai-provider-router/actions/runs/32222693459) |
+| replica-04 | 503 transient | 503 transient | 503 transient | [32222693459](https://github.com/ysrg2003/ai-provider-router/actions/runs/32222693459)، [إعادة النص/البحث 32224351325](https://github.com/ysrg2003/ai-provider-router/actions/runs/32224351325) |
+
+لا تعني `200` من `/health` أن ChatGPT session داخل المتصفح صالحة؛ فالـhealth يثبت runtime HTTP فقط، بينما اختبار `/v1/chat/completions` يمر عبر browser/session وupstream ChatGPT.
+
 ## Replica isolation
 
 كل Space يجب أن تملك runtime وStorage State مستقلين. لا تخلط cookie file بين replica-01 وreplica-02 وreplica-04. إذا نجحت replica-01 وفشلت الأخريان، افحص لكل واحدة على حدة: health، `API_SECRET_KEY`، session/challenge state، browser launch، والـquota. تشابه source files لا يساوي تشابه جلسة ChatGPT أو صلاحية account.
