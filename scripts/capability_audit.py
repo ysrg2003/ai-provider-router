@@ -60,7 +60,7 @@ def route_only(record: dict[str, Any], reason: str) -> dict[str, Any]:
     }
 
 
-def run_live_record(record: dict[str, Any], config: RouterConfig, adapters: dict[str, Any], secret: str) -> dict[str, Any]:
+def run_live_record(record: dict[str, Any], config: RouterConfig, adapters: dict[str, Any], secret: str, raw_fallback: bool = False) -> dict[str, Any]:
     started = time.monotonic()
     provider = record["provider"]
     model = record["model"]
@@ -102,16 +102,29 @@ def run_live_record(record: dict[str, Any], config: RouterConfig, adapters: dict
             text = str(response.payload.get("text", "")).strip()
             base.update({"category": "text_interaction", "status": "passed" if text else "invalid", "response_chars": len(text)})
         else:
-            response = adapter.complete_json(
-                model=model,
-                secret=secret,
-                system_prompt="Return exactly one JSON object.",
-                user_prompt=JSON_PROMPT,
-                timeout_seconds=timeout,
-                supports_response_format=record["supports_response_format"],
-            )
-            answer = response.payload.get("answer")
-            base.update({"category": "text_json", "status": "passed" if answer not in (None, "") else "invalid", "json_keys": sorted(response.payload)})
+            try:
+                response = adapter.complete_json(
+                    model=model,
+                    secret=secret,
+                    system_prompt="Return exactly one JSON object.",
+                    user_prompt=JSON_PROMPT,
+                    timeout_seconds=timeout,
+                    supports_response_format=record["supports_response_format"],
+                )
+                answer = response.payload.get("answer")
+                base.update({"category": "text_json", "status": "passed" if answer not in (None, "") else "invalid", "json_keys": sorted(response.payload)})
+            except ProviderError as json_error:
+                if not raw_fallback or not hasattr(adapter, "complete_text"):
+                    raise
+                raw_response = adapter.complete_text(
+                    model=model,
+                    secret=secret,
+                    system_prompt="Answer briefly. Do not include JSON or Markdown.",
+                    user_prompt=TEXT_PROMPT,
+                    timeout_seconds=timeout,
+                )
+                text = str(raw_response.payload.get("text", "")).strip()
+                base.update({"category": "text_raw_fallback", "status": "passed" if text else "invalid", "response_chars": len(text), "json_error_class": json_error.error_class, "json_status_code": json_error.status_code})
         base["duration_seconds"] = round(time.monotonic() - started, 2)
         return base
     except ProviderError as exc:
@@ -127,6 +140,10 @@ def main() -> int:
     router = AIRouter(config_dir=ROOT / "config", state_db=Path(os.getenv("CAPABILITY_AUDIT_STATE_DB", "/tmp/capability-audit.db")))
     try:
         records = collect_specs(config)
+        requested_models = {item.strip() for item in os.getenv("CAPABILITY_AUDIT_MODELS", "").split(",") if item.strip()}
+        if requested_models:
+            records = [record for record in records if f"{record['provider']}/{record['model']}" in requested_models]
+        raw_fallback = os.getenv("CAPABILITY_AUDIT_RAW_FALLBACK", "0").lower() in {"1", "true", "yes"}
         results: list[dict[str, Any]] = []
         live_methods = {"json", "interaction_text", "translation", "embedding"}
         for record in records:
@@ -145,7 +162,7 @@ def main() -> int:
         static = [item for item in results if "__record" not in item]
         max_workers = max(1, min(int(os.getenv("CAPABILITY_AUDIT_WORKERS", "3")), 3))
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [executor.submit(run_live_record, item["__record"], config, router.adapters, item["__secret"]) for item in pending]
+            futures = [executor.submit(run_live_record, item["__record"], config, router.adapters, item["__secret"], raw_fallback) for item in pending]
             live_results = [future.result() for future in futures]
         final_results = sorted(static + live_results, key=lambda item: (item["provider"], item["method"], item["model"]))
         counts = defaultdict(int)
@@ -154,6 +171,8 @@ def main() -> int:
         payload = {
             "status": "completed",
             "test_type": "all_unique_configured_provider_model_methods",
+            "model_filter": sorted(requested_models) if requested_models else "all",
+            "raw_text_fallback": raw_fallback,
             "unique_records": len(final_results),
             "live_attempts": len(live_results),
             "counts": dict(sorted(counts.items())),

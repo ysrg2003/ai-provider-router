@@ -8,6 +8,16 @@ on:
         required: true
         default: "3"
         type: string
+      models:
+        description: "Optional comma-separated provider/model IDs; empty means all"
+        required: false
+        default: ""
+        type: string
+      raw_fallback:
+        description: "Retry JSON failures as raw text when adapter supports it"
+        required: true
+        default: "false"
+        type: boolean
 
 permissions:
   contents: read
@@ -45,6 +55,8 @@ jobs:
           NVIDIA_API_KEYS_JSON: ${{ secrets.NVIDIA_API_KEYS_JSON }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           CAPABILITY_AUDIT_WORKERS: ${{ inputs.workers }}
+          CAPABILITY_AUDIT_MODELS: ${{ inputs.models }}
+          CAPABILITY_AUDIT_RAW_FALLBACK: ${{ inputs.raw_fallback }}
           CAPABILITY_AUDIT_STATE_DB: /tmp/capability-audit.db
         run: |
           set -euo pipefail
