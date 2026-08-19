@@ -149,7 +149,7 @@ NVIDIA_API_KEY=nvapi-REPLACE_ME
 NVIDIA_API_KEYS_JSON=[]
 ```
 
-توجد قائمة النماذج ومسار التشغيل في `docs/nvidia-free.md`. عند غياب المفتاح يتجاوز router NVIDIA وينتقل إلى المزود التالي، وعند quota أو transient failure يطبق cooldown وfallback المعتاد.
+توجد قائمة النماذج ومسار التشغيل في `docs/nvidia-free.md`. يحتوي `config/nvidia_free_catalog.json` على snapshot كامل لنتائج NVIDIA Free Endpoint وعددها 57، بينما تُفعّل routes العامة فقط النماذج غير المتخصصة وغير deprecated. عند غياب المفتاح يتجاوز router NVIDIA وينتقل إلى المزود التالي، وعند quota أو transient failure يطبق cooldown وfallback المعتاد.
 
 ## أريد إضافة مزود API مختلف تماماً
 

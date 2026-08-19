@@ -56,7 +56,13 @@ class ModelCatalogTests(unittest.TestCase):
         reference = self.models["reference_catalog"]["nvidia_free"]
         self.assertEqual(reference["catalog_free_endpoint_count"], 57)
         self.assertEqual(reference["source"]["api_base"], "https://integrate.api.nvidia.com/v1")
-        self.assertEqual(len(reference["active_text_models"]), 12)
+        catalog = json.loads((ROOT / "config" / "nvidia_free_catalog.json").read_text(encoding="utf-8"))
+        self.assertEqual(reference["catalog_file"], "config/nvidia_free_catalog.json")
+        self.assertEqual(len(catalog["models"]), 57)
+        self.assertEqual(len({item["name"] for item in catalog["models"]}), 57)
+        self.assertEqual(len(reference["active_text_models"]), 34)
+        deprecated = {item["api_model"] for item in catalog["models"] if item["deprecated"]}
+        self.assertTrue(deprecated.isdisjoint(reference["active_text_models"]))
         self.assertEqual(
             [item["model"] for item in self.models["model_chains"]["nvidia_free"]],
             reference["active_text_models"],
