@@ -17,7 +17,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 8,
+      "ranking_reason": "Fast 30B A3B MoE model for specialized agentic tasks; prioritizes latency and throughput over maximum breadth."
     },
     {
       "name": "muse-glimmer-30b",
@@ -36,7 +38,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 14,
+      "ranking_reason": "Strong specialist translation endpoint for 37 languages, not a general reasoning model."
     },
     {
       "name": "ising-calibration-1.5-31b",
@@ -45,7 +49,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 13,
+      "ranking_reason": "Large multimodal model, but specialized for quantum-computing calibration plots and technical text rather than general chat."
     },
     {
       "name": "nemotron-3-embed-1b",
@@ -82,7 +88,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 3,
+      "ranking_reason": "Flagship general model positioned for agentic workflows, coding, and long-horizon reasoning."
     },
     {
       "name": "minimax-m3",
@@ -109,7 +117,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 1,
+      "ranking_reason": "Largest general model in the passed set; official description emphasizes 1M context, agentic reasoning, coding, planning, and tool calling."
     },
     {
       "name": "nemotron-3.5-content-safety",
@@ -151,7 +161,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 6,
+      "ranking_reason": "Omni-modal reasoning across image, video, speech, and text; broader modality coverage than ordinary text models."
     },
     {
       "name": "synthetic-video-detector",
@@ -202,7 +214,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 2,
+      "ranking_reason": "Large hybrid MoE with 1M context and strong agentic reasoning, coding, planning, and tool calling."
     },
     {
       "name": "cosmos-transfer2.5-2b",
@@ -219,7 +233,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 7,
+      "ranking_reason": "General MoE model with 1M context, coding, reasoning, instruction following, and tool calling."
     },
     {
       "name": "riva-translate-4b-instruct-v1_1",
@@ -244,7 +260,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 10,
+      "ranking_reason": "Vision-language model for multi-image/video understanding, visual QA, and summarization."
     },
     {
       "name": "llama-3.1-nemotron-safety-guard-8b-v3",
@@ -289,7 +307,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 4,
+      "ranking_reason": "High-efficiency Nemotron Super variant with strong reasoning, tool calling, chat, and instruction following."
     },
     {
       "name": "llama-guard-4-12b",
@@ -330,7 +350,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 11,
+      "ranking_reason": "Compact vision-language model for text/image understanding and informative responses."
     },
     {
       "name": "magpie-tts-zeroshot",
@@ -363,7 +385,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 5,
+      "ranking_reason": "High-efficiency Nemotron Super variant with strong reasoning, tool calling, chat, and instruction following."
     },
     {
       "name": "llama-3.1-nemotron-nano-8b-v1",
@@ -418,7 +442,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 12,
+      "ranking_reason": "General vision-language model with image reasoning; lower general scale than the larger passed models."
     },
     {
       "name": "llama-3.2-90b-vision-instruct",
@@ -463,7 +489,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 9,
+      "ranking_reason": "Large general instruction model with strong contextual understanding, reasoning, and text generation."
     },
     {
       "name": "llama-3.1-8b-instruct",
@@ -472,7 +500,9 @@
       "deprecated": false,
       "live_test_status": "passed",
       "live_http_status": 200,
-      "enabled": true
+      "enabled": true,
+      "rank": 15,
+      "ranking_reason": "Small general instruction model; useful for low latency and lower resource needs, but below larger passed models in breadth."
     },
     {
       "name": "nv-embed-v1",
@@ -529,5 +559,23 @@
       "meta/llama-3.1-8b-instruct"
     ],
     "policy": "Only passed models are enabled in NVIDIA routes; failed, timed-out, unavailable, and untested catalog entries remain disabled."
-  }
+  },
+  "ranking_policy": "General-capability heuristic ranking; specialized endpoints are intentionally lower for general chat and ranking is not a universal benchmark.",
+  "ranked_active_models": [
+    "nvidia/nemotron-3-ultra-550b-a55b",
+    "nvidia/nemotron-3-super-120b-a12b",
+    "z-ai/glm-5.2",
+    "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    "nvidia/llama-3.3-nemotron-super-49b-v1",
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+    "nvidia/nemotron-3-nano-30b-a3b",
+    "nvidia/nemotron-3.5-lightning-30b-a3b",
+    "meta/llama-3.1-70b-instruct",
+    "nvidia/nemotron-nano-12b-v2-vl",
+    "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+    "meta/llama-3.2-11b-vision-instruct",
+    "nvidia/ising-calibration-1.5-31b",
+    "nvidia/riva-translate-4b-instruct-v2",
+    "meta/llama-3.1-8b-instruct"
+  ]
 }

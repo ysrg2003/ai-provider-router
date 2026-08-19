@@ -21,7 +21,11 @@
 
 > الفكرة الأساسية: عدّل الملفات الموجودة داخل `config/` لتغيير المزود أو النموذج أو الترتيب أو مجموعة المفاتيح، ولا تعدّل المشروع الذي يستعمل المدير.
 
-> **حالة التحقق الأخيرة:** نجحت 38 اختبارًا محليًا، وأصبح ChatGPT بثلاث replicas مرتبة أولًا في مسارات النص والبحث الحي والصورة. نجح اختبار النص والبحث الحي، ونجح اختبار الصورة عبر router وأعاد PNG بحجم 2,054,465 بايت وأبعاد 1199×1312. راجع [توثيق ChatGPT Space](docs/chatgpt-space.md) للتشغيل والتشخيص.
+> **حالة التحقق الأخيرة:** نجحت 43 اختبارًا محليًا، وأصبح ChatGPT بثلاث replicas مرتبة أولًا في مسارات النص والبحث الحي والصورة. نجح اختبار النص والبحث الحي، ونجح اختبار الصورة عبر router وأعاد PNG بحجم 2,054,465 بايت وأبعاد 1199×1312. راجع [توثيق ChatGPT Space](docs/chatgpt-space.md) للتشغيل والتشخيص.
+
+## فهرس التوثيق الهندسي
+
+للبداية السريعة استخدم هذا README. وللتفاصيل التشغيلية، اقرأ [دليل النظرة العامة](project-documentation/overview.md)، [دليل المزودين](project-documentation/providers.md)، [دليل الإعداد](project-documentation/configuration-guide.md)، [دليل NVIDIA](project-documentation/nvidia-integration.md)، [دليل ChatGPT Spaces](project-documentation/chatgpt-spaces.md)، و[استكشاف الأخطاء](project-documentation/troubleshooting.md). أما الوكلاء الذين سيعدلون الكود فيجب أن يبدؤوا من [AI_CONTEXT.md](AI_CONTEXT.md)، وتوجد بطاقات الاعتمادات في [docs/credentials.md](docs/credentials.md).
 
 ---
 
@@ -446,7 +450,7 @@ NVIDIA_API_KEY=nvapi-ضع_المفتاح_هنا
 NVIDIA_API_KEYS_JSON=[]
 ```
 
-توجد القائمة الحالية ومسار التحقق في [docs/nvidia-free.md](docs/nvidia-free.md). أضيفت النماذج النصية ذات Free Endpoint الظاهرة في snapshot كـfallback بعد OpenRouter، بينما لا تدخل النماذج المتخصصة للصوت أو الفيديو أو embedding أو image-only في route النص العام. إذا لم تضع مفتاح NVIDIA، يتجاوز router المزود تلقائيًا ويستمر إلى البديل التالي.
+توجد القائمة الحالية ومسار التحقق في [docs/nvidia-free.md](docs/nvidia-free.md)، ويوجد [الترتيب العملي للنماذج الناجحة](docs/nvidia-ranking.md). أضيفت فقط النماذج التي ظهرت للحساب ونجحت في live completion كـfallback بعد OpenRouter، بينما تبقى النماذج المتخصصة أو غير المتاحة في catalog دون تفعيل في route النص العام. إذا لم تضع مفتاح NVIDIA، يتجاوز router المزود تلقائيًا ويستمر إلى البديل التالي.
 
 لا تعتبر `Free Endpoint` وعدًا دائمًا أو استخدامًا تجاريًا بلا حدود. NVIDIA قد تطلب تحقق الحساب أو الهاتف، وقد تختلف quota وrate limits حسب النموذج والحساب وحركة المرور. لاختبار سلسلة NVIDIA وحدها بعد إضافة المفتاح:
 

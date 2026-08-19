@@ -55,72 +55,7 @@
     "nvidia_free": [
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/nemotron-3-ultra-550b-a55b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
         "method": "json",
         "input_types": [
           "text"
@@ -146,20 +81,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "model": "z-ai/glm-5.2",
         "method": "json",
         "input_types": [
           "text"
@@ -185,7 +107,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -198,7 +120,72 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-nano-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "meta/llama-3.1-70b-instruct",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -224,7 +211,20 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
+        "model": "nvidia/ising-calibration-1.5-31b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -575,72 +575,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/nemotron-3-ultra-550b-a55b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
         "method": "json",
         "input_types": [
           "text"
@@ -666,20 +601,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "model": "z-ai/glm-5.2",
         "method": "json",
         "input_types": [
           "text"
@@ -705,7 +627,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -718,7 +640,72 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-nano-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "meta/llama-3.1-70b-instruct",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -744,7 +731,20 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
+        "model": "nvidia/ising-calibration-1.5-31b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -1065,72 +1065,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/nemotron-3-ultra-550b-a55b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
         "method": "json",
         "input_types": [
           "text"
@@ -1156,20 +1091,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "model": "z-ai/glm-5.2",
         "method": "json",
         "input_types": [
           "text"
@@ -1195,7 +1117,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -1208,7 +1130,72 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-nano-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "meta/llama-3.1-70b-instruct",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -1234,7 +1221,20 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
+        "model": "nvidia/ising-calibration-1.5-31b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -1535,72 +1535,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/nemotron-3-ultra-550b-a55b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
         "method": "json",
         "input_types": [
           "text"
@@ -1626,20 +1561,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "model": "z-ai/glm-5.2",
         "method": "json",
         "input_types": [
           "text"
@@ -1665,7 +1587,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -1678,7 +1600,72 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-nano-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "meta/llama-3.1-70b-instruct",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -1704,7 +1691,20 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
+        "model": "nvidia/ising-calibration-1.5-31b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -2386,72 +2386,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/nemotron-3-ultra-550b-a55b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
         "method": "json",
         "input_types": [
           "text"
@@ -2477,20 +2412,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "model": "z-ai/glm-5.2",
         "method": "json",
         "input_types": [
           "text"
@@ -2516,7 +2438,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -2529,7 +2451,72 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-nano-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "meta/llama-3.1-70b-instruct",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -2555,7 +2542,20 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
+        "model": "nvidia/ising-calibration-1.5-31b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -2647,72 +2647,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/nemotron-3-ultra-550b-a55b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
         "method": "json",
         "input_types": [
           "text"
@@ -2738,20 +2673,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-nano-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "model": "z-ai/glm-5.2",
         "method": "json",
         "input_types": [
           "text"
@@ -2777,7 +2699,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -2790,7 +2712,72 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-nano-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "meta/llama-3.1-70b-instruct",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-nano-12b-v2-vl",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
         "method": "json",
         "input_types": [
           "text"
@@ -2816,7 +2803,20 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
+        "model": "nvidia/ising-calibration-1.5-31b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -3683,20 +3683,20 @@
       "catalog_file": "config/nvidia_free_catalog.json",
       "catalog_free_endpoint_count": 57,
       "active_text_models": [
-        "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "nvidia/riva-translate-4b-instruct-v2",
-        "nvidia/ising-calibration-1.5-31b",
-        "z-ai/glm-5.2",
         "nvidia/nemotron-3-ultra-550b-a55b",
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
         "nvidia/nemotron-3-super-120b-a12b",
-        "nvidia/nemotron-3-nano-30b-a3b",
-        "nvidia/nemotron-nano-12b-v2-vl",
+        "z-ai/glm-5.2",
         "nvidia/llama-3.3-nemotron-super-49b-v1.5",
-        "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
         "nvidia/llama-3.3-nemotron-super-49b-v1",
-        "meta/llama-3.2-11b-vision-instruct",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "nvidia/nemotron-3-nano-30b-a3b",
+        "nvidia/nemotron-3.5-lightning-30b-a3b",
         "meta/llama-3.1-70b-instruct",
+        "nvidia/nemotron-nano-12b-v2-vl",
+        "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+        "meta/llama-3.2-11b-vision-instruct",
+        "nvidia/ising-calibration-1.5-31b",
+        "nvidia/riva-translate-4b-instruct-v2",
         "meta/llama-3.1-8b-instruct"
       ],
       "excluded_specialized_models": [
@@ -3708,7 +3708,84 @@
       ],
       "policy": "Snapshot only; Free Endpoint availability, model capabilities, account verification, and rate limits are controlled by NVIDIA and may change. Specialized endpoints require dedicated routes or adapters.",
       "active_live_tested_count": 15,
-      "live_test_source": "/tmp/nvidia-all-live-results.json (local test artifact)"
+      "live_test_source": "/tmp/nvidia-all-live-results.json (local test artifact)",
+      "ranking": [
+        {
+          "rank": 1,
+          "model": "nvidia/nemotron-3-ultra-550b-a55b",
+          "reason": "Largest general model in the passed set; official description emphasizes 1M context, agentic reasoning, coding, planning, and tool calling."
+        },
+        {
+          "rank": 2,
+          "model": "nvidia/nemotron-3-super-120b-a12b",
+          "reason": "Large hybrid MoE with 1M context and strong agentic reasoning, coding, planning, and tool calling."
+        },
+        {
+          "rank": 3,
+          "model": "z-ai/glm-5.2",
+          "reason": "Flagship general model positioned for agentic workflows, coding, and long-horizon reasoning."
+        },
+        {
+          "rank": 4,
+          "model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+          "reason": "High-efficiency Nemotron Super variant with strong reasoning, tool calling, chat, and instruction following."
+        },
+        {
+          "rank": 5,
+          "model": "nvidia/llama-3.3-nemotron-super-49b-v1",
+          "reason": "High-efficiency Nemotron Super variant with strong reasoning, tool calling, chat, and instruction following."
+        },
+        {
+          "rank": 6,
+          "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+          "reason": "Omni-modal reasoning across image, video, speech, and text; broader modality coverage than ordinary text models."
+        },
+        {
+          "rank": 7,
+          "model": "nvidia/nemotron-3-nano-30b-a3b",
+          "reason": "General MoE model with 1M context, coding, reasoning, instruction following, and tool calling."
+        },
+        {
+          "rank": 8,
+          "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+          "reason": "Fast 30B A3B MoE model for specialized agentic tasks; prioritizes latency and throughput over maximum breadth."
+        },
+        {
+          "rank": 9,
+          "model": "meta/llama-3.1-70b-instruct",
+          "reason": "Large general instruction model with strong contextual understanding, reasoning, and text generation."
+        },
+        {
+          "rank": 10,
+          "model": "nvidia/nemotron-nano-12b-v2-vl",
+          "reason": "Vision-language model for multi-image/video understanding, visual QA, and summarization."
+        },
+        {
+          "rank": 11,
+          "model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+          "reason": "Compact vision-language model for text/image understanding and informative responses."
+        },
+        {
+          "rank": 12,
+          "model": "meta/llama-3.2-11b-vision-instruct",
+          "reason": "General vision-language model with image reasoning; lower general scale than the larger passed models."
+        },
+        {
+          "rank": 13,
+          "model": "nvidia/ising-calibration-1.5-31b",
+          "reason": "Large multimodal model, but specialized for quantum-computing calibration plots and technical text rather than general chat."
+        },
+        {
+          "rank": 14,
+          "model": "nvidia/riva-translate-4b-instruct-v2",
+          "reason": "Strong specialist translation endpoint for 37 languages, not a general reasoning model."
+        },
+        {
+          "rank": 15,
+          "model": "meta/llama-3.1-8b-instruct",
+          "reason": "Small general instruction model; useful for low latency and lower resource needs, but below larger passed models in breadth."
+        }
+      ]
     }
   },
   "openrouter_free_catalog": {

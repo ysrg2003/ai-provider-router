@@ -1,0 +1,73 @@
+# مزودو الذكاء الاصطناعي
+
+هذا الملف يشرح الفرق بين **provider** و**model** و**key pool** و**chain**. provider هو الخدمة التي تستقبل الطلب، model هو النموذج داخلها، key pool هو مجموعة الأسرار المرتبة، وchain هو ترتيب provider/model الذي يطبقه router. التفاصيل التنفيذية في [`../config/providers.json`](../config/providers.json) و[`../config/models.json`](../config/models.json).
+
+## قاعدة الاختيار
+
+يبدأ `complete_auto()` من intent. إذا كان هناك `grounding`، يرشح فقط specs التي تملك الأداة المطلوبة. إذا أعطي `chain` صريح، يستخدمه بدل route auto ولا يسمح بدمج `grounding` معه. داخل route يمر router بالـmodels بالترتيب، ثم يختار keys غير الموجودة في cooldown، ويسجل كل نتيجة في SQLite.
+
+## جدول providers
+
+| Provider ID | Kind | Base URL | Key pool | Default timeout | الاستخدام |
+|---|---|---|---|---:|---|
+| `chatgpt_space_replica_01` | `chatgpt_space` | `CHATGPT_API_REPLICA_01_BASE_URL` | `chatgpt_space_default` | 540s | أول ChatGPT replica |
+| `chatgpt_space_replica_02` | `chatgpt_space` | `CHATGPT_API_REPLICA_02_BASE_URL` | `chatgpt_space_default` | 540s | ثاني ChatGPT replica |
+| `chatgpt_space` | `chatgpt_space` | `CHATGPT_API_BASE_URL` | `chatgpt_space_default` | 540s | replica-04 الحالي |
+| `google_gemini` | `gemini_rest` | Google `v1beta` | `gemini_default` | 180s | Gemini text/multimodal |
+| `huggingface` | `openai_compatible` | Hugging Face `/v1` | `huggingface_default` | 90s | HF inference |
+| `openrouter` | `openai_compatible` | OpenRouter `/api/v1` | `openrouter_default` | 120s | OpenRouter/free catalog |
+| `nvidia` | `openai_compatible` | NVIDIA `/v1` | `nvidia_default` | 120s | NVIDIA Free Endpoint models |
+
+## ChatGPT Spaces
+
+### الاستخدام والعقد
+
+adapter `ChatGPTSpaceAdapter` يرسل interaction text إلى Space، ويضيف جملة البحث المطلوبة عندما يملك route أداة `search`. في الصور يرفع timeout إلى حد أدنى 540 ثانية، يحاول الإرسال حتى ثلاث مرات، يبحث عن image candidates، ويدعم `data_url` أو تنزيل `src` عند الحاجة. النص والبحث لا يعتمدان على HTML inspection؛ فحص الصورة فقط يحتاج التقاط artifact بعد اكتمال generation.
+
+### التشغيل
+
+لكل Space base URL متغير مستقل، بينما API secret pool يمر عبر `AI_ROUTER_CHATGPT_KEYS_JSON` أو fallback `CHATGPT_API_SECRET_KEY`. Cookies وStorage State تبقى داخل Space runtime ولا يجب نسخها إلى router أو Git. افتح [`../docs/chatgpt-space.md`](../docs/chatgpt-space.md) للتفاصيل والنتائج التاريخية.
+
+### الفشل والاستعادة
+
+`401/403` يدل غالبًا على API secret غير متطابق أو session state منتهي داخل Space. `429` أو رسالة Free plan image limit quota من ChatGPT ليست مشكلة rotation في router؛ fallback قد يحاول Space أخرى، لكن quotas قد تكون مرتبطة بالخدمة أو الجلسة ولا تتحول تلقائيًا إلى quota جديدة. timeout في الصورة يُعالج أولًا بالمهلة الطويلة وعدم إعادة الطلبات بلا حدود.
+
+## Gemini
+
+Gemini adapter ليس OpenAI-compatible؛ يستخدم payloads خاصة لـ`generateContent` و`interactions` ومسارات image/TTS/embedding/video analysis. لذلك لا تنسخ model ID إلى OpenRouter أو NVIDIA. key pool هو `AI_ROUTER_GEMINI_KEYS_JSON`، وroute يحدد method صراحة.
+
+يجب أن يكون لكل live test output type واضح؛ text smoke أقل كلفة، بينما image/audio/video قد تستهلك quota أو تنتج artifact. عند `400` راجع method وschema، وعند `429` افحص quota قبل تدوير مفاتيح كثيرة.
+
+## Hugging Face
+
+Hugging Face يستخدم `OpenAICompatibleAdapter` على `https://router.huggingface.co/v1`، ويقرأ `AI_ROUTER_HF_KEYS_JSON` أو `HF_TOKEN`. نجاح route plan لا يعني أن model worker متاح؛ الاختبار الصحيح هو completion صغير. استخدم fine-grained token بأقل صلاحية، وراجع provider/model availability عند `503`.
+
+## OpenRouter
+
+OpenRouter يستخدم `OpenAICompatibleAdapter` على `https://openrouter.ai/api/v1`، ويقرأ `AI_ROUTER_OPENROUTER_KEYS_JSON` أو `OPENROUTER_API_KEY`. `config/models.json` يحتوي catalog وترتيبًا منفصلًا للنماذج المجانية. عند `404` افحص model ID كما يظهر في OpenRouter، ولا تفترض أن model ID من provider آخر صالح هنا.
+
+## NVIDIA NIM
+
+NVIDIA يستخدم OpenAI-compatible `/v1/chat/completions` وkey pool `NVIDIA_API_KEYS_JSON` أو `NVIDIA_API_KEY`. الـcatalog الكامل في [`../config/nvidia_free_catalog.json`](../config/nvidia_free_catalog.json)، أما models المفعّلة فهي التي نجحت في live text completion فقط. يوجد 57 Free Endpoint في snapshot، واختُبر 30 مرشحًا، ونجح 15؛ ترتيبها من الأكثر تقدمًا إلى الأقل في [`../docs/nvidia-ranking.md`](../docs/nvidia-ranking.md).
+
+> **سياسة NVIDIA:** وجود model في صفحة Free Endpoint أو `/v1/models` لا يثبت أن payload text صالح أو أن endpoint متاح لحسابك. لا تفعّل model جديدًا قبل test صغير يسجل status وresponse صالحين دون حفظ المفتاح.
+
+عند `401/403` أعد إصدار key من NVIDIA Build. عند `429/503` احترم quota/worker availability ولا تحوّل الخطأ إلى نجاح. النماذج المتخصصة للصوت والفيديو والصور والـembedding غير مضافة إلى routes لمجرد وجودها في catalog؛ تحتاج adapter method واختبارًا مستقلًا.
+
+## كيف يعمل fallback؟
+
+| المرحلة | ما يحدث |
+|---|---|
+| 1 | يحدد router route وmodel specs من config. |
+| 2 | يأخذ keys ordered أو round-robin حسب pool policy. |
+| 3 | يتجاوز key/model في cooldown. |
+| 4 | يرسل الطلب إلى adapter. |
+| 5 | يسجل success أو failure في SQLite. |
+| 6 | عند retryable error ينتظر backoff قصيرًا، ويحرّك cursor إلى model التالي لنفس key. |
+| 7 | عند انتهاء `max_attempts` يرفع `AllProvidersFailed`. |
+
+لا يعيد fallback المحاولة بلا حد، ولا يضمن أن provider التالي يملك القدرة نفسها؛ route filtering هو الذي يحدد capability. لهذا يجب قراءة `output_routes` قبل القول إن fallback للصورة أو الفيديو موجود.
+
+## إضافة provider أو model
+
+إضافة model في adapter موجود غالبًا config-only: أضف model spec، ضعه في chain/route مناسب، أضف test لترتيبه وcapability، ثم نفّذ live smoke محدودًا. إضافة provider kind جديد تتطلب adapter، تسجيل kind في `AIRouter.__init__`, error mapping، key pool، config، tests، ودليل credential. لا تضع secret في JSON ولا تعدل `base_url` بإضافة token.

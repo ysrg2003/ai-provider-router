@@ -28,6 +28,10 @@ NVIDIA_API_KEYS_JSON=[{"id":"nvidia-key-1","key":"nvapi-REPLACE_ME","project":"d
 
 المصدر النصي الرسمي [llms.txt](https://build.nvidia.com/llms.txt) يؤكد Base URL والتوافق مع Chat Completions، بينما [models.md](https://build.nvidia.com/models.md) يوفر روابط canonical للنماذج.
 
+## ترتيب النماذج الناجحة
+
+يوجد الترتيب العملي الكامل للنماذج الـ15 الناجحة في [docs/nvidia-ranking.md](nvidia-ranking.md). الترتيب يميز بين القدرة العامة والتخصص، ويطابق ترتيب `nvidia_free` داخل `config/models.json`.
+
 ## ما يدخل routes العامة
 
 من أصل 57 نتيجة، أظهر `/v1/models` لحساب الاختبار 30 نموذجًا من المرشحين النشطين، ثم نجح **15 نموذجًا** في live completion نصي محدود. هذه النماذج الـ15 فقط مفعّلة في `model_chains.nvidia_free`، ثم أُضيفت بعد OpenRouter إلى `default` و`creative` و`cheap` وإلى `output_routes.text` و`output_routes.text_grounded_search`. أما النماذج التي ظهرت للحساب لكنها انتهت بـ400 أو 503 أو timeout أو رد فارغ فبقيت disabled.
