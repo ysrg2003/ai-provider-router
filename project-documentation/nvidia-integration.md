@@ -100,6 +100,19 @@ python3 -m ai_router.cli.main \
 
 Expected success: JSON فيه `route` و`intent`. قد يختار route providerًا أسبق مثل ChatGPT أو Gemini؛ لا تعتبر ذلك فشل NVIDIA. لاختبار NVIDIA تحديدًا استخدم chain الذي يحتوي `nvidia_free` عبر Python API أو عطّل providers الأخرى مؤقتًا في نسخة config خارج Git.
 
+## Step 6: اختبار NVIDIA من GitHub Actions
+
+يحتوي workflow [`../.github/workflows/live-smoke.yml`](../.github/workflows/live-smoke.yml) على scenario باسم `nvidia` ويحقن القيم من GitHub **Secrets**، لا من GitHub Variables. أضف أحد الاسمين التاليين في مستودع `ysrg2003/ai-provider-router` عبر **Settings → Secrets and variables → Actions → New repository secret**:
+
+| Secret | التنسيق | مستهلكه |
+|---|---|---|
+| `NVIDIA_API_KEY` | `nvapi-<new-key>` | fallback لمفتاح مفرد |
+| `NVIDIA_API_KEYS_JSON` | `["nvapi-<new-key>"]` | pool مرتب |
+
+يجب ألا يظهر secret في workflow logs أو artifact. من صفحة GitHub افتح **Actions → Live smoke → Run workflow**، اختر `nvidia`، ثم اضغط **Run workflow**. النجاح يتطلب أن تكون الخطوات خضراء وأن يحتوي artifact `live-smoke-<run-id>/live-smoke.json` على `"status": "completed"` ونتيجة `nvidia` بحالة `passed`؛ لا يكفي ظهور رسالة بدء التشغيل.
+
+إذا كان workflow يفشل في خطوة `test -n`، فالـSecret غير موجود أو فارغ. إذا كانت النتيجة `401/403` فالمفتاح أو حساب NVIDIA غير صالح. إذا كانت `429/503` فهذه quota/availability؛ لا تعِد تشغيل workflow مرات متتابعة. هذا الاختبار يستهلك طلبًا حيًا محدودًا من NVIDIA.
+
 ## تحديث model جديد
 
 1. أضف entry إلى catalog مع source/status/evidence، دون key.

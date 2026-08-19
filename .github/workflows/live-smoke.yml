@@ -12,6 +12,7 @@ on:
           - routing
           - text
           - openrouter
+          - nvidia
           - search
           - maps
           - image
@@ -49,11 +50,13 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           AI_ROUTER_OPENROUTER_KEYS_JSON: ${{ secrets.AI_ROUTER_OPENROUTER_KEYS_JSON }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          NVIDIA_API_KEYS_JSON: ${{ secrets.NVIDIA_API_KEYS_JSON }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           SMOKE_SCENARIO: ${{ inputs.scenario }}
           SMOKE_STATE_DB: /tmp/ai-router-live-smoke.db
         run: |
           set -euo pipefail
-          test -n "${AI_ROUTER_GEMINI_KEYS_JSON}${AI_ROUTER_HF_KEYS_JSON}${HF_TOKEN}${AI_ROUTER_OPENROUTER_KEYS_JSON}${OPENROUTER_API_KEY}"
+          test -n "${AI_ROUTER_GEMINI_KEYS_JSON}${AI_ROUTER_HF_KEYS_JSON}${HF_TOKEN}${AI_ROUTER_OPENROUTER_KEYS_JSON}${OPENROUTER_API_KEY}${NVIDIA_API_KEYS_JSON}${NVIDIA_API_KEY}"
           mkdir -p artifacts
           PYTHONPATH=src python scripts/live_smoke.py > artifacts/live-smoke.json
           grep -q '"status": "completed"' artifacts/live-smoke.json

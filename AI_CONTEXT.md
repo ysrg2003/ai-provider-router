@@ -46,7 +46,7 @@ python3 -m ai_router.cli.main \
 | ChatGPT Spaces | [`src/ai_router/providers/chatgpt_space.py`](src/ai_router/providers/chatgpt_space.py) | text/search prefix، image capture، quota detection، data-url/src fallback، ومهلة الصور الطويلة. |
 | Persistence | [`src/ai_router/store.py`](src/ai_router/store.py) | SQLite tables لحالات provider، calls، rotation، وper-key model cursor؛ WAL/checkpoint وحالة تبقى بعد restart. |
 | Tools | [`src/ai_router/tools.py`](src/ai_router/tools.py) | يبني tools للبحث والخرائط عندما يطلبها route. |
-| Examples/automation | [`examples/one_request.py`](examples/one_request.py), [`scripts/live_smoke.py`](scripts/live_smoke.py), [`.github/workflows/test.yml`](.github/workflows/test.yml), [`.github/workflows/live-smoke.yml`](.github/workflows/live-smoke.yml) | تشغيل محلي، live smoke محدود، CI offline، وworkflow يدوي يرفع artifact منقحًا لمدة 7 أيام. |
+| Examples/automation | [`examples/one_request.py`](examples/one_request.py), [`scripts/live_smoke.py`](scripts/live_smoke.py), [`.github/workflows/test.yml`](.github/workflows/test.yml), [`.github/workflows/live-smoke.yml`](.github/workflows/live-smoke.yml) | تشغيل محلي، live smoke محدود، سيناريو `nvidia`، CI offline، وworkflow يدوي يرفع artifact منقحًا لمدة 7 أيام. |
 | Documentation | [`docs/operations.md`](docs/operations.md), [`docs/nvidia-free.md`](docs/nvidia-free.md), [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md), [`docs/credentials.md`](docs/credentials.md) | التشغيل، الأسرار، NVIDIA، والترتيب والتحقيقات. |
 
 ## 4. العقود والبيانات والإعداد
@@ -131,7 +131,7 @@ python3 -m unittest discover -s tests -v
 
 الاختبارات عالية القيمة في [`tests/test_multiroute.py`](tests/test_multiroute.py) و[`tests/test_router.py`](tests/test_router.py) و[`tests/test_model_catalog.py`](tests/test_model_catalog.py) و[`tests/test_nvidia.py`](tests/test_nvidia.py). وهي تثبت intent، search prefix، image filtering/retry/data-url، Gemini payloads، state cursor، secret redaction، ترتيب OpenRouter/NVIDIA، وعدم دخول NVIDIA إلى image route.
 
-لـlive smoke استخدم workflow يدويًا أو `scripts/live_smoke.py`، وحقن secrets من GitHub Secrets فقط. live test ليس جزءًا من CI offline؛ سجّل status/model/route والأحجام فقط، ولا تسجل base64 أو headers أو prompts الحساسة.
+لـlive smoke استخدم workflow يدويًا أو `scripts/live_smoke.py`؛ workflow يحقن Gemini/HF/OpenRouter/NVIDIA من GitHub Secrets فقط، ويقبل scenario مثل `nvidia`. live test ليس جزءًا من CI offline؛ سجّل status/model/route والأحجام فقط، ولا تسجل base64 أو headers أو prompts الحساسة.
 
 ## 10. بروتوكول تعديل المشروع
 
