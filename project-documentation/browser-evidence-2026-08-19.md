@@ -124,3 +124,31 @@ During the same GitHub Action, the live replica-01 Logs panel showed two success
 ## Step 13 — live functional-test evidence (replica-04)
 
 The live replica-04 Logs panel showed the recovery code executing: at `10:09:09` it logged `WARNING ChatGPT generation remained active; reloading the browser page`. The following request still timed out at `10:09:13` with assistant count `1`, length `0`, `generation_active=True`, and returned HTTP 503. A later prompt submission was logged at `10:09:41`. This proves the deployed recovery code is present and active, but it does not guarantee that the same in-flight request will succeed; the current request can still hit the existing stabilization timeout before the recovery is applied to the next request.
+
+## Step 14 — remediation deployment startup (replica-04)
+
+After the second remediation deployment, the live Logs panel showed a fresh startup at `2026-08-19 10:57:44`, followed by `ChatGPT browser gateway is ready; loaded 71 cookies`. Root and health requests returned HTTP 200. The Space UI showed `Running` before functional testing began.
+
+## Step 15 — remediation recovery behavior (replica-04)
+
+During workflow `32245401088`, the live logs showed the first prompt submission at `11:02:16`, then a timeout at `11:05:53`. The new recovery logged `ChatGPT recovery: opening a fresh conversation after timeout`, followed by `ChatGPT request timed out; retrying once after fresh-conversation recovery` at `11:05:57`, and a second prompt submission at `11:06:19`. This is direct evidence that the bounded fresh-conversation retry is active; the final response status remains pending until the workflow artifact completes.
+
+## Step 16 — remediation functional evidence (replica-01)
+
+The live replica-01 Logs panel showed fresh startup at `10:57:43`, gateway readiness with 90 cookies, and three post-deploy `POST /v1/chat/completions` requests returning HTTP 200 at `11:00:10`, `11:00:20`, and `11:00:24`. The third request reported `generation=True` and `assistant_count_increased=False` at submission time but still returned HTTP 200, and no DOM stabilization timeout or 503 appeared in the visible log window.
+
+## Step 17 — remediation functional evidence (replica-04 final)
+
+The final replica-04 Logs window showed the remediation retry twice: the first attempt timed out at `11:05:53`, recovery opened a fresh conversation, and the retry was submitted at `11:06:19`; a later request repeated the same pattern at `11:09:56–11:10:28`, and another at `11:14:04–11:14:37`. The visible diagnostics remained `assistant count=1`, `lengths=0`, `generation_active=True`, with stop control present. Therefore the code-level recovery and bounded retry are functioning, but replica-04's ChatGPT session/upstream state remains unable to produce assistant content. The workflow report classified all three replica-04 scenarios as transient failures.
+
+## Step 19 — replica-04 after real New chat click helper
+
+After deploying the helper that clicks the rendered `New chat`/`دردشة جديدة` link, the limited text/search run showed startup at `11:21:52`, gateway readiness at `11:22:11`, a prompt submission at `11:22:37`, timeout/recovery at `11:26:13–11:26:24`, and a second prompt submission at `11:26:45`. The visible log window still did not show an assistant response or an HTTP 200 completion. This indicates the stored replica-04 ChatGPT session/upstream path remains blocked beyond conversation selection; further code retries would not be evidence of a fix.
+
+## Step 20 — redacted session diagnostics
+
+The new authorized `/diagnostics/session` endpoint returned `ready=true`, `input_visible=true`, and zero stop controls for all three Spaces. Replica-01 and replica-02 reported no visible login marker. Replica-04 reported `markers["log in"] = true` while still showing a composer and `ready=true`; it had 22 cookies versus 20 in each of the other two Spaces. Only cookie counts/names were inspected; no cookie values, Storage State, prompts, or secrets were returned or stored. This is the strongest current evidence that replica-04's stored session state differs or is partially authenticated, rather than a remaining router image-contract defect.
+
+## Step 18 — live ChatGPT account reconnaissance
+
+The connected live browser opened `https://chatgpt.com/` without sending a prompt. It showed the signed-in `Yousef Sg` Free account, a visible composer textarea, and the send button. No login wall, challenge, or `session expired` page was visible. This is evidence about the live browser account only; it does not prove that replica-04's stored Space session state is valid or equivalent. The rendered sidebar also showed a `دردشة جديدة` control, confirming that the live UI exposes a fresh-chat path; no prompt was submitted and no account state was changed.
