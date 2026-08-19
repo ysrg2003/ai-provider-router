@@ -2,7 +2,7 @@
 
 ## النتيجة المستهدفة
 
-بعد اتباع هذا الدليل، يستطيع المشغّل إضافة مفتاح NVIDIA بأمان، التحقق من `/v1/models`، اختبار completion محدود، وفهم لماذا يحتوي catalog على 57 Free Endpoint بينما تفعّل routes الحالية 15 نموذجًا فقط.
+بعد اتباع هذا الدليل، يستطيع المشغّل إضافة مفتاح NVIDIA بأمان، التحقق من `/v1/models`، اختبار completion وترجمة محدودين، وفهم لماذا يحتوي catalog على 57 Free Endpoint بينما تفعّل routes الحالية 12 نموذجًا نصيًا عامًا وroute ترجمة مستقلًا لـRiva.
 
 > هذه الميزة تعتمد على حساب NVIDIA وquota وavailability خارجية. لا تعدّل routes بناءً على منشور أو صفحة catalog فقط.
 
@@ -81,7 +81,7 @@ Expected result: HTTP 200 وmessage نصية. إذا كان model لا يقبل 
 
 ## Step 4: افهم catalog مقابل routes
 
-`config/nvidia_free_catalog.json` snapshot بحثي يحتوي 57 Free Endpoint. نتائج live السابقة صنفت 30 مرشحًا، ونجح 15 في completion نصي محدود. `config/models.json` يفعّل الناجح فقط ضمن سلسلة `nvidia_free` وبعد OpenRouter في السلاسل المطلوبة.
+`config/nvidia_free_catalog.json` snapshot بحثي يحتوي 57 Free Endpoint. نتائج live السابقة صنفت 30 مرشحًا، ثم أثبت الاختبار الوظيفي 12 نموذجًا عامًا في عقد JSON، وأثبت Riva في `output_routes.translation` بعقد raw text. `config/models.json` يفعّل النماذج العامة فقط ضمن سلسلة `nvidia_free` وبعد OpenRouter، ويضع Riva في route الترجمة المستقل.
 
 الترتيب الحالي من الأعلى إلى الأقل موثق في [`../docs/nvidia-ranking.md`](../docs/nvidia-ranking.md). الترتيب **ترتيب capability عام مبني على family/parameter/reasoning/multimodal evidence ضمن الاختبار**، وليس benchmark موحدًا ولا وعدًا بالجودة أو السرعة.
 
@@ -119,9 +119,27 @@ Expected success: JSON فيه `route` و`intent`. قد يختار route provider
 
 للاختبار الواقعي، يشغّل [`../scripts/nvidia_functional_smoke.py`](../scripts/nvidia_functional_smoke.py) سؤالين عربيين لكل نموذج عام في `nvidia_free`: سؤال معرفة عن عاصمة اليابان، ومسألة حسابية تتطلب استدلالًا. لا يكتفي الاختبار بHTTP 200؛ يشترط JSON صالحًا ووجود `answer` غير فارغ في الاختبارين. في التشغيل [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) نجحت 10 من 12 نماذج عامة في الجولة الأولى، ثم نجح GLM وLlama 70B في إعادة الفحص [32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211)، فأصبحت النتيجة النهائية 12 من 12. واجه `meta/llama-3.2-11b-vision-instruct` و`meta/llama-3.1-8b-instruct` output غير متوافق مع عقد JSON العام، فأُخرجا من `nvidia_free`.
 
-يُختبر `nvidia/riva-translate-4b-instruct-v2` منفصلًا برسالة ترجمة مباشرة، وقد نجح؛ لذلك صُنّف ترجمة متخصصة خارج `nvidia_free` العام حتى وجود translation route. في الوضع الافتراضي الحالي يشغّل harness الـ12 نموذجًا العام وRiva المتخصص، بينما يبقى Vision وLlama 8B المستبعدان خارج الاختبار العام. يستخدم workflow [`../.github/workflows/nvidia-functional.yml`](../.github/workflows/nvidia-functional.yml) المفتاح من GitHub Secrets، ويقبل من 1 إلى 3 عمال متوازيين، ويرفع تقريرًا منقحًا لمدة 14 يومًا.
+يُختبر `nvidia/riva-translate-4b-instruct-v2` منفصلًا برسالة ترجمة مباشرة، وقد نجح؛ لذلك صُنّف ترجمة متخصصة في `output_routes.translation` خارج `nvidia_free` العام. في الوضع الافتراضي الحالي يشغّل harness الـ12 نموذجًا العام وRiva المتخصص، بينما يبقى Vision وLlama 8B المستبعدان خارج الاختبار العام. يستخدم workflow [`../.github/workflows/nvidia-functional.yml`](../.github/workflows/nvidia-functional.yml) المفتاح من GitHub Secrets، ويقبل من 1 إلى 3 عمال متوازيين، ويرفع تقريرًا منقحًا لمدة 14 يومًا.
 
 هذا الاختبار لا يدّعي اختبار البحث الحي؛ NVIDIA adapter الحالي لا يرسل search tool إلى `/chat/completions`. لذلك يسجل التقرير البحث كـ`not_supported_by_nvidia_adapter` بدل تحويل غياب الأداة إلى نجاح زائف. كما لا يختبر الصور لأن أي نموذج NVIDIA لم يُضف إلى `output_routes.image`.
+
+## استخدام translation route
+
+يُستدعى route الترجمة صراحةً عبر `output_type="translation"`، أو تلقائيًا عندما يحتوي prompt على marker مثل `ترجم` أو `translate`. الواجهة البرمجية الأسهل هي:
+
+```python
+from ai_router import AIRouter
+
+router = AIRouter(state_db="data/translation.db")
+result = router.translate_text(
+    text="The capital of France is Paris.",
+    target_language="Arabic",
+)
+print(result["translation"])
+router.close()
+```
+
+العقد مختلف عن route النص العام: `method=translation` يستدعي `complete_text`، يمنع `response_format=json_object`، ويتوقع نصًا غير فارغ. لا يدخل Riva في `model_chains.nvidia_free`، لذلك لا يُستخدم fallback ترجمة كأنه completion JSON. الاختبار الحي [32220367894](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220367894) أكد route=`translation` وoutput_type=`translation`.
 
 ## تحديث model جديد
 

@@ -253,7 +253,7 @@
 
 **Minimal health check:** GET `/v1/models` لاختبار المصادقة وقائمة النماذج، ثم completion محدود؛ لا تسجل Authorization header.
 
-**Expected success:** HTTP 200 من `/v1/models` وresponse من `/v1/chat/completions`. في الإصدار الحالي مفعّل فقط ما نجح live test، وهو 15 نموذجًا؛ catalog العام 57 ليس ضمانًا أن كل نموذج مكشوف لحسابك.
+**Expected success:** HTTP 200 من `/v1/models` وresponse من `/v1/chat/completions`. في الإصدار الحالي مفعّل 12 نموذجًا NVIDIA في النص العام، مع Riva في `output_routes.translation` بعد اختبار وظيفي مستقل؛ catalog العام 57 ليس ضمانًا أن كل نموذج مكشوف أو صالح لكل capability في حسابك.
 
 **Common failure and fix:** `401/403` key/account verification؛ `400` model/payload؛ `429/503` quota أو worker limit؛ timeout availability. لا تضف نموذجًا إلى routes لمجرد وجوده في public catalog؛ اختبره أولًا.
 

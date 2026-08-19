@@ -17,7 +17,7 @@ python3 -m compileall -q src tests
 python3 -m unittest discover -s tests -v
 ```
 
-النتيجة المثبتة الحالية: **43 اختبارًا ناجحًا**. لتشغيل طلب حقيقي، انسخ [`.env.example`](.env.example)، أضف secret لمزود واحد على الأقل، ثم استخدم:
+النتيجة المثبتة الحالية: **46 اختبارًا ناجحًا**. لتشغيل طلب حقيقي، انسخ [`.env.example`](.env.example)، أضف secret لمزود واحد على الأقل، ثم استخدم:
 
 ```bash
 export PYTHONPATH=src
@@ -59,7 +59,7 @@ python3 -m ai_router.cli.main \
 
 `config/models.json` يعرّف `model_chains` للتدوير العام، و`output_routes` للتوجيه حسب المخرج، و`reference_catalog` للمصادر والـsnapshots. كل row يحدد provider/model/method/input_types/output_types/tools و`supports_response_format` و`enabled`. route لا يثبت أن endpoint متاح دائمًا؛ availability وquota خارجية.
 
-الترتيب الحالي المهم هو: ChatGPT Spaces أولًا في text/search/image، ثم Gemini/Hugging Face/OpenRouter وفق route، وNVIDIA بعد OpenRouter في السلاسل العامة. سلسلة `nvidia_free` تحتوي **12 نموذجًا نصيًا عامًا** بعد الاختبار الوظيفي، بترتيب [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md). Riva مصنف ترجمة متخصصة خارج السلسلة العامة، وLlama Vision وLlama 8B أُخرجا من عقد JSON العام. catalog NVIDIA الكامل يحتوي 57 نتيجة في [`config/nvidia_free_catalog.json`](config/nvidia_free_catalog.json)، لكن غير المؤكد أو المتخصص يبقى خارج routes العامة.
+الترتيب الحالي المهم هو: ChatGPT Spaces أولًا في text/search/image، ثم Gemini/Hugging Face/OpenRouter وفق route، وNVIDIA بعد OpenRouter في السلاسل العامة. سلسلة `nvidia_free` تحتوي **12 نموذجًا نصيًا عامًا** بعد الاختبار الوظيفي، بترتيب [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md). Riva مصنف ترجمة متخصصة وله الآن `output_routes.translation` مستقل مع `method=translation` وraw-text contract، بينما Llama Vision وLlama 8B أُخرجا من عقد JSON العام. catalog NVIDIA الكامل يحتوي 57 نتيجة في [`config/nvidia_free_catalog.json`](config/nvidia_free_catalog.json)، لكن غير المؤكد أو المتخصص يبقى خارج routes العامة.
 
 ### KeySpec والسرية
 
@@ -109,7 +109,7 @@ CLI input
 | Gemini | `gemini_rest` | `gemini_default` | 180s | يدعم مسارات multimodal إضافية. |
 | Hugging Face | `openai_compatible` | `huggingface_default` | 90s | fallback token `HF_TOKEN`. |
 | OpenRouter | `openai_compatible` | `openrouter_default` | 120s | catalog مجاني مستقل. |
-| NVIDIA | `openai_compatible` | `nvidia_default` | 120s | 12 نموذجًا نصيًا عامًا في routes بعد OpenRouter؛ Riva ترجمة متخصصة خارجها، وVision/Llama 8B غير موثوقين لعقد JSON العام. |
+| NVIDIA | `openai_compatible` | `nvidia_default` | 120s | 12 نموذجًا نصيًا عامًا في routes بعد OpenRouter؛ Riva في `output_routes.translation`، وVision/Llama 8B غير موثوقين لعقد JSON العام. |
 
 ## 8. الأخطاء والإصلاحات المثبتة
 
@@ -131,7 +131,7 @@ python3 -m unittest discover -s tests -v
 
 الاختبارات عالية القيمة في [`tests/test_multiroute.py`](tests/test_multiroute.py) و[`tests/test_router.py`](tests/test_router.py) و[`tests/test_model_catalog.py`](tests/test_model_catalog.py) و[`tests/test_nvidia.py`](tests/test_nvidia.py). وهي تثبت intent، search prefix، image filtering/retry/data-url، Gemini payloads، state cursor، secret redaction، ترتيب OpenRouter/NVIDIA، وعدم دخول NVIDIA إلى image route.
 
-لـlive smoke استخدم workflow يدويًا أو `scripts/live_smoke.py`؛ workflow يحقن Gemini/HF/OpenRouter/NVIDIA من GitHub Secrets فقط، ويقبل scenario مثل `nvidia`. live test ليس جزءًا من CI offline؛ سجّل status/model/route والأحجام فقط، ولا تسجل base64 أو headers أو prompts الحساسة.
+لـlive smoke استخدم workflow يدويًا أو `scripts/live_smoke.py`؛ workflow يحقن Gemini/HF/OpenRouter/NVIDIA من GitHub Secrets فقط، ويقبل scenarios مثل `nvidia` و`translation`. live test ليس جزءًا من CI offline؛ سجّل status/model/route والأحجام فقط، ولا تسجل base64 أو headers أو prompts الحساسة. لتدقيق كل النماذج استخدم [`scripts/capability_audit.py`](scripts/capability_audit.py) وworkflow [`capability-audit.yml`](.github/workflows/capability-audit.yml): جرد 82 سجلًا فريدًا، نفذ 57 probe حيًا، وسجل 25 route-only للصور والصوت والفيديو والـlive والـmethods المتخصصة.
 
 ## 10. بروتوكول تعديل المشروع
 
@@ -141,7 +141,7 @@ python3 -m unittest discover -s tests -v
 2. اقرأ `config.py` و`router.py` و`base.py` والـadapter المقابل.
 3. أضف أو عدّل config دون secrets.
 4. اكتب regression test يثبت request shape والـfallback وترتيب route.
-5. شغّل JSON validation و`compileall` و43+ unit tests و`git diff --check` وفحص secrets.
+5. شغّل JSON validation و`compileall` و46 unit tests و`git diff --check` وفحص secrets.
 6. إن كان التكامل خارجيًا، نفّذ live smoke محدودًا فقط بعد توفير credential، وسجّل deferred عندما لا يكون متاحًا.
 7. حدث docs وAI_CONTEXT ثم commit/release مع ملاحظة ما تم اختباره وما بقي غير مؤكد.
 
@@ -149,9 +149,13 @@ python3 -m unittest discover -s tests -v
 
 ## 11. الحالة الحالية والقدرات المؤجلة
 
-**Verified:** 43 unit tests، catalog NVIDIA 57، اختباران وظيفيان حقيقيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211)؛ نجحت النماذج العامة الـ12 في سؤال معرفة ومسألة استدلال بعد إعادة فحص transient، ونجحت Riva في اختبار ترجمة متخصص. بعد إضافة المفتاح الجديد إلى GitHub Secrets، نجح أيضًا تشغيل smoke رقم [`32217577979`](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) على route=`nvidia_free`.
+**Verified:** 46 unit tests، catalog NVIDIA 57، اختباران وظيفيان حقيقيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211)؛ نجحت النماذج العامة الـ12 في سؤال معرفة ومسألة استدلال بعد إعادة فحص transient، ونجحت Riva في اختبار ترجمة متخصص. بعد إضافة المفتاح الجديد إلى GitHub Secrets، نجح أيضًا تشغيل smoke رقم [`32217577979`](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) على route=`nvidia_free`.
 
-**Deferred:** البحث الحي عبر NVIDIA لأن adapter الحالي لا يرسل search tool، routes متخصصة للنماذج NVIDIA audio/video/embedding/rerank/moderation/image، وtranslation route لـRiva. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
+**Verified:** أضيف `translation route` مستقل واختُبر حيًا في [32220367894](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220367894) بالمفتاح الجديد؛ route=`translation` وoutput_type=`translation` وRiva أعاد نصًا غير فارغ.
+
+**Capability audit:** التشغيل الكامل [32220522226](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220522226) فحص 82 سجلًا فريدًا، نفذ 57 live probes، وسجل 47 passed و10 failed و25 route-only. إعادة الاختبار المستهدف [32220960460](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220960460) فرّقت بين quota/transient و404/400 وعقد JSON غير المناسب. التفاصيل في [`project-documentation/capability-audit.md`](project-documentation/capability-audit.md).
+
+**Deferred:** البحث الحي عبر NVIDIA لأن adapter الحالي لا يرسل search tool، والقدرات المتخصصة للصورة والصوت والفيديو والـlive عندما لا يملك provider adapter مناسبًا. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
 
 ## 12. المراجع
 
@@ -160,5 +164,6 @@ python3 -m unittest discover -s tests -v
 - [`docs/operations.md`](docs/operations.md) — التشغيل وGitHub Actions/live smoke.
 - [`docs/nvidia-free.md`](docs/nvidia-free.md) — NVIDIA catalog والسياسة.
 - [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md) — ترتيب النماذج الناجحة.
+- [`project-documentation/capability-audit.md`](project-documentation/capability-audit.md) — تدقيق جميع النماذج وتصنيف route-only/live.
 - [`config/nvidia_free_catalog.json`](config/nvidia_free_catalog.json) — evidence snapshot وlive status.
 - [`tests/test_multiroute.py`](tests/test_multiroute.py) و[`tests/test_router.py`](tests/test_router.py) — contracts السلوكية.

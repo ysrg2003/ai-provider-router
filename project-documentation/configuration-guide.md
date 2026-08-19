@@ -124,6 +124,7 @@ python3 -m ai_router.cli.main --config-dir config --state-db /tmp/fresh-router.d
 | route/output | config source | تنفيذ أم plan |
 |---|---|---|
 | text | `output_routes.text` أو `default` | تنفيذ |
+| translation | `output_routes.translation` | تنفيذ NVIDIA Riva بعقد raw text |
 | grounded search/maps | `tools` في model spec | تنفيذ إن وُجد adapter |
 | image | `output_routes.image` | تنفيذ ChatGPT/Gemini |
 | audio | `output_routes.audio` | تنفيذ Gemini |

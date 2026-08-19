@@ -21,11 +21,11 @@
 
 > الفكرة الأساسية: عدّل الملفات الموجودة داخل `config/` لتغيير المزود أو النموذج أو الترتيب أو مجموعة المفاتيح، ولا تعدّل المشروع الذي يستعمل المدير.
 
-> **حالة التحقق الأخيرة:** نجحت 43 اختبارًا محليًا، وأصبح ChatGPT بثلاث replicas مرتبة أولًا في مسارات النص والبحث الحي والصورة. نجح اختبار النص والبحث الحي، ونجح اختبار الصورة عبر router وأعاد PNG بحجم 2,054,465 بايت وأبعاد 1199×1312. راجع [توثيق ChatGPT Space](docs/chatgpt-space.md) للتشغيل والتشخيص.
+> **حالة التحقق الأخيرة:** نجحت 46 اختبارًا محليًا، وأصبح ChatGPT بثلاث replicas مرتبة أولًا في مسارات النص والبحث الحي والصورة. نجح اختبار النص والبحث الحي، ونجح اختبار الصورة عبر router وأعاد PNG بحجم 2,054,465 بايت وأبعاد 1199×1312. راجع [توثيق ChatGPT Space](docs/chatgpt-space.md) للتشغيل والتشخيص.
 
 ## فهرس التوثيق الهندسي
 
-للبداية السريعة استخدم هذا README. وللتفاصيل التشغيلية، اقرأ [دليل النظرة العامة](project-documentation/overview.md)، [دليل المزودين](project-documentation/providers.md)، [دليل الإعداد](project-documentation/configuration-guide.md)، [دليل NVIDIA](project-documentation/nvidia-integration.md)، [دليل ChatGPT Spaces](project-documentation/chatgpt-spaces.md)، و[استكشاف الأخطاء](project-documentation/troubleshooting.md). أما الوكلاء الذين سيعدلون الكود فيجب أن يبدؤوا من [AI_CONTEXT.md](AI_CONTEXT.md)، وتوجد بطاقات الاعتمادات في [docs/credentials.md](docs/credentials.md).
+للبداية السريعة استخدم هذا README. وللتفاصيل التشغيلية، اقرأ [دليل النظرة العامة](project-documentation/overview.md)، [دليل المزودين](project-documentation/providers.md)، [دليل الإعداد](project-documentation/configuration-guide.md)، [دليل NVIDIA](project-documentation/nvidia-integration.md)، [دليل capability audit لجميع النماذج](project-documentation/capability-audit.md)، [دليل ChatGPT Spaces](project-documentation/chatgpt-spaces.md)، و[استكشاف الأخطاء](project-documentation/troubleshooting.md). أما الوكلاء الذين سيعدلون الكود فيجب أن يبدؤوا من [AI_CONTEXT.md](AI_CONTEXT.md)، وتوجد بطاقات الاعتمادات في [docs/credentials.md](docs/credentials.md).
 
 ---
 
@@ -450,9 +450,9 @@ NVIDIA_API_KEY=nvapi-ضع_المفتاح_هنا
 NVIDIA_API_KEYS_JSON=[]
 ```
 
-توجد القائمة الحالية ومسار التحقق في [docs/nvidia-free.md](docs/nvidia-free.md)، ويوجد [الترتيب العملي للنماذج العامة المفعّلة](docs/nvidia-ranking.md). بعد الاختبار الوظيفي الحقيقي بقيت 13 نماذج عامة في fallback النصي بعد OpenRouter؛ صُنّف Riva كترجمة متخصصة، وأُخرج Llama Vision من عقد JSON العام. إذا لم تضع مفتاح NVIDIA، يتجاوز router المزود تلقائيًا ويستمر إلى البديل التالي.
+توجد القائمة الحالية ومسار التحقق في [docs/nvidia-free.md](docs/nvidia-free.md)، ويوجد [الترتيب العملي للنماذج العامة المفعّلة](docs/nvidia-ranking.md). بعد الاختبار الوظيفي الحقيقي بقيت 12 نموذجًا عامًا في fallback النصي بعد OpenRouter؛ أُضيف Riva إلى `output_routes.translation` كترجمة متخصصة، وأُخرج Llama Vision وLlama 8B من عقد JSON العام. إذا لم تضع مفتاح NVIDIA، يتجاوز router المزود تلقائيًا ويستمر إلى البديل التالي.
 
-لا تعتبر `Free Endpoint` وعدًا دائمًا أو استخدامًا تجاريًا بلا حدود. NVIDIA قد تطلب تحقق الحساب أو الهاتف، وقد تختلف quota وrate limits حسب النموذج والحساب وحركة المرور. سجّل تشغيل GitHub Actions [32217577979](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) نجاحًا بالمفتاح الجديد على `nvidia_free`، وسجّل الاختبار الوظيفي [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) إجابات واقعية لـ12 من 13 نموذجًا عامًا، مع اختبار ترجمة منفصل لـRiva. لا يثبت ذلك البحث الحي أو الصور عبر NVIDIA.
+لا تعتبر `Free Endpoint` وعدًا دائمًا أو استخدامًا تجاريًا بلا حدود. NVIDIA قد تطلب تحقق الحساب أو الهاتف، وقد تختلف quota وrate limits حسب النموذج والحساب وحركة المرور. سجّل تشغيل GitHub Actions [32217577979](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) نجاحًا بالمفتاح الجديد على `nvidia_free`، وسجّل الاختبار الوظيفي [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) ثم إعادة الفحص [32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211) نجاح النماذج العامة الـ12، مع اختبار ترجمة منفصل لـRiva نجح في [32220367894](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220367894). لا يثبت ذلك البحث الحي أو الصور عبر NVIDIA.
 
 لاختبار سلسلة NVIDIA وحدها بعد إضافة المفتاح:
 

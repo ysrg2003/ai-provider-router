@@ -30,7 +30,7 @@
 | التصنيف | النماذج | قرار router |
 |---|---|---|
 | نص عام | 12 نموذجًا في `model_chains.nvidia_free` | مفعّلة بعد OpenRouter |
-| ترجمة متخصصة | `nvidia/riva-translate-4b-instruct-v2` | غير مفعّل حتى وجود translation route/adapter |
+| ترجمة متخصصة | `nvidia/riva-translate-4b-instruct-v2` | مفعّل في `output_routes.translation` خارج fallback النص العام |
 | نماذج غير متوافقة مع عقد JSON العام | `meta/llama-3.2-11b-vision-instruct`, `meta/llama-3.1-8b-instruct` | disabled من routes النص العامة |
 | بحث حي | لا يوجد NVIDIA model مفعّل بأداة search | لا يُصنّف NVIDIA كمزود بحث حي |
 | صور | لا يوجد NVIDIA image route | لا تُرسل طلبات image إلى NVIDIA عبر router |
@@ -41,7 +41,7 @@
 
 ## دليل الاختيار السريع
 
-للمهام العامة المعقدة ابدأ بـNemotron Ultra أو Super أو GLM 5.2، مع مراقبة quota. للـagents والبرمجة طويلة الأفق استخدم GLM 5.2 أو أحد Nemotron Super. للسرعة استخدم Nemotron Lightning. لفهم الصور والفيديو، لا يعني نجاح text completion أن route image جاهز؛ تحتاج capability وadapter مثبتين. للترجمة استخدم Riva Translate عبر route متخصص عند إضافته. لا تستخدم Llama 8B في fallback JSON العام الحالي بسبب عدم ثبات عقد الاستدلال.
+للمهام العامة المعقدة ابدأ بـNemotron Ultra أو Super أو GLM 5.2، مع مراقبة quota. للـagents والبرمجة طويلة الأفق استخدم GLM 5.2 أو أحد Nemotron Super. للسرعة استخدم Nemotron Lightning. لفهم الصور والفيديو، لا يعني نجاح text completion أن route image جاهز؛ تحتاج capability وadapter مثبتين. للترجمة استخدم Riva Translate عبر `output_routes.translation` الحالي. لا تستخدم Llama 8B في fallback JSON العام الحالي بسبب عدم ثبات عقد الاستدلال.
 
 ## الأدلة والمراجع
 

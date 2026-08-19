@@ -45,7 +45,7 @@
 
 ## مزودو الإصدار الحالي
 
-ChatGPT Spaces الثلاثة هي الخيار الأول في النص والبحث والصور عند وجودها في route. Gemini يضيف مسارات text-grounding وimage وTTS وembedding وvideo analysis. Hugging Face وOpenRouter مزودان OpenAI-compatible، وNVIDIA يستخدم adapter نفسه بعد OpenRouter في السلاسل ذات الصلة. NVIDIA catalog فيه 57 Free Endpoint، لكن الإصدار يفعّل 15 نموذجًا فقط بعد live completion verification، كما يشرح [`../docs/nvidia-ranking.md`](../docs/nvidia-ranking.md).
+ChatGPT Spaces الثلاثة هي الخيار الأول في النص والبحث والصور عند وجودها في route. Gemini يضيف مسارات text-grounding وimage وTTS وembedding وvideo analysis. Hugging Face وOpenRouter مزودان OpenAI-compatible، وNVIDIA يستخدم adapter نفسه بعد OpenRouter في السلاسل ذات الصلة. NVIDIA catalog فيه 57 Free Endpoint، لكن الإصدار يفعّل 12 نموذجًا نصيًا عامًا بعد capability audit، ويضيف Riva في `output_routes.translation`، كما يشرح [`../docs/nvidia-ranking.md`](../docs/nvidia-ranking.md).
 
 ## حالة القدرات
 
@@ -56,6 +56,7 @@ ChatGPT Spaces الثلاثة هي الخيار الأول في النص وال�
 | image | تنفيذ حي عبر ChatGPT/Gemini routes؛ quota ChatGPT خارجية |
 | audio/TTS | route Gemini مهيأ |
 | embedding | route Gemini مهيأ |
+| translation | route NVIDIA Riva مهيأ بعقد raw text |
 | video analysis | يحتاج `video_uri` وadapter داعم |
 | video generation | plan فقط؛ لا asynchronous Veo adapter حاليًا |
 | live | WebSocket plan فقط، لا HTTP request |

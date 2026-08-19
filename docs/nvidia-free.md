@@ -34,20 +34,20 @@ NVIDIA_API_KEYS_JSON=[{"id":"nvidia-key-1","key":"nvapi-REPLACE_ME","project":"d
 
 ## ما يدخل routes العامة
 
-من أصل 57 نتيجة، أظهر `/v1/models` لحساب الاختبار 30 نموذجًا من المرشحين النشطين. الاختباران الوظيفيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211) اختبرا النماذج بسؤال معرفة ومسألة استدلال؛ نجحت **12 من 12 نموذجًا عامًا** بعد إعادة فحص transient، ونجح Riva عند اختباره بترجمة مباشرة. لذلك أصبحت 12 نماذج عامة فقط مفعّلة في `model_chains.nvidia_free` بعد OpenRouter، بينما Riva خارج السلسلة العامة حتى إنشاء translation route، وLlama Vision وLlama 8B خارج عقد JSON العام. واجه GLM quota مؤقتًا ثم نجح في الجولة اللاحقة.
+من أصل 57 نتيجة، أظهر `/v1/models` لحساب الاختبار 30 نموذجًا من المرشحين النشطين. الاختباران الوظيفيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211) اختبرا النماذج بسؤال معرفة ومسألة استدلال؛ نجحت **12 من 12 نموذجًا عامًا** بعد إعادة فحص transient، ونجح Riva عند اختباره بترجمة مباشرة. لذلك أصبحت 12 نماذج عامة فقط مفعّلة في `model_chains.nvidia_free` بعد OpenRouter، بينما Riva مفعّل في `output_routes.translation` خارج السلسلة العامة، وLlama Vision وLlama 8B خارج عقد JSON العام. واجه GLM quota مؤقتًا ثم نجح في الجولة اللاحقة.
 
 بقية النتائج تبقى محفوظة في catalog الكامل لكنها لا تدخل route النص العام. منها نماذج ظهرت للحساب لكنها أعادت 400 أو 503 أو timeout أو ردًا فارغًا، ومنها نتائج لم تظهر في `/v1/models` وقت الاختبار، ومنها endpoints متخصصة للـembedding أو reranking أو moderation أو audio/TTS أو video/3D أو protein أو image/vision. عدم إدخالها في route النص لا يعني حذفها؛ بل يمنع إرسال prompt نصي عام إلى endpoint يتطلب payload أو adapter مختلفًا.
 
 | حالة الاختبار | العدد | سياسة router |
 |---|---:|---|
 | نماذج عامة نجحت في الاختبارين الوظيفيين | 12 من 12 | مفعلة في routes النصية بعد OpenRouter |
-| Riva ترجمة متخصصة نجحت بترجمة مباشرة | 1 | محفوظة خارج النص العام حتى وجود translation route |
+| Riva ترجمة متخصصة نجحت بترجمة مباشرة | 1 | مفعّل في `output_routes.translation` وخارج النص العام |
 | نماذج غير متوافقة مع عقد JSON العام | 2 | Vision وLlama 8B محفوظان في catalog وdisabled من routes النصية |
 | quota transient أثناء جولة ثم نجاح في الإعادة | 1 | GLM محفوظ ومفعّل مع احترام cooldown |
 | نماذج غير ظاهرة أو غير مؤكدة في catalog | 27 | محفوظة في catalog وdisabled |
 | إجمالي catalog | 57 | يتضمن كل Free Endpoint المرصود |
 
-حالة specialization وdeprecation محفوظة لكل entry داخل catalog. النماذج المتخصصة تحتاج routes/normalizers أو adapters منفصلة قبل تفعيلها، والنماذج التي أعلنت NVIDIA قرب deprecation لا تُفعّل تلقائيًا.
+حالة specialization وdeprecation محفوظة لكل entry داخل catalog. النماذج المتخصصة تحتاج routes/normalizers أو adapters منفصلة قبل تفعيلها؛ Riva هو الاستثناء الحالي لأنه يملك `translation` adapter/route مثبتًا. والنماذج التي أعلنت NVIDIA قرب deprecation لا تُفعّل تلقائيًا.
 
 العدد الدقيق، ونتيجة live test لكل نموذج، ونتيجة الاختبار الوظيفي وسبب الفشل المنقح محفوظة في `config/nvidia_free_catalog.json`. هذا الفصل مهم لأن الكتالوج العام يتغير، كما أن `/v1/models` يختلف حسب الحساب والوقت.
 
