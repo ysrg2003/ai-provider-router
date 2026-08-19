@@ -6,7 +6,7 @@ from typing import Any
 
 from .config import ModelSpec, RouterConfig
 from .intent import RequestIntent, detect_intent
-from .providers.base import ProviderAdapter, ProviderError
+from .providers.base import ProviderAdapter, ProviderError, url_citations_from_annotations, url_citations_from_text
 from .providers.chatgpt_space import ChatGPTSpaceAdapter
 from .providers.gemini import GeminiAdapter
 from .providers.openai_compatible import OpenAICompatibleAdapter
@@ -482,6 +482,12 @@ class AIRouter:
                         operation=operation,
                         usage=response.usage,
                     )
+                    existing_urls = response.payload.get("url_citations", [])
+                    normalized_urls: list[str] = []
+                    for url in [*(existing_urls if isinstance(existing_urls, list) else []), *url_citations_from_annotations(response.payload), *url_citations_from_text(response.payload.get("text") or response.payload.get("provider_text") or "")]:
+                        if url not in normalized_urls:
+                            normalized_urls.append(url)
+                    response.payload["url_citations"] = normalized_urls
                     response.payload["route"] = route_name
                     response.payload["intent"] = intent.output_type
                     response.payload["provider"] = spec.provider_id
