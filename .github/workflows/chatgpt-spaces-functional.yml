@@ -8,6 +8,16 @@ on:
         required: true
         default: "true"
         type: boolean
+      spaces:
+        description: "Optional comma-separated space IDs"
+        required: false
+        default: ""
+        type: string
+      scenarios:
+        description: "Optional comma-separated scenarios: text,search,image"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -37,6 +47,8 @@ jobs:
           AI_ROUTER_CHATGPT_KEYS_JSON: ${{ secrets.AI_ROUTER_CHATGPT_KEYS_JSON }}
           CHATGPT_API_SECRET_KEY: ${{ secrets.CHATGPT_API_SECRET_KEY }}
           CHATGPT_SPACES_TEST_IMAGES: ${{ inputs.test_images }}
+          CHATGPT_SPACES_ONLY: ${{ inputs.spaces }}
+          CHATGPT_SPACES_SCENARIOS: ${{ inputs.scenarios }}
           CHATGPT_SPACES_STATE_DB: /tmp/chatgpt-spaces-functional.db
         run: |
           set -euo pipefail

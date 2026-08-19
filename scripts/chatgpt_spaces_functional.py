@@ -80,18 +80,25 @@ def main() -> int:
     router = AIRouter(config_dir=ROOT / "config", state_db=Path(os.getenv("CHATGPT_SPACES_STATE_DB", "/tmp/chatgpt-spaces-functional.db")))
     try:
         keys = router.config.keys_for("chatgpt_space_replica_01")
+        selected_spaces = [item.strip() for item in os.getenv("CHATGPT_SPACES_ONLY", "").split(",") if item.strip()] or SPACE_IDS
+        selected_spaces = [item for item in selected_spaces if item in SPACE_IDS]
+        requested_scenarios = [item.strip() for item in os.getenv("CHATGPT_SPACES_SCENARIOS", "").split(",") if item.strip()]
         image_enabled = os.getenv("CHATGPT_SPACES_TEST_IMAGES", "true").lower() in {"1", "true", "yes"}
+        default_scenarios = ("text", "search", "image") if image_enabled else ("text", "search")
+        scenarios = [item for item in (requested_scenarios or list(default_scenarios)) if item in {"text", "search", "image"}]
+        if not image_enabled:
+            scenarios = [item for item in scenarios if item != "image"]
         results: list[dict[str, Any]] = []
         if not keys:
-            for provider_id in SPACE_IDS:
-                for scenario in ("text", "search", "image") if image_enabled else ("text", "search"):
+            for provider_id in selected_spaces:
+                for scenario in scenarios:
                     results.append({"provider": provider_id, "scenario": scenario, "status": "no_key"})
         else:
             secret = keys[0].secret
-            for provider_id in SPACE_IDS:
+            for provider_id in selected_spaces:
                 adapter = router.adapters[provider_id]
                 provider_timeout = router.config.providers[provider_id].timeout_seconds
-                for scenario in ("text", "search", "image") if image_enabled else ("text", "search"):
+                for scenario in scenarios:
                     # Sequential execution avoids concurrent browser/session load and accidental quota bursts.
                     results.append(run_one(adapter, provider_id, secret, provider_timeout, scenario))
         counts: dict[str, int] = {}
@@ -99,8 +106,9 @@ def main() -> int:
             counts[item["status"]] = counts.get(item["status"], 0) + 1
         payload = {
             "status": "completed",
-            "spaces": SPACE_IDS,
-            "image_tested": image_enabled,
+            "spaces": selected_spaces,
+            "scenarios": scenarios,
+            "image_tested": image_enabled and "image" in scenarios,
             "execution_policy": "sequential_per_space_and_scenario",
             "counts": counts,
             "results": results,
