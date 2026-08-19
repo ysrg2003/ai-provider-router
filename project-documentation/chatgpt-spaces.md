@@ -151,3 +151,9 @@ Expected success: artifact صورة صالح أو data URL normalized. إذا ظ
 أُضيف endpoint تشخيص محمي `GET /diagnostics/session`. وهو يعيد إشارات redacted فقط: `ready`، و`input_visible`، وعدد cookies وأسماءها، ووجود login/challenge markers، و`visible_auth_controls`؛ ولا يعيد قيم cookies أو Storage State أو prompts. أظهر التشخيص أن replica-01 وreplica-02 لا تحتويان عناصر auth مرئية، بينما replica-04 أظهرت `visible_auth_controls=["log in"]` مع `ready=true` و`input_visible=true`. هذا يثبت أن replica-04 **جزئية المصادقة أو تحتاج إعادة تسجيل دخول**، وليس أن مشكلة image contract ما زالت في router.
 
 بدل ترك كل طلب replica-04 ينتظر timeout طويلًا، أصبح gateway يوقفه فورًا برسالة `ChatGPT session requires re-authentication; visible auth control detected`. تحقق مباشر واحد أعاد HTTP 503 خلال `2.881228` ثانية، مقابل نحو 268 ثانية سابقًا. هذا إصلاح تشغيلي يمنع الهدر والـretries العمياء، لكنه لا يستطيع تسجيل الدخول إلى حساب ChatGPT الخاص بـreplica-04 تلقائيًا؛ يجب تحديث جلسة ذلك الحساب داخل Space نفسها، مع إبقاء Cookies كل replica مستقلة.
+
+## ما كشفه المتصفح الحي عن الصور
+
+لم أرسل prompt صورة جديدًا في هذه الجولة. في الصفحة الرئيسية ظهر prompt صورة موجود مسبقًا داخل textarea، لكنه لم يكن مرسلًا، ولم تظهر صورة assistant أو generation نشطة. أما عند فتح **المكتبة**، ظهرت أصول PNG مولدة سابقة مثل `Vivid Blue Star on White.png` بحجم 765 KB و`image-gen-1.png` بحجم 817 KB. فتح الأصل أظهر preview كبيرًا فعليًا وأزرارًا مستقلة لـ`تنزيل الصورة` و`مشاركة` و`إزالة`.
+
+الاستنتاج العملي هو أن مسار الصورة المكتملة في ChatGPT هو: إرسال prompt → انتظار اكتمال generation → ظهور أصل مكتبة/preview قابل للتنزيل → استخراج `data_url` أو رابط الصورة داخل جلسة المتصفح. لذلك لا ينبغي اعتبار كل `<img>` في الصفحة صورة مولدة؛ الصفحة الرئيسية قد تحتوي صور واجهة أو avatars. وهذا يفسر لماذا يركز gateway على assistant container وbackend/image candidates، بينما يختبر router النتيجة النهائية بوجود `data_base64` صالح.

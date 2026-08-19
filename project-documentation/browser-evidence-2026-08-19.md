@@ -153,6 +153,22 @@ The new authorized `/diagnostics/session` endpoint returned `ready=true`, `input
 
 After deploying the fail-fast guard, one text request was sent to replica-04 only. It returned HTTP 503 with `ChatGPT session requires re-authentication; visible auth control detected` in `2.881228` seconds. This replaces the previous 268-second transient timeout behavior with an actionable terminal session signal. No image request was repeated.
 
+## Step 22 — live image-path inspection preparation (replica-01/02)
+
+The live Logs panels for replica-01 and replica-02 were opened without sending new prompts. Both Spaces showed fresh application startup and `ChatGPT browser gateway is ready`: replica-01 loaded 90 cookies and replica-02 loaded 92 cookies. The visible windows contained only health/UI probes and no new `POST /v1/chat/completions` image request, so no image quota was consumed during this inspection step.
+
+## Step 23 — live ChatGPT image DOM inspection without submission
+
+The connected ChatGPT browser was opened without sending a new prompt. The composer contained the previously typed image prompt `generate image of a simple blue star on a white background`, but it remained unsent: the page showed a textarea and send button, no assistant image, no `<img>` result, and no active generation indicator. Opening the recent-chats control exposed only new-chat/organizer controls in the current viewport; no completed image conversation was selected. This step consumed no image request.
+
+## Step 24 — live ChatGPT image library inspection
+
+The live ChatGPT Library page showed previously generated image assets, including `Vivid Blue Star on White.png` at 765 KB, `image-gen-1.png` at 817 KB, and several library images between 1.8 MB and 3.1 MB. The assets appeared as PNG/JPG library rows with dedicated image buttons, separate from the unsent composer on the home page. This demonstrates that a successful ChatGPT image flow persists a downloadable library asset even when the current conversation DOM is not displaying a generated image.
+
+## Step 25 — live generated-image preview and download controls
+
+Opening `Vivid Blue Star on White.png` in the live Library showed the actual blue-star image preview in a large image canvas. The UI exposed dedicated controls for `تنزيل الصورة` (download), `مشاركة` (share), `إزالة` (remove), aspect-ratio display, and comments. No new generation was started. This is the clearest live reference for the completed-image contract: a finished image is a library asset with a real preview and an explicit download action, not merely an `<img>` found in the unsent composer page.
+
 ## Step 18 — live ChatGPT account reconnaissance
 
 The connected live browser opened `https://chatgpt.com/` without sending a prompt. It showed the signed-in `Yousef Sg` Free account, a visible composer textarea, and the send button. No login wall, challenge, or `session expired` page was visible. This is evidence about the live browser account only; it does not prove that replica-04's stored Space session state is valid or equivalent. The rendered sidebar also showed a `دردشة جديدة` control, confirming that the live UI exposes a fresh-chat path; no prompt was submitted and no account state was changed.
