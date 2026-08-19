@@ -5,6 +5,8 @@ import json
 import os
 import sys
 import time
+
+import requests
 from pathlib import Path
 from typing import Any
 
@@ -24,9 +26,43 @@ REASONING_PROMPT = (
     "لدى سارة 3 صناديق، في كل صندوق 4 كرات، ثم أضافت كرتين إلى كل صندوق. كم كرة أصبحت لديها؟ "
     "لا تضف Markdown أو نصًا خارج JSON."
 )
+TRANSLATION_MODEL = "nvidia/riva-translate-4b-instruct-v2"
+TRANSLATION_PROMPT = "Translate to Arabic and return only the translation: The capital of France is Paris."
 
 
-def run_model(adapter: OpenAICompatibleAdapter, model: str, secret: str) -> dict[str, Any]:
+def run_translation_model(base_url: str, model: str, secret: str) -> dict[str, Any]:
+    started = time.monotonic()
+    result: dict[str, Any] = {"model": model, "functional_category": "specialized_translation", "status": "passed"}
+    try:
+        response = requests.post(
+            f"{base_url.rstrip('/')}/chat/completions",
+            headers={"Authorization": f"Bearer {secret}", "Content-Type": "application/json"},
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": TRANSLATION_PROMPT}],
+                "stream": False,
+            },
+            timeout=120,
+        )
+        if response.status_code >= 400:
+            result.update({"status": "failed", "error_class": "http", "status_code": response.status_code})
+        else:
+            body = response.json()
+            text = str(body.get("choices", [{}])[0].get("message", {}).get("content", "")).strip()
+            result["translation"] = {"status": "passed" if text else "invalid", "text_chars": len(text), "contains_paris": "باريس" in text}
+            if not text:
+                result["status"] = "failed"
+    except requests.RequestException:
+        result.update({"status": "failed", "error_class": "transient"})
+    except (ValueError, KeyError, IndexError, TypeError):
+        result.update({"status": "failed", "error_class": "invalid_or_unknown"})
+    result["duration_seconds"] = round(time.monotonic() - started, 2)
+    return result
+
+
+def run_model(adapter: OpenAICompatibleAdapter, model: str, secret: str, base_url: str) -> dict[str, Any]:
+    if model == TRANSLATION_MODEL:
+        return run_translation_model(base_url, model, secret)
     started = time.monotonic()
     result: dict[str, Any] = {
         "model": model,
@@ -85,17 +121,21 @@ def main() -> int:
     max_workers = max(1, min(int(os.getenv("NVIDIA_FUNCTIONAL_WORKERS", "3")), 3))
     results: list[dict[str, Any]] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = [executor.submit(run_model, adapter, model, keys[0].secret) for model in models]
+        futures = [executor.submit(run_model, adapter, model, keys[0].secret, config.providers["nvidia"].base_url) for model in models]
         for future in futures:
             results.append(future.result())
     results.sort(key=lambda item: models.index(item["model"]))
     passed = sum(item["status"] == "passed" for item in results)
+    general_text_passed = sum(item["status"] == "passed" and item.get("functional_category", "general_text") == "general_text" for item in results)
+    specialized_passed = sum(item["status"] == "passed" and item.get("functional_category") == "specialized_translation" for item in results)
     payload = {
         "status": "completed",
         "test_type": "functional_text",
         "models_tested": len(results),
         "model_filter": requested or "all_active_nvidia_free",
-        "models_passed_both_prompts": passed,
+        "models_passed": passed,
+        "general_text_models_passed_both_prompts": general_text_passed,
+        "specialized_models_passed": specialized_passed,
         "prompts": ["factual_knowledge_arabic", "arithmetic_reasoning_arabic"],
         "search_test": {"status": "not_supported_by_nvidia_adapter", "reason": "No search tool is sent to the NVIDIA OpenAI-compatible endpoint."},
         "results": results,
