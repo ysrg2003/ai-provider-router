@@ -13,6 +13,8 @@ Space قديمة محفوظة على Hugging Face خارج router، ولا تد�
 
 > `chatgpt-api` ليس OpenAI API رسميًا؛ هو خدمة أتمتة لجلسة ChatGPT Web. قد تتغير واجهة ChatGPT أو شروطها أو حصصها. لا تستخدمه لتجاوز حدود أو ضوابط المزود.
 
+لشرح **إنشاء Space-01 وSpace-02 من الصفر، نشر نفس source revision، إضافة Secrets مستقلة، وربط كل Base URL بالrouter**، استخدم [دليل Spaces وSecrets التفصيلي](chatgpt-vendor-secrets.md).
+
 ## 2. المتطلبات
 
 | المتطلب | الحالة | الاستخدام |

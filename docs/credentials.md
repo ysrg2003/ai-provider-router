@@ -25,6 +25,19 @@
 | `NVIDIA_API_KEYS_JSON` / `NVIDIA_API_KEY` | secret pool/single fallback | اختياري | `nvidia_default` | local `.env` أو GitHub Secret |
 | `CHATGPT_API_REPLICA_01_BASE_URL`, `CHATGPT_API_REPLICA_02_BASE_URL` | non-secret routing variables | اختياري إذا كانت القيم الافتراضية صحيحة | `providers.json` عبر `base_url_env` | `.env` أو GitHub Variable |
 
+## خريطة ChatGPT Space قبل قراءة البطاقات
+
+بطاقتا ChatGPT في router تخصان Space محددتين، وليستا خدمة واحدة غامضة:
+
+| بطاقة Secret | Space المقابلة | Base URL | Provider ID | مصدر الإنشاء |
+|---|---|---|---|---|
+| `CHATGPT_API_SECRET_KEY` أو عنصر في `AI_ROUTER_CHATGPT_KEYS_JSON` | `Yousefsg/chatgpt-api-replica-01` | `https://yousefsg-chatgpt-api-replica-01.hf.space` | `chatgpt_space_replica_01` | نسخة Docker من `vendors/chatgpt-api` أو `ysrg2003/chatgpt-api` |
+| `CHATGPT_API_SECRET_KEY` أو عنصر في `AI_ROUTER_CHATGPT_KEYS_JSON` | `Yousefsg/chatgpt-api-replica-02` | `https://yousefsg-chatgpt-api-replica-02.hf.space` | `chatgpt_space_replica_02` | نفس source revision في Space مستقلة |
+
+خطوات إنشاء كل Space، رفع الملفات، ضبط `API_SECRET_KEY` و`CHATGPT_COOKIES_NETSCAPE`، readiness، والربط بالrouter موثقة بالتفصيل في [docs/chatgpt-vendor-secrets.md](chatgpt-vendor-secrets.md). لا تنقل Cookies أو Storage State إلى router.
+
+في config الحالي يشترك providerان في `chatgpt_space_default`؛ لذلك الإعداد الأبسط هو أن تقبل Space-01 وSpace-02 قيمة `API_SECRET_KEY` نفسها ويضعها router في `CHATGPT_API_SECRET_KEY`. إذا كانت لكل Space قيمة مختلفة، يجب فصل key pools/provider config كتغيير هندسي مستقل؛ لا تضع القيمتين عشوائيًا في pool مشترك لأن router قد يجرب قيمة غير مناسبة على Space أخرى.
+
 ## بطاقة `CHATGPT_API_SECRET_KEY`
 
 **Exact name:** `CHATGPT_API_SECRET_KEY`.

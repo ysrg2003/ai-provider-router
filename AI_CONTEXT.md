@@ -102,7 +102,7 @@ finally:
 
 ## 5. الأسرار والمتغيرات
 
-المصدر التفصيلي لكل قيمة هو [`docs/credentials.md`](docs/credentials.md). لا تنقل قيمة حقيقية إلى AI_CONTEXT.
+المصدر التفصيلي لأسرار router هو [`docs/credentials.md`](docs/credentials.md)، ولإنشاء وتشغيل ChatGPT Space-01 وSpace-02 وفصل Cookies عن router راجع [`docs/chatgpt-vendor-secrets.md`](docs/chatgpt-vendor-secrets.md). ملفات Space مصدرها repository [`ysrg2003/chatgpt-api`](https://github.com/ysrg2003/chatgpt-api) عند revision `2ac0d0e4f07fb78805b81b2633a33d9e3ab45e42`; النسخة المضمنة `vendors/chatgpt-api` مطابقة لملفات runtime الأساسية. لا تنقل قيمة حقيقية إلى AI_CONTEXT.
 
 | الاسم | النوع | يقرأه | الوظيفة |
 |---|---|---|---|
