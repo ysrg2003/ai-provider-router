@@ -8,7 +8,7 @@
 |---|---|
 | المستودع | `ysrg2003/ai-provider-router` |
 | الفرع | `main` |
-| آخر router commit منشور | `63e6b33` — `fix: fail fast on ChatGPT reauthentication state` |
+| آخر router commit منشور | `4dbb06e` — `docs: record ChatGPT remediation and reauthentication diagnosis` |
 | آخر source commit منشور | `5c34094` — `fix: fail fast when ChatGPT session needs reauthentication` |
 | workflow الشامل | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
 | workflow المحدود لـreplica-04 | [32247225620](https://github.com/ysrg2003/ai-provider-router/actions/runs/32247225620) |
