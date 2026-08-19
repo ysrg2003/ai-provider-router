@@ -149,9 +149,9 @@ python3 -m unittest discover -s tests -v
 
 ## 11. الحالة الحالية والقدرات المؤجلة
 
-**Verified:** 43 unit tests، catalog NVIDIA 57، 30 مرشحًا اختُبروا حيًا بالمفتاح السابق، 15 NVIDIA models passed ومُرتبة، وChatGPT text/search/image history موثقة. نجح router NVIDIA-only smoke قبل تدوير المفتاح.
+**Verified:** 43 unit tests، catalog NVIDIA 57، 30 مرشحًا اختُبروا حيًا سابقًا، 15 NVIDIA models passed ومُرتبة، وChatGPT text/search/image history موثقة. بعد إضافة المفتاح الجديد إلى GitHub Secrets، نجح تشغيل GitHub Actions رقم [`32217577979`](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979): scenario=`nvidia`، route=`nvidia_free`، key count للـNVIDIA=`1`، والنتيجة `passed`.
 
-**Deferred:** إعادة live verification بعد تدوير مفتاح NVIDIA جديد، routes متخصصة للنماذج NVIDIA audio/video/embedding/rerank/moderation/image، واختبار كل endpoint غير text-compatible. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
+**Deferred:** routes متخصصة للنماذج NVIDIA audio/video/embedding/rerank/moderation/image، واختبار كل endpoint غير text-compatible. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
 
 ## 12. المراجع
 

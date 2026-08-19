@@ -75,6 +75,20 @@ python3 -m ai_router.cli.main \
 
 لا تسجل قيمة المفتاح في shell history أو CI logs. استخدم Secret manager أو متغير بيئة خادمي، ولا تضع `NVIDIA_API_KEY` في frontend أو متصفح المستخدم.
 
+## أحدث تحقق حي عبر GitHub Actions
+
+بعد إضافة المفتاح الجديد إلى GitHub Secret، أضيف سيناريو `nvidia` إلى [`scripts/live_smoke.py`](../scripts/live_smoke.py) وworkflow [`live-smoke.yml`](../.github/workflows/live-smoke.yml). نجح التشغيل [`32217577979`](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) على فرع `main`، وكانت النتيجة المنقحة:
+
+| الحقل | النتيجة |
+|---|---|
+| `scenario_filter` | `nvidia` |
+| `route` | `nvidia_free` |
+| `status` | `passed` |
+| `loaded_key_counts.nvidia` | `1` |
+| `json_fields` | `ok` |
+
+الـartifact لم يتضمن قيمة المفتاح أو Authorization header. هذا يثبت المصادقة والـtext completion عبر السلسلة الحالية في ذلك التشغيل فقط؛ لا يثبت توفر كل نماذج catalog ولا يضيف routes للصور أو الصوت أو الفيديو.
+
 ## قيود مهمة
 
 Free Endpoint يعني free trial أو وصولًا مجانيًا محدودًا وفق حالة النموذج والحساب والازدحام وسياسة NVIDIA الحالية؛ لا يعني استخدامًا تجاريًا غير محدود، ولا يضمن حدًا ثابتًا لكل نموذج. قد تطلب NVIDIA تحقق الحساب أو الهاتف قبل إصدار API key. راجع صفحة النموذج قبل الاعتماد الإنتاجي.

@@ -113,6 +113,8 @@ Expected success: JSON فيه `route` و`intent`. قد يختار route provider
 
 إذا كان workflow يفشل في خطوة `test -n`، فالـSecret غير موجود أو فارغ. إذا كانت النتيجة `401/403` فالمفتاح أو حساب NVIDIA غير صالح. إذا كانت `429/503` فهذه quota/availability؛ لا تعِد تشغيل workflow مرات متتابعة. هذا الاختبار يستهلك طلبًا حيًا محدودًا من NVIDIA.
 
+**آخر نتيجة موثقة:** التشغيل [32217577979](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) على `main` اكتمل بنجاح؛ artifact المنقح سجل `scenario_filter=nvidia` و`route=nvidia_free` و`status=passed` و`loaded_key_counts.nvidia=1` وJSON field باسم `ok`. لم تُحفظ قيمة المفتاح أو Authorization header. هذه النتيجة تثبت completion نصيًا عبر السلسلة الحالية، ولا تثبت capabilities غير النصية.
+
 ## تحديث model جديد
 
 1. أضف entry إلى catalog مع source/status/evidence، دون key.
