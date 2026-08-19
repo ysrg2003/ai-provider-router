@@ -54,6 +54,8 @@ env:
   CHATGPT_API_REPLICA_02_BASE_URL: ${{ vars.CHATGPT_API_REPLICA_02_BASE_URL }}
 ```
 
+قيمة ال CHATGPT_API_SECRET_KEY ضعها : gptkey0 
+لأنها يجب ان تتوافق مع الموجودة في HF spaces
 إذا لم تنشئ Variables، سيستخدم router العناوين الافتراضية من config. أما Cookies وStorage State الخاصة بـChatGPT فتبقى داخل Space ولا تُضاف إلى GitHub Secrets الخاصة بالrouter.
 
 ### 3.3 تشغيل أول تحقق
