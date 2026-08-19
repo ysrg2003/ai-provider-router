@@ -40,7 +40,13 @@
       "live_http_status": 200,
       "enabled": true,
       "rank": 14,
-      "ranking_reason": "Strong specialist translation endpoint for 37 languages, not a general reasoning model."
+      "ranking_reason": "Strong specialist translation endpoint for 37 languages, not a general reasoning model.",
+      "functional_test": {
+        "run": "https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597",
+        "category": "specialized_translation",
+        "status": "passed",
+        "route_status": "deferred_until_translation_route_exists"
+      }
     },
     {
       "name": "ising-calibration-1.5-31b",
@@ -444,7 +450,13 @@
       "live_http_status": 200,
       "enabled": true,
       "rank": 12,
-      "ranking_reason": "General vision-language model with image reasoning; lower general scale than the larger passed models."
+      "ranking_reason": "General vision-language model with image reasoning; lower general scale than the larger passed models.",
+      "functional_test": {
+        "run": "https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597",
+        "category": "vision_text",
+        "status": "failed_json_contract",
+        "route_status": "disabled_from_general_text"
+      }
     },
     {
       "name": "llama-3.2-90b-vision-instruct",
@@ -577,5 +589,19 @@
     "nvidia/ising-calibration-1.5-31b",
     "nvidia/riva-translate-4b-instruct-v2",
     "meta/llama-3.1-8b-instruct"
-  ]
+  ],
+  "functional_test": {
+    "run": "https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597",
+    "test_type": "two real Arabic prompts per general model plus translation prompt for Riva",
+    "models_tested": 15,
+    "general_text_models_passed_both_prompts": 12,
+    "specialized_models_passed": 1,
+    "quota_failed_models": [
+      "z-ai/glm-5.2"
+    ],
+    "json_incompatible_models": [
+      "meta/llama-3.2-11b-vision-instruct"
+    ],
+    "search_status": "not_supported_by_nvidia_adapter"
+  }
 }

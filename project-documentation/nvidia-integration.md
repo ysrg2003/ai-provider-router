@@ -117,7 +117,9 @@ Expected success: JSON فيه `route` و`intent`. قد يختار route provider
 
 ## Step 7: الاختبار الوظيفي لكل نموذج
 
-للاختبار الواقعي، يشغّل [`../scripts/nvidia_functional_smoke.py`](../scripts/nvidia_functional_smoke.py) سؤالين عربيين لكل نموذج في `nvidia_free`: سؤال معرفة عن عاصمة اليابان، ومسألة حسابية تتطلب استدلالًا. لا يكتفي الاختبار بHTTP 200؛ يشترط JSON صالحًا ووجود `answer` غير فارغ في الاختبارين. يستخدم workflow [`../.github/workflows/nvidia-functional.yml`](../.github/workflows/nvidia-functional.yml) المفتاح من GitHub Secrets، ويقبل من 1 إلى 3 عمال متوازيين، ويرفع تقريرًا منقحًا لمدة 14 يومًا.
+للاختبار الواقعي، يشغّل [`../scripts/nvidia_functional_smoke.py`](../scripts/nvidia_functional_smoke.py) سؤالين عربيين لكل نموذج عام في `nvidia_free`: سؤال معرفة عن عاصمة اليابان، ومسألة حسابية تتطلب استدلالًا. لا يكتفي الاختبار بHTTP 200؛ يشترط JSON صالحًا ووجود `answer` غير فارغ في الاختبارين. في التشغيل [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) نجحت 12 من 13 نماذج عامة في الاختبارين. واجه `z-ai/glm-5.2` 429 quota أثناء الاستدلال، وأعاد `meta/llama-3.2-11b-vision-instruct` output غير متوافق مع عقد JSON العام، فتم إخراجه من `nvidia_free`.
+
+يُختبر `nvidia/riva-translate-4b-instruct-v2` منفصلًا برسالة ترجمة مباشرة، وقد نجح؛ لذلك صُنّف ترجمة متخصصة خارج `nvidia_free` العام حتى وجود translation route. في الوضع الافتراضي الحالي يشغّل harness الـ13 نموذجًا العام وRiva المتخصص، بينما يبقى Vision المستبعد خارج الاختبار العام. يستخدم workflow [`../.github/workflows/nvidia-functional.yml`](../.github/workflows/nvidia-functional.yml) المفتاح من GitHub Secrets، ويقبل من 1 إلى 3 عمال متوازيين، ويرفع تقريرًا منقحًا لمدة 14 يومًا.
 
 هذا الاختبار لا يدّعي اختبار البحث الحي؛ NVIDIA adapter الحالي لا يرسل search tool إلى `/chat/completions`. لذلك يسجل التقرير البحث كـ`not_supported_by_nvidia_adapter` بدل تحويل غياب الأداة إلى نجاح زائف. كما لا يختبر الصور لأن أي نموذج NVIDIA لم يُضف إلى `output_routes.image`.
 

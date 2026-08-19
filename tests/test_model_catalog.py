@@ -60,7 +60,7 @@ class ModelCatalogTests(unittest.TestCase):
         self.assertEqual(reference["catalog_file"], "config/nvidia_free_catalog.json")
         self.assertEqual(len(catalog["models"]), 57)
         self.assertEqual(len({item["name"] for item in catalog["models"]}), 57)
-        self.assertEqual(len(reference["active_text_models"]), 15)
+        self.assertEqual(len(reference["active_text_models"]), 13)
         deprecated = {item["api_model"] for item in catalog["models"] if item["deprecated"]}
         self.assertTrue(deprecated.isdisjoint(reference["active_text_models"]))
         self.assertEqual(
@@ -69,6 +69,10 @@ class ModelCatalogTests(unittest.TestCase):
         )
         self.assertIn("z-ai/glm-5.2", reference["active_text_models"])
         self.assertNotIn("minimaxai/minimax-m3", reference["active_text_models"])
+        self.assertNotIn("nvidia/riva-translate-4b-instruct-v2", reference["active_text_models"])
+        self.assertNotIn("meta/llama-3.2-11b-vision-instruct", reference["active_text_models"])
+        self.assertEqual(reference["specialized_functional_models"], ["nvidia/riva-translate-4b-instruct-v2"])
+        self.assertEqual(reference["json_incompatible_models"], ["meta/llama-3.2-11b-vision-instruct"])
         self.assertNotIn("nvidia", {item["provider"] for item in self.models["output_routes"]["image"]})
 
     def test_openrouter_free_catalog_and_order_are_present(self):

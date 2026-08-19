@@ -450,9 +450,9 @@ NVIDIA_API_KEY=nvapi-ضع_المفتاح_هنا
 NVIDIA_API_KEYS_JSON=[]
 ```
 
-توجد القائمة الحالية ومسار التحقق في [docs/nvidia-free.md](docs/nvidia-free.md)، ويوجد [الترتيب العملي للنماذج الناجحة](docs/nvidia-ranking.md). أضيفت فقط النماذج التي ظهرت للحساب ونجحت في live completion كـfallback بعد OpenRouter، بينما تبقى النماذج المتخصصة أو غير المتاحة في catalog دون تفعيل في route النص العام. إذا لم تضع مفتاح NVIDIA، يتجاوز router المزود تلقائيًا ويستمر إلى البديل التالي.
+توجد القائمة الحالية ومسار التحقق في [docs/nvidia-free.md](docs/nvidia-free.md)، ويوجد [الترتيب العملي للنماذج العامة المفعّلة](docs/nvidia-ranking.md). بعد الاختبار الوظيفي الحقيقي بقيت 13 نماذج عامة في fallback النصي بعد OpenRouter؛ صُنّف Riva كترجمة متخصصة، وأُخرج Llama Vision من عقد JSON العام. إذا لم تضع مفتاح NVIDIA، يتجاوز router المزود تلقائيًا ويستمر إلى البديل التالي.
 
-لا تعتبر `Free Endpoint` وعدًا دائمًا أو استخدامًا تجاريًا بلا حدود. NVIDIA قد تطلب تحقق الحساب أو الهاتف، وقد تختلف quota وrate limits حسب النموذج والحساب وحركة المرور. سجّل تشغيل GitHub Actions [32217577979](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) نجاحًا بالمفتاح الجديد على `nvidia_free`؛ artifact المنقح أكد `status: passed` وkey count يساوي 1، دون حفظ قيمة المفتاح.
+لا تعتبر `Free Endpoint` وعدًا دائمًا أو استخدامًا تجاريًا بلا حدود. NVIDIA قد تطلب تحقق الحساب أو الهاتف، وقد تختلف quota وrate limits حسب النموذج والحساب وحركة المرور. سجّل تشغيل GitHub Actions [32217577979](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) نجاحًا بالمفتاح الجديد على `nvidia_free`، وسجّل الاختبار الوظيفي [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) إجابات واقعية لـ12 من 13 نموذجًا عامًا، مع اختبار ترجمة منفصل لـRiva. لا يثبت ذلك البحث الحي أو الصور عبر NVIDIA.
 
 لاختبار سلسلة NVIDIA وحدها بعد إضافة المفتاح:
 

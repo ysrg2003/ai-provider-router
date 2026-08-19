@@ -30,24 +30,26 @@ NVIDIA_API_KEYS_JSON=[{"id":"nvidia-key-1","key":"nvapi-REPLACE_ME","project":"d
 
 ## ترتيب النماذج الناجحة
 
-يوجد الترتيب العملي الكامل للنماذج الـ15 الناجحة في [docs/nvidia-ranking.md](nvidia-ranking.md). الترتيب يميز بين القدرة العامة والتخصص، ويطابق ترتيب `nvidia_free` داخل `config/models.json`.
+يوجد الترتيب العملي الكامل للنماذج الـ13 العامة المفعّلة في [docs/nvidia-ranking.md](nvidia-ranking.md). الترتيب يميز بين القدرة العامة والتخصص، ويطابق ترتيب `nvidia_free` داخل `config/models.json`.
 
 ## ما يدخل routes العامة
 
-من أصل 57 نتيجة، أظهر `/v1/models` لحساب الاختبار 30 نموذجًا من المرشحين النشطين، ثم نجح **15 نموذجًا** في live completion نصي محدود. هذه النماذج الـ15 فقط مفعّلة في `model_chains.nvidia_free`، ثم أُضيفت بعد OpenRouter إلى `default` و`creative` و`cheap` وإلى `output_routes.text` و`output_routes.text_grounded_search`. أما النماذج التي ظهرت للحساب لكنها انتهت بـ400 أو 503 أو timeout أو رد فارغ فبقيت disabled.
+من أصل 57 نتيجة، أظهر `/v1/models` لحساب الاختبار 30 نموذجًا من المرشحين النشطين. الاختبار الوظيفي [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) شغّل 15 نموذجًا بسؤال معرفة ومسألة استدلال؛ نجحت **12 من 13 نموذجًا عامًا** في الاختبارين، ونجح Riva عند اختباره بترجمة مباشرة. لذلك أصبحت 13 نماذج عامة فقط مفعّلة في `model_chains.nvidia_free` بعد OpenRouter، بينما Riva خارج السلسلة العامة حتى إنشاء translation route، وLlama Vision خارج عقد JSON العام. أما GLM فواجه `429 quota` في مسألة الاستدلال، وهو فشل تشغيل/حصة لا حكم قدرة دائم.
 
 بقية النتائج تبقى محفوظة في catalog الكامل لكنها لا تدخل route النص العام. منها نماذج ظهرت للحساب لكنها أعادت 400 أو 503 أو timeout أو ردًا فارغًا، ومنها نتائج لم تظهر في `/v1/models` وقت الاختبار، ومنها endpoints متخصصة للـembedding أو reranking أو moderation أو audio/TTS أو video/3D أو protein أو image/vision. عدم إدخالها في route النص لا يعني حذفها؛ بل يمنع إرسال prompt نصي عام إلى endpoint يتطلب payload أو adapter مختلفًا.
 
 | حالة الاختبار | العدد | سياسة router |
 |---|---:|---|
-| نماذج live-tested الناجحة | 15 | مفعلة في routes النصية بعد OpenRouter |
-| نماذج ظهرت للحساب ولم تنجح | 15 | محفوظة في catalog وdisabled |
-| نماذج غير ظاهرة للحساب وقت الاختبار | 27 | محفوظة في catalog وdisabled |
+| نماذج عامة نجحت في الاختبارين الوظيفيين | 12 من 13 | مفعلة في routes النصية بعد OpenRouter |
+| Riva ترجمة متخصصة نجحت بترجمة مباشرة | 1 | محفوظة خارج النص العام حتى وجود translation route |
+| نموذج Vision غير متوافق مع عقد JSON العام | 1 | محفوظ في catalog وdisabled من routes النصية |
+| نماذج عامة أخرى واجهت quota في التشغيل | 1 | محفوظة في catalog مع ملاحظة quota |
+| نماذج غير ظاهرة أو غير مؤكدة في catalog | 27 | محفوظة في catalog وdisabled |
 | إجمالي catalog | 57 | يتضمن كل Free Endpoint المرصود |
 
 حالة specialization وdeprecation محفوظة لكل entry داخل catalog. النماذج المتخصصة تحتاج routes/normalizers أو adapters منفصلة قبل تفعيلها، والنماذج التي أعلنت NVIDIA قرب deprecation لا تُفعّل تلقائيًا.
 
-العدد الدقيق، ونتيجة live test لكل نموذج، وسبب الفشل المنقح محفوظة في `config/nvidia_free_catalog.json`. هذا الفصل مهم لأن الكتالوج العام يتغير، كما أن `/v1/models` يختلف حسب الحساب والوقت.
+العدد الدقيق، ونتيجة live test لكل نموذج، ونتيجة الاختبار الوظيفي وسبب الفشل المنقح محفوظة في `config/nvidia_free_catalog.json`. هذا الفصل مهم لأن الكتالوج العام يتغير، كما أن `/v1/models` يختلف حسب الحساب والوقت.
 
 ## الترتيب وfallback
 

@@ -198,33 +198,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.2-11b-vision-instruct",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -718,33 +692,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.2-11b-vision-instruct",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -1208,33 +1156,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.2-11b-vision-instruct",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -1678,33 +1600,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.2-11b-vision-instruct",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -2529,33 +2425,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.2-11b-vision-instruct",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -2790,33 +2660,7 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.2-11b-vision-instruct",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/ising-calibration-1.5-31b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "nvidia",
-        "model": "nvidia/riva-translate-4b-instruct-v2",
         "method": "json",
         "input_types": [
           "text"
@@ -3694,9 +3538,7 @@
         "meta/llama-3.1-70b-instruct",
         "nvidia/nemotron-nano-12b-v2-vl",
         "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
-        "meta/llama-3.2-11b-vision-instruct",
         "nvidia/ising-calibration-1.5-31b",
-        "nvidia/riva-translate-4b-instruct-v2",
         "meta/llama-3.1-8b-instruct"
       ],
       "excluded_specialized_models": [
@@ -3707,7 +3549,7 @@
         "nvidia/synthetic-video-detector"
       ],
       "policy": "Snapshot only; Free Endpoint availability, model capabilities, account verification, and rate limits are controlled by NVIDIA and may change. Specialized endpoints require dedicated routes or adapters.",
-      "active_live_tested_count": 15,
+      "active_live_tested_count": 13,
       "live_test_source": "/tmp/nvidia-all-live-results.json (local test artifact)",
       "ranking": [
         {
@@ -3785,7 +3627,27 @@
           "model": "meta/llama-3.1-8b-instruct",
           "reason": "Small general instruction model; useful for low latency and lower resource needs, but below larger passed models in breadth."
         }
-      ]
+      ],
+      "specialized_functional_models": [
+        "nvidia/riva-translate-4b-instruct-v2"
+      ],
+      "json_incompatible_models": [
+        "meta/llama-3.2-11b-vision-instruct"
+      ],
+      "functional_test": {
+        "run": "https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597",
+        "test_type": "two real Arabic prompts per general model plus translation prompt for Riva",
+        "models_tested": 15,
+        "general_text_models_passed_both_prompts": 12,
+        "specialized_models_passed": 1,
+        "quota_failed_models": [
+          "z-ai/glm-5.2"
+        ],
+        "json_incompatible_models": [
+          "meta/llama-3.2-11b-vision-instruct"
+        ],
+        "search_status": "not_supported_by_nvidia_adapter"
+      }
     }
   },
   "openrouter_free_catalog": {

@@ -63,7 +63,7 @@ class NvidiaRouterTests(unittest.TestCase):
 
     def test_nvidia_routes_follow_openrouter_and_exclude_image(self):
         models = json.loads((ROOT / 'config' / 'models.json').read_text(encoding='utf-8'))
-        self.assertEqual(len(models['model_chains']['nvidia_free']), 15)
+        self.assertEqual(len(models['model_chains']['nvidia_free']), 13)
         for route_name in ('default', 'creative', 'cheap'):
             entries = models['model_chains'][route_name]
             openrouter_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'openrouter']
@@ -80,6 +80,9 @@ class NvidiaRouterTests(unittest.TestCase):
                 self.assertGreater(min(nvidia_indexes), max(openrouter_indexes))
             self.assertEqual(max(nvidia_indexes), len(entries) - 1)
         self.assertFalse(any(item['provider'] == 'nvidia' for item in models['output_routes']['image']))
+        all_nvidia_models = [item['model'] for item in models['model_chains']['nvidia_free']]
+        self.assertNotIn('nvidia/riva-translate-4b-instruct-v2', all_nvidia_models)
+        self.assertNotIn('meta/llama-3.2-11b-vision-instruct', all_nvidia_models)
 
     def test_router_initializes_without_nvidia_key(self):
         previous = os.environ.pop('NVIDIA_API_KEY', None)

@@ -112,11 +112,17 @@ def main() -> int:
         return 2
     all_models = [spec.model for spec in config.model_chain("nvidia_free")]
     requested = [item.strip() for item in os.getenv("NVIDIA_FUNCTIONAL_MODELS", "").split(",") if item.strip()]
-    unknown = sorted(set(requested) - set(all_models))
+    known_models = set(all_models) | {TRANSLATION_MODEL}
+    unknown = sorted(set(requested) - known_models)
     if unknown:
         print(json.dumps({"status": "blocked", "reason": "Unknown NVIDIA model selection", "unknown_models": unknown}))
         return 2
-    models = [model for model in all_models if not requested or model in requested]
+    if requested:
+        models = [model for model in all_models if model in requested]
+        if TRANSLATION_MODEL in requested and TRANSLATION_MODEL not in models:
+            models.append(TRANSLATION_MODEL)
+    else:
+        models = all_models + [TRANSLATION_MODEL]
     adapter = OpenAICompatibleAdapter("nvidia", config.providers["nvidia"].base_url)
     max_workers = max(1, min(int(os.getenv("NVIDIA_FUNCTIONAL_WORKERS", "3")), 3))
     results: list[dict[str, Any]] = []
