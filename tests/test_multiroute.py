@@ -137,6 +137,21 @@ class ChatGPTSpaceAdapterTests(unittest.TestCase):
         self.assertEqual(result.payload["data_base64"], "cG5nLWJ5dGVz")
         self.assertEqual(get.call_args.args[0], "https://cdn.example/image.png")
 
+    def test_image_data_url_without_src_or_alt_is_accepted(self):
+        adapter = ChatGPTSpaceAdapter("https://space.example")
+        response = FakeResponse({
+            "choices": [{"message": {"content": "done"}}],
+            "images": [{"data_url": "data:image/png;base64,aW1hZ2U="}],
+        })
+        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response):
+            result = adapter.generate_image(
+                model="gpt-4o-mini",
+                secret="secret",
+                prompt="draw a cat",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["data_base64"], "aW1hZ2U=")
+
     def test_image_data_url_is_normalized(self):
         adapter = ChatGPTSpaceAdapter("https://space.example")
         response = FakeResponse({
@@ -153,6 +168,7 @@ class ChatGPTSpaceAdapterTests(unittest.TestCase):
         self.assertEqual(result.payload["output_type"], "image")
         self.assertEqual(result.payload["data_base64"], "aW1hZ2U=")
         self.assertEqual(result.payload["mime_type"], "image/png")
+        self.assertEqual(post.call_args.kwargs["json"]["output_type"], "image")
         self.assertNotIn("stream", post.call_args.kwargs["json"])
 
 

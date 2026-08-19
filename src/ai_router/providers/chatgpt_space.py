@@ -94,13 +94,14 @@ class ChatGPTSpaceAdapter:
             ]
         body: dict[str, Any] = {}
         images: list[Any] = []
-        for attempt in range(3):
+        for attempt in range(2):
             body = self._post(
                 model=model,
                 secret=secret,
                 messages=[{"role": "user", "content": user_content}],
                 timeout_seconds=max(timeout_seconds, 540),
                 tools=tools,
+                output_type="image",
             )
             raw_images = body.get("images") or []
             candidates = raw_images if isinstance(raw_images, list) else []
@@ -111,13 +112,16 @@ class ChatGPTSpaceAdapter:
             lowered = response_text.lower()
             if "free plan limit" in lowered or "image generations requests" in lowered or "limit resets" in lowered:
                 raise ProviderError("ChatGPT Space image generation quota is exhausted", error_class="quota", status_code=429, retryable=False)
-            if attempt < 2:
+            if attempt < 1:
                 time.sleep(20)
         if not images:
-            raise ProviderError("ChatGPT Space returned no generated image data after 3 attempts", error_class="invalid_or_unknown", retryable=False)
-        first = next((item for item in images if item.get("data_url")), None)
+            raise ProviderError("ChatGPT Space returned no generated image data after 2 attempts", error_class="invalid_or_unknown", retryable=False)
+        first = next(
+            (item for item in images if isinstance(item.get("data_url") or item.get("dataUrl"), str)),
+            None,
+        )
         if first:
-            data_url = str(first["data_url"])
+            data_url = str(first.get("data_url") or first.get("dataUrl"))
             try:
                 header, encoded = data_url.split(",", 1)
                 mime_type = header.split(";", 1)[0].removeprefix("data:") or "image/png"
@@ -125,10 +129,16 @@ class ChatGPTSpaceAdapter:
             except (ValueError, TypeError) as exc:
                 raise ProviderError("ChatGPT Space returned malformed image data", error_class="invalid_or_unknown", retryable=False) from exc
         else:
-            first = next((item for item in images if item.get("src")), None)
+            first = next(
+                (item for item in images if item.get("src") or item.get("url") or item.get("image_url")),
+                None,
+            )
             if not first:
                 raise ProviderError("ChatGPT Space returned no downloadable image data", error_class="invalid_or_unknown", retryable=False)
-            encoded, mime_type = self._download_src(str(first["src"]), secret=secret, timeout_seconds=timeout_seconds)
+            image_url = first.get("src") or first.get("url") or first.get("image_url")
+            if isinstance(image_url, dict):
+                image_url = image_url.get("url")
+            encoded, mime_type = self._download_src(str(image_url), secret=secret, timeout_seconds=timeout_seconds)
         return ProviderResponse(
             {
                 "output_type": "image",
@@ -142,13 +152,23 @@ class ChatGPTSpaceAdapter:
 
     @staticmethod
     def _is_generated_image(item: dict[str, Any]) -> bool:
-        src = str(item.get("src", "")).lower()
+        raw_data_url = item.get("data_url") or item.get("dataUrl")
+        if isinstance(raw_data_url, str) and raw_data_url.lower().startswith("data:image/"):
+            return True
+        nested = item.get("image_url")
+        if isinstance(nested, dict):
+            nested = nested.get("url")
+        raw_src = item.get("src") or item.get("url") or nested or ""
+        src = str(raw_src).lower()
         alt = str(item.get("alt", "")).lower()
+        blocked_markers = ("favicon", "avatar", "profile", "logo", "icon", "emoji", "thumbnail")
+        if any(marker in src or marker in alt for marker in blocked_markers):
+            return False
         if "generated image" in alt or "generated_image" in alt:
             return True
         if src.startswith("blob:"):
             return True
-        return "backend-api" in src and ("file_" in src or "estuary" in src or "/content" in src)
+        return "backend-api" in src and any(marker in src for marker in ("file_", "estuary", "/content", "/files/"))
 
     @staticmethod
     def _download_src(src: str, *, secret: str, timeout_seconds: int) -> tuple[str, str]:
@@ -176,8 +196,11 @@ class ChatGPTSpaceAdapter:
         messages: list[dict[str, Any]],
         timeout_seconds: int,
         tools: list[dict[str, Any]] | None = None,
+        output_type: str | None = None,
     ) -> dict[str, Any]:
         payload: dict[str, Any] = {"model": model, "messages": messages}
+        if output_type:
+            payload["output_type"] = output_type
         if tools:
             payload["tools"] = tools
         try:
