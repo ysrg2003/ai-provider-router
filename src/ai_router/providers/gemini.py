@@ -5,7 +5,7 @@ from typing import Any
 
 import requests
 
-from .base import ProviderError, ProviderResponse
+from .base import ProviderError, ProviderResponse, url_citations_from_annotations
 
 
 class GeminiAdapter:
@@ -56,8 +56,9 @@ class GeminiAdapter:
             text = self._interaction_text(body)
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise ProviderError("Gemini interaction returned no text", error_class="invalid_or_unknown", retryable=False) from exc
+        annotations = self._annotations(body)
         return ProviderResponse(
-            {"output_type": "text", "text": text, "steps": body.get("steps", []), "annotations": self._annotations(body)},
+            {"output_type": "text", "text": text, "steps": body.get("steps", []), "annotations": annotations, "url_citations": url_citations_from_annotations(annotations)},
             body.get("usage", body.get("usageMetadata", {})),
         )
 

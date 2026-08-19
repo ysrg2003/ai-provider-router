@@ -484,6 +484,8 @@ class AIRouter:
                     )
                     response.payload["route"] = route_name
                     response.payload["intent"] = intent.output_type
+                    response.payload["provider"] = spec.provider_id
+                    response.payload["model"] = spec.model
                     return response.payload
                 except ProviderError as exc:
                     errors.append(f"{spec.provider_id}/{spec.model}/{key.key_id}: {exc.error_class}/{exc.status_code or '-'}: {exc}")

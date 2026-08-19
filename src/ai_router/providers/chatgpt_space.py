@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 
-from .base import ProviderError, ProviderResponse
+from .base import ProviderError, ProviderResponse, url_citations_from_text
 
 
 class ChatGPTSpaceAdapter:
@@ -45,6 +45,7 @@ class ChatGPTSpaceAdapter:
                 "output_type": "text",
                 "text": text,
                 "annotations": [],
+                "url_citations": url_citations_from_text(text),
                 "images": body.get("images", []),
             },
             body.get("usage", {}),
