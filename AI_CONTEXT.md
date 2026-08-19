@@ -59,7 +59,7 @@ python3 -m ai_router.cli.main \
 
 `config/models.json` يعرّف `model_chains` للتدوير العام، و`output_routes` للتوجيه حسب المخرج، و`reference_catalog` للمصادر والـsnapshots. كل row يحدد provider/model/method/input_types/output_types/tools و`supports_response_format` و`enabled`. route لا يثبت أن endpoint متاح دائمًا؛ availability وquota خارجية.
 
-الترتيب الحالي المهم هو: ChatGPT Spaces أولًا في text/search/image، ثم Gemini/Hugging Face/OpenRouter وفق route، وNVIDIA بعد OpenRouter في السلاسل العامة. سلسلة `nvidia_free` تحتوي **13 نموذجًا نصيًا عامًا** بعد الاختبار الوظيفي، بترتيب [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md). Riva مصنف ترجمة متخصصة خارج السلسلة العامة، وLlama Vision أُخرج من عقد JSON العام. catalog NVIDIA الكامل يحتوي 57 نتيجة في [`config/nvidia_free_catalog.json`](config/nvidia_free_catalog.json)، لكن غير المؤكد أو المتخصص يبقى خارج routes العامة.
+الترتيب الحالي المهم هو: ChatGPT Spaces أولًا في text/search/image، ثم Gemini/Hugging Face/OpenRouter وفق route، وNVIDIA بعد OpenRouter في السلاسل العامة. سلسلة `nvidia_free` تحتوي **12 نموذجًا نصيًا عامًا** بعد الاختبار الوظيفي، بترتيب [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md). Riva مصنف ترجمة متخصصة خارج السلسلة العامة، وLlama Vision وLlama 8B أُخرجا من عقد JSON العام. catalog NVIDIA الكامل يحتوي 57 نتيجة في [`config/nvidia_free_catalog.json`](config/nvidia_free_catalog.json)، لكن غير المؤكد أو المتخصص يبقى خارج routes العامة.
 
 ### KeySpec والسرية
 
@@ -109,7 +109,7 @@ CLI input
 | Gemini | `gemini_rest` | `gemini_default` | 180s | يدعم مسارات multimodal إضافية. |
 | Hugging Face | `openai_compatible` | `huggingface_default` | 90s | fallback token `HF_TOKEN`. |
 | OpenRouter | `openai_compatible` | `openrouter_default` | 120s | catalog مجاني مستقل. |
-| NVIDIA | `openai_compatible` | `nvidia_default` | 120s | 13 نموذجًا نصيًا عامًا في routes بعد OpenRouter؛ Riva ترجمة متخصصة خارجها، وVision JSON-incompatible خارجها. |
+| NVIDIA | `openai_compatible` | `nvidia_default` | 120s | 12 نموذجًا نصيًا عامًا في routes بعد OpenRouter؛ Riva ترجمة متخصصة خارجها، وVision/Llama 8B غير موثوقين لعقد JSON العام. |
 
 ## 8. الأخطاء والإصلاحات المثبتة
 
@@ -118,7 +118,7 @@ CLI input
 - `408/409/425/5xx` أو `RemoteDisconnected`: transient؛ تحقق من timeout وhealth ثم اسمح بالـfallback المحدود.
 - JSON غير صالح أو response فارغ: `invalid_or_unknown`؛ راجع method وpayload وmodel capability.
 - ChatGPT image: كان السبب المؤكد مهلة 210s والتحقق الضعيف من نجاح الإرسال؛ الإصلاح رفع مهلة الصورة إلى 540s والتحقق من بدء generation، ونجح PNG حيًا.
-- NVIDIA: الكتالوج العام 57، وظهر 30 مرشحًا في اختبار `/v1/models` السابق. الاختبار الوظيفي [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) اختبر 15 نموذجًا بسؤال معرفة ومسألة استدلال؛ نجحت 12 من 13 العامة، ونجحت Riva في اختبار ترجمة متخصص، بينما واجه GLM quota وLlama Vision عقد JSON غير مناسب.
+- NVIDIA: الكتالوج العام 57، وظهر 30 مرشحًا في اختبار `/v1/models` السابق. الاختباران الوظيفيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211) اختبرا النماذج بسؤال معرفة ومسألة استدلال؛ نجحت النماذج العامة الـ12 بعد إعادة اختبار transient، ونجحت Riva في ترجمة مباشرة، بينما أخرج Vision وLlama 8B بسبب عقد JSON غير مناسب. واجه GLM quota مؤقتًا ثم نجح في الجولة اللاحقة.
 
 ## 9. الاختبارات وبوابات release
 
@@ -149,7 +149,7 @@ python3 -m unittest discover -s tests -v
 
 ## 11. الحالة الحالية والقدرات المؤجلة
 
-**Verified:** 43 unit tests، catalog NVIDIA 57، اختبار وظيفي حقيقي [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) شغّل 15 نموذجًا؛ نجحت 12 من 13 العامة في سؤال معرفة ومسألة استدلال، ونجحت Riva في اختبار ترجمة متخصص. بعد إضافة المفتاح الجديد إلى GitHub Secrets، نجح أيضًا تشغيل smoke رقم [`32217577979`](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) على route=`nvidia_free`.
+**Verified:** 43 unit tests، catalog NVIDIA 57، اختباران وظيفيان حقيقيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211)؛ نجحت النماذج العامة الـ12 في سؤال معرفة ومسألة استدلال بعد إعادة فحص transient، ونجحت Riva في اختبار ترجمة متخصص. بعد إضافة المفتاح الجديد إلى GitHub Secrets، نجح أيضًا تشغيل smoke رقم [`32217577979`](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) على route=`nvidia_free`.
 
 **Deferred:** البحث الحي عبر NVIDIA لأن adapter الحالي لا يرسل search tool، routes متخصصة للنماذج NVIDIA audio/video/embedding/rerank/moderation/image، وtranslation route لـRiva. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
 

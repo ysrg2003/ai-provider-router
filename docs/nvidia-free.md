@@ -30,20 +30,20 @@ NVIDIA_API_KEYS_JSON=[{"id":"nvidia-key-1","key":"nvapi-REPLACE_ME","project":"d
 
 ## ترتيب النماذج الناجحة
 
-يوجد الترتيب العملي الكامل للنماذج الـ13 العامة المفعّلة في [docs/nvidia-ranking.md](nvidia-ranking.md). الترتيب يميز بين القدرة العامة والتخصص، ويطابق ترتيب `nvidia_free` داخل `config/models.json`.
+يوجد الترتيب العملي الكامل للنماذج الـ12 العامة المفعّلة في [docs/nvidia-ranking.md](nvidia-ranking.md). الترتيب يميز بين القدرة العامة والتخصص، ويطابق ترتيب `nvidia_free` داخل `config/models.json`.
 
 ## ما يدخل routes العامة
 
-من أصل 57 نتيجة، أظهر `/v1/models` لحساب الاختبار 30 نموذجًا من المرشحين النشطين. الاختبار الوظيفي [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) شغّل 15 نموذجًا بسؤال معرفة ومسألة استدلال؛ نجحت **12 من 13 نموذجًا عامًا** في الاختبارين، ونجح Riva عند اختباره بترجمة مباشرة. لذلك أصبحت 13 نماذج عامة فقط مفعّلة في `model_chains.nvidia_free` بعد OpenRouter، بينما Riva خارج السلسلة العامة حتى إنشاء translation route، وLlama Vision خارج عقد JSON العام. أما GLM فواجه `429 quota` في مسألة الاستدلال، وهو فشل تشغيل/حصة لا حكم قدرة دائم.
+من أصل 57 نتيجة، أظهر `/v1/models` لحساب الاختبار 30 نموذجًا من المرشحين النشطين. الاختباران الوظيفيان [32218928597](https://github.com/ysrg2003/ai-provider-router/actions/runs/32218928597) و[32219540211](https://github.com/ysrg2003/ai-provider-router/actions/runs/32219540211) اختبرا النماذج بسؤال معرفة ومسألة استدلال؛ نجحت **12 من 12 نموذجًا عامًا** بعد إعادة فحص transient، ونجح Riva عند اختباره بترجمة مباشرة. لذلك أصبحت 12 نماذج عامة فقط مفعّلة في `model_chains.nvidia_free` بعد OpenRouter، بينما Riva خارج السلسلة العامة حتى إنشاء translation route، وLlama Vision وLlama 8B خارج عقد JSON العام. واجه GLM quota مؤقتًا ثم نجح في الجولة اللاحقة.
 
 بقية النتائج تبقى محفوظة في catalog الكامل لكنها لا تدخل route النص العام. منها نماذج ظهرت للحساب لكنها أعادت 400 أو 503 أو timeout أو ردًا فارغًا، ومنها نتائج لم تظهر في `/v1/models` وقت الاختبار، ومنها endpoints متخصصة للـembedding أو reranking أو moderation أو audio/TTS أو video/3D أو protein أو image/vision. عدم إدخالها في route النص لا يعني حذفها؛ بل يمنع إرسال prompt نصي عام إلى endpoint يتطلب payload أو adapter مختلفًا.
 
 | حالة الاختبار | العدد | سياسة router |
 |---|---:|---|
-| نماذج عامة نجحت في الاختبارين الوظيفيين | 12 من 13 | مفعلة في routes النصية بعد OpenRouter |
+| نماذج عامة نجحت في الاختبارين الوظيفيين | 12 من 12 | مفعلة في routes النصية بعد OpenRouter |
 | Riva ترجمة متخصصة نجحت بترجمة مباشرة | 1 | محفوظة خارج النص العام حتى وجود translation route |
-| نموذج Vision غير متوافق مع عقد JSON العام | 1 | محفوظ في catalog وdisabled من routes النصية |
-| نماذج عامة أخرى واجهت quota في التشغيل | 1 | محفوظة في catalog مع ملاحظة quota |
+| نماذج غير متوافقة مع عقد JSON العام | 2 | Vision وLlama 8B محفوظان في catalog وdisabled من routes النصية |
+| quota transient أثناء جولة ثم نجاح في الإعادة | 1 | GLM محفوظ ومفعّل مع احترام cooldown |
 | نماذج غير ظاهرة أو غير مؤكدة في catalog | 27 | محفوظة في catalog وdisabled |
 | إجمالي catalog | 57 | يتضمن كل Free Endpoint المرصود |
 
