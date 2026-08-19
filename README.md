@@ -21,11 +21,11 @@
 
 > الفكرة الأساسية: عدّل الملفات الموجودة داخل `config/` لتغيير المزود أو النموذج أو الترتيب أو مجموعة المفاتيح، ولا تعدّل المشروع الذي يستعمل المدير.
 
-> **حالة التحقق الأخيرة:** نجحت 46 اختبارًا محليًا، وأصبح ChatGPT بثلاث replicas مرتبة أولًا في مسارات النص والبحث الحي والصورة. نجح اختبار النص والبحث الحي، ونجح اختبار الصورة عبر router وأعاد PNG بحجم 2,054,465 بايت وأبعاد 1199×1312. راجع [توثيق ChatGPT Space](docs/chatgpt-space.md) للتشغيل والتشخيص.
+> **حالة التحقق الأخيرة:** نجحت 46 اختبارًا محليًا. في الاختبار المباشر الأخير نجح النص والبحث في replica-01 وreplica-02، بينما أعادت الصور 503، وأعاد replica-04 503 في النص والبحث والصورة. راجع [توثيق ChatGPT Spaces](project-documentation/chatgpt-spaces.md) و[نقطة الاستعادة](project-documentation/checkpoint-2026-08-19.md) للتفاصيل.
 
 ## فهرس التوثيق الهندسي
 
-للبداية السريعة استخدم هذا README. وللتفاصيل التشغيلية، اقرأ [دليل النظرة العامة](project-documentation/overview.md)، [دليل المزودين](project-documentation/providers.md)، [دليل الإعداد](project-documentation/configuration-guide.md)، [دليل NVIDIA](project-documentation/nvidia-integration.md)، [دليل capability audit لجميع النماذج](project-documentation/capability-audit.md)، [دليل ChatGPT Spaces](project-documentation/chatgpt-spaces.md)، و[استكشاف الأخطاء](project-documentation/troubleshooting.md). أما الوكلاء الذين سيعدلون الكود فيجب أن يبدؤوا من [AI_CONTEXT.md](AI_CONTEXT.md)، وتوجد بطاقات الاعتمادات في [docs/credentials.md](docs/credentials.md).
+للبداية السريعة استخدم هذا README. وللتفاصيل التشغيلية، اقرأ [دليل النظرة العامة](project-documentation/overview.md)، [دليل المزودين](project-documentation/providers.md)، [دليل الإعداد](project-documentation/configuration-guide.md)، [دليل NVIDIA](project-documentation/nvidia-integration.md)، [دليل capability audit لجميع النماذج](project-documentation/capability-audit.md)، [دليل ChatGPT Spaces](project-documentation/chatgpt-spaces.md)، [نقطة الاستعادة الحالية](project-documentation/checkpoint-2026-08-19.md)، و[استكشاف الأخطاء](project-documentation/troubleshooting.md). أما الوكلاء الذين سيعدلون الكود فيجب أن يبدؤوا من [AI_CONTEXT.md](AI_CONTEXT.md)، وتوجد بطاقات الاعتمادات في [docs/credentials.md](docs/credentials.md).
 
 ---
 

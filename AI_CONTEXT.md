@@ -155,6 +155,8 @@ python3 -m unittest discover -s tests -v
 
 **Capability audit:** التشغيل الكامل [32220522226](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220522226) فحص 82 سجلًا فريدًا، نفذ 57 live probes، وسجل 47 passed و10 failed و25 route-only. إعادة الاختبار المستهدف [32220960460](https://github.com/ysrg2003/ai-provider-router/actions/runs/32220960460) فرّقت بين quota/transient و404/400 وعقد JSON غير المناسب. التفاصيل في [`project-documentation/capability-audit.md`](project-documentation/capability-audit.md).
 
+**Current checkpoint:** آخر commit موثق للحالة الحالية هو `b21c9cf`. بعد اختبار ChatGPT Spaces، نجح النص والبحث في replica-01 وreplica-02، وفشلت الصور في الثلاث بـ503، وفشل replica-04 في الأنواع الثلاثة بـ503. نقطة الاستعادة والإجراءات الآمنة في [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md).
+
 **Deferred:** البحث الحي عبر NVIDIA لأن adapter الحالي لا يرسل search tool، والقدرات المتخصصة للصورة والصوت والفيديو والـlive عندما لا يملك provider adapter مناسبًا. لا تصف هذه العناصر كميزات حية قبل إضافة adapter واختبار contract.
 
 ## 12. المراجع
@@ -165,5 +167,6 @@ python3 -m unittest discover -s tests -v
 - [`docs/nvidia-free.md`](docs/nvidia-free.md) — NVIDIA catalog والسياسة.
 - [`docs/nvidia-ranking.md`](docs/nvidia-ranking.md) — ترتيب النماذج الناجحة.
 - [`project-documentation/capability-audit.md`](project-documentation/capability-audit.md) — تدقيق جميع النماذج وتصنيف route-only/live.
+- [`project-documentation/checkpoint-2026-08-19.md`](project-documentation/checkpoint-2026-08-19.md) — نقطة الاستعادة الحالية ونتائج ChatGPT Spaces.
 - [`config/nvidia_free_catalog.json`](config/nvidia_free_catalog.json) — evidence snapshot وlive status.
 - [`tests/test_multiroute.py`](tests/test_multiroute.py) و[`tests/test_router.py`](tests/test_router.py) — contracts السلوكية.
