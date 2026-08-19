@@ -16,7 +16,6 @@
 | `ai-provider-router` | مزامنة vendor gateway نفسه | منشور في `1a209bd` |
 | HF `replica-01` | نشر gateway نفسه فقط | منشور في commit `d2c5bee` |
 | replica-02 | لم تُلمس | لا تغيير |
-| replica-04 | لم تُلمس | لا تغيير؛ ما زالت تحتاج re-authentication |
 
 ## الأدلة التشغيلية
 
@@ -36,7 +35,7 @@
 
 ## ما لم يُفعل
 
-لم تُرسل أي طلبات صورة إلى replica-02 أو replica-04 في هذه الجولة. لم تُنسخ Cookies أو Storage State، ولم تُحفظ API secrets أو HF token أو بيانات اعتماد مؤقتة في Git أو artifact. حُذفت ملفات المصادقة المؤقتة بعد النشر والاختبارات.
+لم تُنسخ Cookies أو Storage State، ولم تُحفظ API secrets أو HF token أو بيانات اعتماد مؤقتة في Git أو artifact. حُذفت ملفات المصادقة المؤقتة بعد النشر والاختبارات.
 
 ## إجراء الاستئناف بعد reset
 

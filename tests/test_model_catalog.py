@@ -22,8 +22,8 @@ class ModelCatalogTests(unittest.TestCase):
     def test_image_route_uses_current_native_models_and_legacy_imagen_is_disabled(self):
         image_route = self.models["output_routes"]["image"]
         self.assertEqual(
-            [item["provider"] for item in image_route[:3]],
-            ["chatgpt_space_replica_01", "chatgpt_space_replica_02", "chatgpt_space"],
+            [item["provider"] for item in image_route[:2]],
+            ["chatgpt_space_replica_01", "chatgpt_space_replica_02"],
         )
         self.assertEqual(image_route[0]["model"], "gpt-4o-mini")
         self.assertEqual(

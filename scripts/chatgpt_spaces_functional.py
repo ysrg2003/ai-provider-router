@@ -13,7 +13,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from ai_router import AIRouter  # noqa: E402
 from ai_router.providers.base import ProviderError  # noqa: E402
 
-SPACE_IDS = ["chatgpt_space_replica_01", "chatgpt_space_replica_02", "chatgpt_space"]
+SPACE_IDS = ["chatgpt_space_replica_01", "chatgpt_space_replica_02"]
 TEXT_PROMPT = "Answer in one short sentence: What is the capital of Japan?"
 SEARCH_PROMPT = "What is the current UTC date? Use live web search and cite at least one source."
 IMAGE_PROMPT = "Create a simple blue circle on a white background."

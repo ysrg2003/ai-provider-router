@@ -21,7 +21,7 @@
 
 > الفكرة الأساسية: عدّل الملفات الموجودة داخل `config/` لتغيير المزود أو النموذج أو الترتيب أو مجموعة المفاتيح، ولا تعدّل المشروع الذي يستعمل المدير.
 
-> **حالة التحقق الأخيرة:** نجحت 46 اختبارًا محليًا. في الاختبار المباشر الأخير نجح النص والبحث في replica-01 وreplica-02، بينما أعادت الصور 503، وأعاد replica-04 503 في النص والبحث والصورة. راجع [توثيق ChatGPT Spaces](project-documentation/chatgpt-spaces.md) و[نقطة الاستعادة](project-documentation/checkpoint-2026-08-19.md) للتفاصيل.
+> **حالة التحقق الأخيرة:** نجحت اختبارات router المحلية وعددها 47، ونجحت اختبارات المصدر وعددها 14. في آخر live smoke نجح النص والبحث في replica-01 وreplica-02، بينما أعادت الصورة في النسختين رسالة ChatGPT Free plan quota مع `images=[]`. راجع [توثيق ChatGPT Spaces](project-documentation/chatgpt-spaces.md) و[نقطة الاستعادة](project-documentation/checkpoint-2026-08-19.md) للتفاصيل.
 
 ## فهرس التوثيق الهندسي
 
@@ -810,10 +810,9 @@ git ls-files .env
 
 # تكامل ChatGPT Spaces كمصدر أول
 
-يستخدم router ثلاث نسخ مستقلة من `chatgpt-api` المنشورة على Hugging Face كأول مصادر HTTP لمسارات `text` و`text_grounded_search` و`image` و`image_grounded_search`. الترتيب هو `replica-01` ثم `replica-02` ثم `replica-04`. لا يحتاج router إلى Cookies أو Playwright محليًا؛ فهو يستدعي `POST /v1/chat/completions` ويقرأ Secret من البيئة فقط.
+يستخدم router نسختين مستقلتين من `chatgpt-api` المنشورتين على Hugging Face كأول مصادر HTTP لمسارات `text` و`text_grounded_search` و`image` و`image_grounded_search`. الترتيب هو `replica-01` ثم `replica-02`. لا يحتاج router إلى Cookies أو Playwright محليًا؛ فهو يستدعي `POST /v1/chat/completions` ويقرأ Secret من البيئة فقط.
 
 ```dotenv
-CHATGPT_API_BASE_URL=https://yousefsg-chatgpt-api-replica-04.hf.space
 CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
 CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
 CHATGPT_API_SECRET_KEY=ضع_المفتاح_الحقيقي_هنا

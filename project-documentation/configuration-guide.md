@@ -47,7 +47,6 @@ Expected result: `summary` يعمل دون طباعة القيمة. إذا ظه�
 
 | المتغير | النوع | default/format | consumer | الأثر |
 |---|---|---|---|---|
-| `CHATGPT_API_BASE_URL` | non-secret URL | replica-04 URL في example | ChatGPT provider | base URL للـprovider العام |
 | `CHATGPT_API_REPLICA_01_BASE_URL` | non-secret URL | replica-01 URL | replica-01 | override |
 | `CHATGPT_API_REPLICA_02_BASE_URL` | non-secret URL | replica-02 URL | replica-02 | override |
 | `CHATGPT_API_SECRET_KEY` | secret | empty | ChatGPT key pool fallback | single ChatGPT key |

@@ -12,7 +12,6 @@
 |---|---|---|---|---:|---|
 | `chatgpt_space_replica_01` | `chatgpt_space` | `CHATGPT_API_REPLICA_01_BASE_URL` | `chatgpt_space_default` | 540s | أول ChatGPT replica |
 | `chatgpt_space_replica_02` | `chatgpt_space` | `CHATGPT_API_REPLICA_02_BASE_URL` | `chatgpt_space_default` | 540s | ثاني ChatGPT replica |
-| `chatgpt_space` | `chatgpt_space` | `CHATGPT_API_BASE_URL` | `chatgpt_space_default` | 540s | replica-04 الحالي |
 | `google_gemini` | `gemini_rest` | Google `v1beta` | `gemini_default` | 180s | Gemini text/multimodal |
 | `huggingface` | `openai_compatible` | Hugging Face `/v1` | `huggingface_default` | 90s | HF inference |
 | `openrouter` | `openai_compatible` | OpenRouter `/api/v1` | `openrouter_default` | 120s | OpenRouter/free catalog |
@@ -22,7 +21,7 @@
 
 ### الاستخدام والعقد
 
-adapter `ChatGPTSpaceAdapter` يرسل interaction text إلى Space، ويضيف جملة البحث المطلوبة عندما يملك route أداة `search`. في الصور يرفع timeout إلى حد أدنى 540 ثانية، يحاول الإرسال حتى ثلاث مرات، يبحث عن image candidates، ويدعم `data_url` أو تنزيل `src` عند الحاجة. النص والبحث لا يعتمدان على HTML inspection؛ فحص الصورة فقط يحتاج التقاط artifact بعد اكتمال generation.
+adapter `ChatGPTSpaceAdapter` يرسل interaction text إلى Space، ويضيف جملة البحث المطلوبة عندما يملك route أداة `search`. في الصور يرفع timeout إلى حد أدنى 540 ثانية، يستخدم محاولات محدودة، يبحث عن image candidates، ويدعم `data_url` أو تنزيل `src` عند الحاجة. النص والبحث لا يعتمدان على HTML inspection؛ فحص الصورة فقط يحتاج التقاط artifact بعد اكتمال generation.
 
 ### التشغيل
 

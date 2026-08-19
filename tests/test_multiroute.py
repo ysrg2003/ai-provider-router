@@ -258,8 +258,8 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(image_plan["output_type"], "image")
             self.assertEqual(image_plan["route"], "image")
             self.assertEqual(
-                [item["provider"] for item in image_plan["models"][:3]],
-                ["chatgpt_space_replica_01", "chatgpt_space_replica_02", "chatgpt_space"],
+                [item["provider"] for item in image_plan["models"][:2]],
+                ["chatgpt_space_replica_01", "chatgpt_space_replica_02"],
             )
             self.assertEqual(image_plan["models"][0]["model"], "gpt-4o-mini")
             self.assertEqual(image_plan["models"][0]["input_types"], ["text", "image"])
@@ -272,8 +272,8 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(translation_plan["models"][0]["model"], "nvidia/riva-translate-4b-instruct-v2")
             self.assertEqual(translation_plan["models"][0]["method"], "translation")
             self.assertEqual(
-                [item["provider"] for item in search_plan["models"][:3]],
-                ["chatgpt_space_replica_01", "chatgpt_space_replica_02", "chatgpt_space"],
+                [item["provider"] for item in search_plan["models"][:2]],
+                ["chatgpt_space_replica_01", "chatgpt_space_replica_02"],
             )
             self.assertEqual(search_plan["models"][0]["tools"], ["search"])
             self.assertEqual(live_plan["output_type"], "live")

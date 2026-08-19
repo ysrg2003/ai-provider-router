@@ -1,193 +1,94 @@
-# تكامل ChatGPT Spaces
+# ChatGPT Spaces المعتمدة في ai-provider-router
 
-## الفكرة
+## النطاق
 
-الـrouter يتعامل مع ChatGPT Spaces كـHTTP providers مستقلة. لكل replica base URL، لكن قيمة API secret تمر عبر key pool مشترك ما لم تقرر توزيع secrets منفصلًا. Cookies وStorage State الخاصة بمتصفح ChatGPT لا تدخل إلى router؛ تبقى داخل Space التي تشغّل Playwright/Chromium.
+يعتمد router نسختين مستقلتين فقط من `chatgpt-api` كمصادر ChatGPT مرتبة. تبقى Space قديمة محفوظة على Hugging Face خارج هذا المشروع، لكنها لا تُستخدم ولا تظهر في configuration أو routes أو workflow الاختبار.
 
-## replicas الحالية
+| الترتيب | Provider ID | Base URL | الحالة الوظيفية الأخيرة |
+|---:|---|---|---|
+| 1 | `chatgpt_space_replica_01` | `https://yousefsg-chatgpt-api-replica-01.hf.space` | text/search نجحا؛ image مؤجلة بسبب quota |
+| 2 | `chatgpt_space_replica_02` | `https://yousefsg-chatgpt-api-replica-02.hf.space` | text/search نجحا؛ image مؤجلة بسبب quota في آخر جولة |
 
-| Provider ID | Base URL variable | الدور | timeout |
-|---|---|---|---:|
-| `chatgpt_space_replica_01` | `CHATGPT_API_REPLICA_01_BASE_URL` | replica-01 | 540s |
-| `chatgpt_space_replica_02` | `CHATGPT_API_REPLICA_02_BASE_URL` | replica-02 | 540s |
-| `chatgpt_space` | `CHATGPT_API_BASE_URL` | replica-04 | 540s |
+## الحدود الأمنية
 
-القيم الافتراضية موجودة في [`../config/providers.json`](../config/providers.json) و[`.env.example`](../.env.example). base URL public identifier، أما `CHATGPT_API_SECRET_KEY` و`AI_ROUTER_CHATGPT_KEYS_JSON` فهما secrets. خطوات الحصول والتدوير في [`../docs/credentials.md`](../docs/credentials.md).
+تحتوي كل Space على Chromium وCookies أو Storage State الخاصة بها. لا تدخل Cookies أو Storage State إلى router، ولا تُحفظ في Git. يستخدم router `API_SECRET_KEY` فقط لمصادقة HTTP، ويمكنه قراءة قيمة واحدة من `CHATGPT_API_SECRET_KEY` أو مصفوفة مرتبة من `AI_ROUTER_CHATGPT_KEYS_JSON`.
 
-## ما الذي يفعله adapter؟
+## الإعداد
 
-للنص، يرسل adapter interaction text ويحلل JSON/النص دون فحص HTML. للبحث، يضيف جملة search prefix المطلوبة قبل prompt عندما تكون أداة `search` في route. للصورة فقط ينتظر generation، يتحقق من image candidates، يدعم `data_url`، وينزّل `src` عند توفره؛ لذلك timeout الصور أطول وقد يصل إلى 540 ثانية.
+تعريف providers موجود في `config/providers.json`، وترتيب المسارات في `config/models.json`. المتغيرات العامة الاختيارية هي:
 
-> نجاح النص أو البحث لا يثبت نجاح الصورة؛ الصورة تتأثر بـquota generation، session state، browser DOM، ووقت generation. والعكس صحيح: فشل الصورة لا يعني أن base URL أو text API معطل.
-
-## التشغيل والإعداد
-
-### الخطوة 1: تحضير Space
-
-في كل Space، افتح Hugging Face **Settings → Variables and secrets** وأنشئ Secret باسم `API_SECRET_KEY` بالقيمة التي سيستخدمها router. احتفظ بكل Cookie/Storage State داخل Space نفسها ولا ترفعها إلى repository. بعد حفظ secret أعد تشغيل Space وانتظر health response.
-
-Expected result: Space تظهر Running، وطلب health أو text صغير يعيد HTTP success. إذا كانت Space تبقى Building، افحص logs وDocker/runtime قبل تغيير router.
-
-### الخطوة 2: ضبط base URLs
-
-في `.env` المحلي اترك القيم الافتراضية أو overrideها:
-
-```bash
-CHATGPT_API_BASE_URL=https://<replica-04-space>.hf.space
-CHATGPT_API_REPLICA_01_BASE_URL=https://<replica-01-space>.hf.space
-CHATGPT_API_REPLICA_02_BASE_URL=https://<replica-02-space>.hf.space
+```dotenv
+CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
+CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
 ```
 
-Expected result: `summary` يذكر providers الثلاثة. الخطأ الشائع هو وضع `/v1` أو مسار API غير موجود؛ اتبع contract الخاص بـSpace ولا تفترض OpenAI-compatible URL.
+أما السر فيُضبط في router عبر:
 
-### الخطوة 3: ضبط secret pool
-
-لـsingle key:
-
-```bash
-CHATGPT_API_SECRET_KEY=<space-api-secret>
+```dotenv
+CHATGPT_API_SECRET_KEY=YOUR_SPACE_API_SECRET
+AI_ROUTER_CHATGPT_KEYS_JSON=[]
 ```
 
-لـpool:
+يجب أن تطابق قيمة router Secret قيمة `API_SECRET_KEY` في Space المقابلة. لا تضع `CHATGPT_COOKIES_NETSCAPE` أو `CHATGPT_STORAGE_STATE_JSON` في router.
 
-```bash
-AI_ROUTER_CHATGPT_KEYS_JSON=["<space-key-1>","<space-key-2>"]
-```
+## ترتيب المسارات
 
-لا تضع `API_SECRET_KEY` أو cookies داخل `providers.json`. يستخدم `key_pools.json` أسماء env vars فقط.
-
-### الخطوة 4: اختبار النص
-
-```bash
-export PYTHONPATH=src
-python3 -m ai_router.cli.main \
-  --config-dir config \
-  --state-db /tmp/chatgpt-text.db \
-  call-auto --output-type text --operation chatgpt_text_smoke \
-  --user 'Return exactly: ChatGPT text works'
-```
-
-Expected result: JSON response مع `route` و`intent`. إذا اختار route providerًا آخر، فهذا fallback طبيعي؛ لاستخدام ChatGPT وحده نفّذ chain/نسخة config تقيّد providers.
-
-### الخطوة 5: اختبار البحث
-
-```bash
-python3 -m ai_router.cli.main \
-  --config-dir config \
-  --state-db /tmp/chatgpt-search.db \
-  call-auto --output-type text --grounding search \
-  --operation chatgpt_search_smoke \
-  --user 'ابحث في الويب عن آخر موديل Anthropic AI وأعد المصادر'
-```
-
-Expected result: response grounded عندما ينجح ChatGPT search-capable spec. الفشل إذا كان route لا يملك `search` يعني config capability filtering، وليس بالضرورة فشل Space.
-
-### الخطوة 6: اختبار الصورة بحذر
-
-اختبار الصور يستهلك quota وقد يستغرق دقائق. لا تكرره لمجرد progress message. نفّذ request واحدًا، انتظر timeout المسموح، وتحقق من payload/artifact. استخدم prompt قصيرًا لا يحتوي بيانات شخصية، ثم افحص وجود image data أو downloadable `src` في JSON النهائي.
-
-Expected success: artifact صورة صالح أو data URL normalized. إذا ظهرت رسالة `Free plan limit` فهي quota خارجية؛ لا تصلحها بتدوير ChatGPT API keys. إذا ظهر timeout، راجع Space logs وDOM/session state، ثم لا تعاود الطلب إلا بعد التأكد من أن generation لم يكتمل خلفيًا.
-
-## آخر اختبار مباشر لكل Space
-
-شغّل workflow [`../.github/workflows/chatgpt-spaces-functional.yml`](../.github/workflows/chatgpt-spaces-functional.yml) بالتنفيذ التسلسلي في [run 32222693459](https://github.com/ysrg2003/ai-provider-router/actions/runs/32222693459). كانت النتيجة: النص والبحث نجحا في `chatgpt_space_replica_01` و`chatgpt_space_replica_02`، بينما فشل اختبار الصورة فيهما بـHTTP 503. أما `chatgpt_space`، وهو replica-04، ففشل النص والبحث والصورة كلها بـHTTP 503. لا توجد في التقرير رسالة `Free plan limit` أو `429`، لذلك هذه الجولة لا تشير إلى استنفاد quota؛ الأقرب أنها مشكلة runtime أو browser/session state داخل الـSpace أو upstream ChatGPT.
-
-أعيد اختبار replica-04 منفردًا في النص والبحث فقط بعد أن أعادت endpoints العامة `/` و`/health` و`/docs` HTTP 200، في [run 32224351325](https://github.com/ysrg2003/ai-provider-router/actions/runs/32224351325). بقي النص والبحث عند HTTP 503 بعد نحو 223 ثانية لكل طلب. هذا يفصل المشكلة عن image quota ويثبت أن replica-04 يحتاج فحص logs وStorage State وsession/challenge وتهيئة المتصفح داخل Space قبل تعديل router.
-
-| Space | النص | البحث | الصورة | الدليل |
-|---|---|---|---|---|
-| replica-01 | نجح | نجح | 503 transient | [32222693459](https://github.com/ysrg2003/ai-provider-router/actions/runs/32222693459) |
-| replica-02 | نجح | نجح | 503 transient | [32222693459](https://github.com/ysrg2003/ai-provider-router/actions/runs/32222693459) |
-| replica-04 | 503 transient | 503 transient | 503 transient | [32222693459](https://github.com/ysrg2003/ai-provider-router/actions/runs/32222693459)، [إعادة النص/البحث 32224351325](https://github.com/ysrg2003/ai-provider-router/actions/runs/32224351325) |
-
-لا تعني `200` من `/health` أن ChatGPT session داخل المتصفح صالحة؛ فالـhealth يثبت runtime HTTP فقط، بينما اختبار `/v1/chat/completions` يمر عبر browser/session وupstream ChatGPT.
-
-## Replica isolation
-
-كل Space يجب أن تملك runtime وStorage State مستقلين. لا تخلط cookie file بين replica-01 وreplica-02 وreplica-04. إذا نجحت replica-01 وفشلت الأخريان، افحص لكل واحدة على حدة: health، `API_SECRET_KEY`، session/challenge state، browser launch، والـquota. تشابه source files لا يساوي تشابه جلسة ChatGPT أو صلاحية account.
-
-## تشخيص الأخطاء
-
-| العرض | الاحتمال | الإصلاح |
-|---|---|---|
-| `401/403` في الثلاث | secret غير متطابق أو Space لا تقبله | حدّث `API_SECRET_KEY` في Space وrouter |
-| النص يفشل قبل الوصول إلى ChatGPT | route/config أو كل providers في cooldown | شغّل `route-plan` ثم state DB جديد للاختبار |
-| search لا يعطي مصادر | لا يوجد `search` tool في spec أو Space session لا تملك البحث | راجع `models.json` وSpace capability |
-| الصورة تعطي quota | ChatGPT Free image quota | انتظر reset؛ لا تكرر الطلب ولا تغيّر keys |
-| الصورة timeout | generation/DOM بطيء أو session state | راجع logs و540s timeout وartifact بعد اكتمال generation |
-| Space Running لكن كل الطلبات 503 | app/browser/session initialization | افحص HF logs وStorage State، ثم أعد تشغيل Space |
-| replica واحدة تعمل | اختلاف session أو account أو secret، لا source فقط | اختبرها منفردة وسجّل root cause قبل fallback |
-
-## الأمن والتحديث
-
-لا تسجل cookies، Storage State، Authorization، prompts حساسة، أو base64 image في GitHub Actions artifacts. عند تسريب API secret غيّره في Space ثم في router. عند تسريب session state، ألغِ جلسة ChatGPT وأصدر state جديدة؛ لا يكفي تدوير `CHATGPT_API_SECRET_KEY`. قبل release افحص `git diff --check` وsecret patterns و`git ls-files` للتأكد من عدم وجود cookie files.
-
-## نتائج ما بعد نشر generation recovery
-
-نُشر `browser_gateway.py` المصحح إلى Spaces الثلاثة، ثم شُغّل workflow واحد متسلسل [32240146321](https://github.com/ysrg2003/ai-provider-router/actions/runs/32240146321) مع text وlive search وimage مرة واحدة لكل Space. التقرير الأحمر المنقح محفوظ في [`chatgpt-spaces-functional-32240146321.json`](chatgpt-spaces-functional-32240146321.json). النتيجة الإجمالية: **4 passed و5 failed**.
-
-| Space | النص | البحث الحي | الصورة | تفسير مختصر |
-|---|---|---|---|---|
-| replica-01 | passed | passed | failed: transient 503 | المساران النصي والبحثي نجحا؛ فشل طلب الصورة بعد 212.19s دون رسالة quota في التقرير. |
-| replica-02 | passed | passed | failed: invalid_or_unknown | المساران النصي والبحثي نجحا؛ فشل image payload/contract بعد 269.85s، ويحتاج تفاصيل Space logs أو artifact أعمق قبل نسبته إلى quota. |
-| replica-04 | failed: transient 503 | failed: transient 503 | failed: transient 503 | كل السيناريوهات فشلت بعد نحو 240–248s؛ Logs الحية أثبتت أن recovery نفّذ reload عند بقاء generation نشطًا، لكن الطلب الجاري نفسه انتهى timeout. |
-
-هذه الجولة **لا تثبت نجاحًا كاملًا بعد الإصلاح**. هي تثبت أن الإصلاح نُشر وأنه ينفذ recovery في الحالة المستهدفة، كما تثبت أن replica-01 وreplica-02 ينجحان في text/search، لكنها تكشف فشلين متبقيين مختلفين: image failures في 01/02، وsession/upstream أو stabilization failure مستمر في 04. لا توجد في التقرير رسالة `Free plan limit` أو HTTP 429؛ لا ينبغي إعادة طلب الصور قبل تشخيص logs أو انتظار reset خارجي.
-
-لأدلة المتصفح الحية المنقحة، راجع [`browser-evidence-2026-08-19.md`](browser-evidence-2026-08-19.md). وللتفصيل البرمجي للإصلاح، راجع [`chatgpt-generation-recovery.md`](chatgpt-generation-recovery.md). وللمقارنة التاريخية والإصلاحات، راجع [`../docs/chatgpt-integration-guide.md`](../docs/chatgpt-integration-guide.md) و[`../docs/chatgpt-space.md`](../docs/chatgpt-space.md).
-
-## نتائج remediation اللاحقة
-
-بعد إضافة فتح محادثة جديدة فعليًا عبر رابط `New chat`/`دردشة جديدة`، شُغّل workflow شامل واحد [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) بالتتابع، وكانت النتيجة **6 passed و3 failed**. نجحت text/search/image في replica-01 وreplica-02، بما في ذلك `mime_type=image/png` وimage payload صالح. بقيت replica-04 فاشلة في الأنواع الثلاثة بحالة transient؛ لذلك لم تُكرر الصور بعد هذه الجولة.
-
-| Space | النص | البحث | الصورة | الدليل |
-|---|---|---|---|---|
-| replica-01 | passed | passed | passed | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
-| replica-02 | passed | passed | passed | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
-| replica-04 | failed: transient | failed: transient | failed: transient | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
-
-أُجري بعد ذلك اختبار محدود لـreplica-04 في text/search فقط [32247225620](https://github.com/ysrg2003/ai-provider-router/actions/runs/32247225620)، وفشل كلاهما بعد نحو 268 ثانية. Logs الحية أثبتت أن retry وفتح المحادثة الجديدة يعملان، لكن ChatGPT لا ينتج assistant content في هذه الجلسة.
-
-أُضيف endpoint تشخيص محمي `GET /diagnostics/session`. وهو يعيد إشارات redacted فقط: `ready`، و`input_visible`، وعدد cookies وأسماءها، ووجود login/challenge markers، و`visible_auth_controls`؛ ولا يعيد قيم cookies أو Storage State أو prompts. أظهر التشخيص أن replica-01 وreplica-02 لا تحتويان عناصر auth مرئية، بينما replica-04 أظهرت `visible_auth_controls=["log in"]` مع `ready=true` و`input_visible=true`. هذا يثبت أن replica-04 **جزئية المصادقة أو تحتاج إعادة تسجيل دخول**، وليس أن مشكلة image contract ما زالت في router.
-
-بدل ترك كل طلب replica-04 ينتظر timeout طويلًا، أصبح gateway يوقفه فورًا برسالة `ChatGPT session requires re-authentication; visible auth control detected`. تحقق مباشر واحد أعاد HTTP 503 خلال `2.881228` ثانية، مقابل نحو 268 ثانية سابقًا. هذا إصلاح تشغيلي يمنع الهدر والـretries العمياء، لكنه لا يستطيع تسجيل الدخول إلى حساب ChatGPT الخاص بـreplica-04 تلقائيًا؛ يجب تحديث جلسة ذلك الحساب داخل Space نفسها، مع إبقاء Cookies كل replica مستقلة.
-
-## ما كشفه المتصفح الحي عن الصور
-
-لم أرسل prompt صورة جديدًا في هذه الجولة. في الصفحة الرئيسية ظهر prompt صورة موجود مسبقًا داخل textarea، لكنه لم يكن مرسلًا، ولم تظهر صورة assistant أو generation نشطة. أما عند فتح **المكتبة**، ظهرت أصول PNG مولدة سابقة مثل `Vivid Blue Star on White.png` بحجم 765 KB و`image-gen-1.png` بحجم 817 KB. فتح الأصل أظهر preview كبيرًا فعليًا وأزرارًا مستقلة لـ`تنزيل الصورة` و`مشاركة` و`إزالة`.
-
-الاستنتاج العملي هو أن مسار الصورة المكتملة في ChatGPT هو: إرسال prompt → انتظار اكتمال generation → ظهور أصل مكتبة/preview قابل للتنزيل → استخراج `data_url` أو رابط الصورة داخل جلسة المتصفح. لذلك لا ينبغي اعتبار كل `<img>` في الصفحة صورة مولدة؛ الصفحة الرئيسية قد تحتوي صور واجهة أو avatars. وهذا يفسر لماذا يركز gateway على assistant container وbackend/image candidates، بينما يختبر router النتيجة النهائية بوجود `data_base64` صالح.
-
-## تصحيح فرضية حساب sg
-
-أكد المتصفح الحي أن الحساب الظاهر هو `Yousef Sg` على الخطة المجانية، وهو الحساب المقصود لـreplica-04. لكن بعد نشر diagnostics المنقح إلى replica-04، أظهر endpoint عنصرًا حقيقيًا مرئيًا من نوع `button` يحمل `log in`، بحجم `68.2×36`، وليس نصًا مخفيًا أو عنصرًا `aria-hidden`. لذلك فالمشكلة ليست أن الحساب المقصود خطأ؛ بل إن Storage State داخل Space لا يعكس جلسة المتصفح الحي المصادق عليها بالكامل، أو أن جلسة sg داخل Space انتهت جزئيًا. لا ينبغي نسخ Cookies بين البيئتين؛ المطلوب تحديث session state الخاصة بحساب sg داخل replica-04 نفسها.
-
-
-## التحقق النهائي من replica-01 بعد إصلاح استخراج الصور — 2026-08-19
-
-بعد نشر commit `d2c5bee` إلى replica-01 فقط، أصبحت حالة runtime جاهزة، ثم أُجريت محاولة صورة واحدة مبررة للتحقق من الإصلاح. أعاد endpoint HTTP 200، لكن payload النهائي كان يحتوي `images=[]`، بينما احتوى `choices[0].message.content` على رسالة ChatGPT الصريحة:
-
-> You've hit the Free plan limit for image generations requests. You can create more images when the limit resets in 17 hours and 3 minutes.
-
-هذه النتيجة تغيّر تصنيف الفشل السابق من **unknown extraction failure** إلى **quota-confirmed / image not verified**. لم تكن هناك صورة جديدة أو bytes يمكن استخراجها، ولذلك لا يمكن استخدام هذه الجولة للحكم على نجاح extraction بعد reset. لا يوجد سبب لتغيير Base URL أو `API_SECRET_KEY` أو router key pool لمعالجة هذا الخطأ.
-
-| العنصر | النتيجة النهائية |
+| المسار | ترتيب ChatGPT |
 |---|---|
-| replica-01 text | passed سابقًا، ولم يُمس في الإصلاح الأخير |
-| replica-01 live search | passed سابقًا، ولم يُمس في الإصلاح الأخير |
-| replica-01 image | quota-confirmed؛ HTTP 200 لكن `images=[]`، وليس نجاح صورة |
-| replica-02 | لم تُلمس في هذه الجولة؛ تظل آخر صورة موثقة PNG صالحًا من 831230 bytes |
-| replica-04 | لم تُلمس؛ ما زالت تحتاج إعادة مصادقة يدوية |
+| `text` | replica-01 ثم replica-02 |
+| `text_grounded_search` | replica-01 ثم replica-02 |
+| `image` | replica-01 ثم replica-02 |
+| `image_grounded_search` | replica-01 ثم replica-02 |
 
-سجل الأدلة التفصيلي موجود في [`replica-01-image-final-verification-2026-08-19.md`](replica-01-image-final-verification-2026-08-19.md). بعد reset، يجب إرسال محاولة صورة واحدة فقط والتحقق من `images[].data_url` وفك base64 وفحص MIME والأبعاد. إذا عادت رسالة quota، يجب الانتظار بدل تكرار الطلب؛ وإذا عادت صورة فعلية مع `images=[]`، عندها فقط تُراجع image DOM diagnostics redacted.
+تعمل providers الأخرى الموجودة في route كـfallback بعد ChatGPT إذا سمحت capability filtering بذلك. عند نجاح replica-01 لا يُرسل الطلب نفسه إلى replica-02 لتجنب التكرار؛ عند فشلها ينتقل router وفق سياسة retry وcooldown.
 
-## live smoke للنسختين 01 و02 — 2026-08-19
+## قاعدة الصور
 
-بعد readiness check أعاد `ready=true` للنسختين، نُفذت الحالات بالتسلسل: نص، بحث حي، ثم صورة واحدة فقط لكل نسخة. النتائج الحية:
+لا يُفعل فحص DOM أو image extraction في text/search. للصورة فقط، ينتظر adapter generation، يرفض الصور القديمة وfavicon وavatar، ويفك `data_url` أو ينزّل `src` عند توفره. HTTP 200 وحده لا يكفي؛ النجاح يتطلب bytes صورة صالحة وفحص MIME والأبعاد.
+
+## آخر live smoke
+
+بعد readiness check ناجح للنسختين، أُجريت الحالات بالتسلسل: نص، بحث حي، ثم طلب صورة واحد فقط لكل نسخة.
 
 | Space | النص | البحث الحي | الصورة |
 |---|---|---|---|
 | replica-01 | passed، HTTP 200، `LIVE_TEXT_OK` | passed_nonempty، HTTP 200، إجابة مع مصدر | quota، HTTP 200، `images_count=0` |
 | replica-02 | passed، HTTP 200، `LIVE_TEXT_OK` | passed، HTTP 200، إجابة مع مصدر | quota، HTTP 200، `images_count=0` |
 
-في حالتي الصورة، احتوى `choices[0].message.content` على رسالة `You've hit the Free plan limit for image generations requests...`. لذلك لم تُحفظ صورة جديدة ولم تُرسل retries إضافية. هذا لا يلغي الدليل التاريخي السابق الذي فُك فيه PNG صالح من replica-02؛ لكنه يثبت أن **حالة quota الحالية تمنع إعادة التحقق من الصورة في النسختين**. التفاصيل والـartifacts الآمنة في [`live-test-report-2026-08-19.md`](live-test-report-2026-08-19.md) والمجلد [`live-verification-2026-08-19`](live-verification-2026-08-19).
+في حالتي الصورة، احتوى الرد على رسالة ChatGPT Free plan image-generation limit. لم تُرسل retries إضافية. يوجد دليل تاريخي سابق على PNG صالح من replica-02 بحجم 831230 bytes وأبعاد 1254×1254، لكن quota الحالية منعت إعادة التحقق في آخر جولة.
+
+التقرير الكامل في [`live-test-report-2026-08-19.md`](live-test-report-2026-08-19.md)، والـartifacts في [`live-verification-2026-08-19/summary.json`](live-verification-2026-08-19/summary.json).
+
+## الاختبار الوظيفي
+
+يستخدم `.github/workflows/chatgpt-spaces-functional.yml` السكربت `scripts/chatgpt_spaces_functional.py`، وقائمة الاختبار داخله مقيدة بالمعرفين:
+
+```text
+chatgpt_space_replica_01
+chatgpt_space_replica_02
+```
+
+الاختبار متسلسل لتجنب concurrent browser/session load وbursts غير الضرورية في quota. نفّذ text/search أولًا، ثم image مرة واحدة فقط عندما تكون هناك حاجة.
+
+## التشغيل الآمن
+
+```bash
+curl -fsS https://yousefsg-chatgpt-api-replica-01.hf.space/health
+curl -fsS https://yousefsg-chatgpt-api-replica-02.hf.space/health
+
+PYTHONPATH=src python3 -m compileall -q src tests vendors/chatgpt-api
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+```
+
+إذا كان `/health` جاهزًا لكن text/search يفشلان، افحص Secret والجلسة داخل Space. إذا ظهرت رسالة Free plan limit للصورة، انتظر reset ولا تغيّر Base URL أو key pool.
+
+## الملفات ذات الصلة
+
+| الملف | الوظيفة |
+|---|---|
+| `config/providers.json` | تعريف Space-01 وSpace-02 |
+| `config/models.json` | ترتيب providers في routes |
+| `scripts/chatgpt_spaces_functional.py` | live smoke للنسختين فقط |
+| `src/ai_router/providers/chatgpt_space.py` | HTTP adapter |
+| `project-documentation/live-test-report-2026-08-19.md` | التقرير الحي الأخير |
+| `project-documentation/live-verification-2026-08-19/` | artifacts JSON redacted |

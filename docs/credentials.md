@@ -12,7 +12,7 @@
 | `AI_ROUTER_HF_KEYS_JSON` / `HF_TOKEN` | secret pool/single fallback | اختياري | `huggingface_default` | local `.env` أو GitHub Secret |
 | `AI_ROUTER_OPENROUTER_KEYS_JSON` / `OPENROUTER_API_KEY` | secret pool/single fallback | اختياري | `openrouter_default` | local `.env` أو GitHub Secret |
 | `NVIDIA_API_KEYS_JSON` / `NVIDIA_API_KEY` | secret pool/single fallback | اختياري | `nvidia_default` | local `.env` أو GitHub Secret |
-| `CHATGPT_API_BASE_URL`, `CHATGPT_API_REPLICA_01_BASE_URL`, `CHATGPT_API_REPLICA_02_BASE_URL` | non-secret routing variables | اختياري إذا كانت القيم الافتراضية صحيحة | `providers.json` عبر `base_url_env` | `.env` أو GitHub Variable |
+| `CHATGPT_API_REPLICA_01_BASE_URL`, `CHATGPT_API_REPLICA_02_BASE_URL` | non-secret routing variables | اختياري إذا كانت القيم الافتراضية صحيحة | `providers.json` عبر `base_url_env` | `.env` أو GitHub Variable |
 
 ## بطاقة `CHATGPT_API_SECRET_KEY`
 
@@ -22,7 +22,7 @@
 
 **Required or optional:** اختياري؛ يصبح مطلوبًا عندما تريد تشغيل ChatGPT provider ولا توجد قيمة صالحة في `AI_ROUTER_CHATGPT_KEYS_JSON`.
 
-**Used by:** key pool `chatgpt_space_default`، الذي يربط providers الثلاثة `chatgpt_space_replica_01` و`chatgpt_space_replica_02` و`chatgpt_space`.
+**Used by:** key pool `chatgpt_space_default`، الذي يربط `chatgpt_space_replica_01` و`chatgpt_space_replica_02`.
 
 **Where to obtain it:** أنشئ أو اعرض قيمة `API_SECRET_KEY` من إعدادات كل Space في Hugging Face. يجب أن تتطابق القيمة مع Secret الذي تقبله Spaces، ولا علاقة لها بـCookies أو `CHATGPT_STORAGE_STATE_JSON` داخل Space.
 
@@ -267,7 +267,7 @@
 
 ## بطاقات متغيرات غير سرية
 
-### `CHATGPT_API_BASE_URL`, `CHATGPT_API_REPLICA_01_BASE_URL`, `CHATGPT_API_REPLICA_02_BASE_URL`
+### `CHATGPT_API_REPLICA_01_BASE_URL`, `CHATGPT_API_REPLICA_02_BASE_URL`
 
 هذه base URLs ليست secrets بحد ذاتها، ويستخدمها `providers.json` عبر `base_url_env`. يجب أن تكون HTTPS URLs لـSpace الصحيحة. القيمة الافتراضية موجودة في `.env.example`، ويمكن override محليًا أو عبر GitHub Variables. تحقق من `/health` أو أول response قبل تغييرها. الخطأ الشائع هو وضع key داخل URL أو خلط replica مع Storage State؛ Storage State لا يوضع في router config.
 

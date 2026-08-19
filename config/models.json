@@ -1822,18 +1822,6 @@
         "enabled": true
       },
       {
-        "provider": "chatgpt_space",
-        "model": "gpt-4o-mini",
-        "method": "interaction_text",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "enabled": true
-      },
-      {
         "provider": "google_gemini",
         "model": "gemini-3.7-flash",
         "method": "json",
@@ -2417,21 +2405,6 @@
         ]
       },
       {
-        "provider": "chatgpt_space",
-        "model": "gpt-4o-mini",
-        "method": "interaction_text",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "enabled": true,
-        "tools": [
-          "search"
-        ]
-      },
-      {
         "provider": "google_gemini",
         "model": "gemini-2.5-flash",
         "method": "interaction_text",
@@ -2686,20 +2659,6 @@
       },
       {
         "provider": "chatgpt_space_replica_02",
-        "model": "gpt-4o-mini",
-        "method": "image",
-        "input_types": [
-          "text",
-          "image"
-        ],
-        "output_types": [
-          "image",
-          "text"
-        ],
-        "enabled": true
-      },
-      {
-        "provider": "chatgpt_space",
         "model": "gpt-4o-mini",
         "method": "image",
         "input_types": [
@@ -3016,23 +2975,6 @@
       },
       {
         "provider": "chatgpt_space_replica_02",
-        "model": "gpt-4o-mini",
-        "method": "image",
-        "input_types": [
-          "text",
-          "image"
-        ],
-        "output_types": [
-          "image",
-          "text"
-        ],
-        "enabled": true,
-        "tools": [
-          "search"
-        ]
-      },
-      {
-        "provider": "chatgpt_space",
         "model": "gpt-4o-mini",
         "method": "image",
         "input_types": [
