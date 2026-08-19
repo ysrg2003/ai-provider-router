@@ -8,8 +8,8 @@
 |---|---|
 | المستودع | `ysrg2003/ai-provider-router` |
 | الفرع | `main` |
-| آخر router commit منشور | `4dbb06e` — `docs: record ChatGPT remediation and reauthentication diagnosis` |
-| آخر source commit منشور | `5c34094` — `fix: fail fast when ChatGPT session needs reauthentication` |
+| آخر router commit منشور | `45d2da0` — `fix: distinguish visible sg reauthentication controls` |
+| آخر source commit منشور | `eddbfda` — `fix: ignore hidden auth marker noise in diagnostics` |
 | workflow الشامل | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
 | workflow المحدود لـreplica-04 | [32247225620](https://github.com/ysrg2003/ai-provider-router/actions/runs/32247225620) |
 | artifact الشامل | [`chatgpt-spaces-functional-32245401088.json`](chatgpt-spaces-functional-32245401088.json) |
@@ -20,13 +20,13 @@
 |---|---|---|---|---|
 | `chatgpt-api-replica-01` | passed | passed | passed | المسارات الثلاثة نجحت بعد إصلاح output_type/image extraction. |
 | `chatgpt-api-replica-02` | passed | passed | passed | المسارات الثلاثة نجحت بعد إصلاح output_type/image extraction. |
-| `chatgpt-api-replica-04` | re-auth required | re-auth required | لم تُكرر بعد التشخيص | تظهر `visible_auth_controls=["log in"]` رغم `ready=true` و`input_visible=true`. |
+| `chatgpt-api-replica-04` | re-auth required | re-auth required | لم تُكرر بعد التشخيص | الحساب المقصود هو sg، لكن diagnostics المنقح أثبت زر `log in` مرئيًا فعليًا بحجم 68.2×36 رغم `ready=true` و`input_visible=true`. |
 
 النتيجة الإجمالية في workflow الشامل: **6 passed و3 failed**. اختبار text/search المحدود للنسخة 04 فشل قبل fail-fast بعد نحو 268 ثانية. بعد نشر fail-fast، أعاد طلب نص واحد إلى replica-04 HTTP 503 برسالة `ChatGPT session requires re-authentication; visible auth control detected` خلال `2.881228` ثانية، بدل timeout طويل.
 
 ## إصلاحات الكود
 
-في `chatgpt-api` المصدر أضيفت bounded fresh-conversation recovery، فتح رابط `New chat` فعليًا مع fallback، قبول assistant text الجديد عند توقف generation، استخراج الصور من data_url/src/url، وendpoint محمي `GET /diagnostics/session` لا يعيد إلا مؤشرات redacted. أضيف أيضًا fail-fast عند ظهور login control.
+في `chatgpt-api` المصدر أضيفت bounded fresh-conversation recovery، فتح رابط `New chat` فعليًا مع fallback، قبول assistant text الجديد عند توقف generation، استخراج الصور من data_url/src/url، وendpoint محمي `GET /diagnostics/session` لا يعيد إلا مؤشرات redacted. أضيف أيضًا fail-fast عند ظهور login control، ثم ضُيّق التشخيص بحيث لا يعدّ النص المخفي auth control؛ ومع ذلك ظل replica-04 يعرض زر `log in` مرئيًا حقيقيًا. المتصفح الحي أكد أن الحساب المتصل هو `Yousef Sg`، لذا الفرق في session state داخل Space نفسها لا في اختيار الحساب.
 
 في router أُرسل `output_type=image` صراحة، وقُبلت أشكال الصور `data_url` و`src` و`url`، وحُدّ retry الصور إلى محاولتين. تمت مزامنة `vendors/chatgpt-api` مع المصدر، ونجحت **47 اختبارات router** و**13 اختبارًا في المصدر**، مع compileall وgit diff check.
 
