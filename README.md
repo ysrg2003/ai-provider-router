@@ -34,9 +34,27 @@
 - run: python -m pip install ./ai-provider-router
 ```
 
-### 3.2 إضافة Secrets
+### 3.2 إضافة Secrets وBase URLs لـChatGPT
 
-من مستودعك: **Settings → Secrets and variables → Actions → Secrets**. أضف فقط credentials التي تريد استخدامها. الأسماء والروابط وطريقة الحصول والتدوير موثقة في [docs/credentials.md](docs/credentials.md). لا تجعل Secret في YAML أو logs.
+من مستودعك: **Settings → Secrets and variables → Actions → Secrets**، أضف Secret باسم `CHATGPT_API_SECRET_KEY`. يجب أن تكون قيمته مطابقة لقيمة `API_SECRET_KEY` الموجودة في Space-01 وSpace-02 إذا كنت تستخدم key pool المشترك الحالي. لا تضع هذا المفتاح في Variables أو YAML أو logs.
+
+عناوين Spaces عامة وليست Secrets. يمكنك ترك القيم الافتراضية في `config/providers.json`، أو تسجيلها كـGitHub Variables من **Settings → Secrets and variables → Actions → Variables**:
+
+```text
+CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
+CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
+```
+
+واستخدمها في workflow المستهلك هكذا:
+
+```yaml
+env:
+  CHATGPT_API_SECRET_KEY: ${{ secrets.CHATGPT_API_SECRET_KEY }}
+  CHATGPT_API_REPLICA_01_BASE_URL: ${{ vars.CHATGPT_API_REPLICA_01_BASE_URL }}
+  CHATGPT_API_REPLICA_02_BASE_URL: ${{ vars.CHATGPT_API_REPLICA_02_BASE_URL }}
+```
+
+إذا لم تنشئ Variables، سيستخدم router العناوين الافتراضية من config. أما Cookies وStorage State الخاصة بـChatGPT فتبقى داخل Space ولا تُضاف إلى GitHub Secrets الخاصة بالrouter.
 
 ### 3.3 تشغيل أول تحقق
 
@@ -53,6 +71,16 @@
 ## 4. التشغيل المحلي
 
 المتطلبات: Python 3.11+، `requests`، `python-dotenv`، SQLite قابل للكتابة، وcredential لمزود واحد على الأقل لأول live call.
+
+للاستخدام الأبسط مع ChatGPT Spaces، ضع في `.env`:
+
+```dotenv
+CHATGPT_API_SECRET_KEY=<نفس API_SECRET_KEY في Space-01 وSpace-02>
+CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
+CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
+```
+
+الـBase URLs اختيارية لأن لها defaults في `config/providers.json`. لا تضع `CHATGPT_COOKIES_NETSCAPE` أو `CHATGPT_STORAGE_STATE_JSON` في `.env` الخاص بالrouter؛ هاتان القيمتان تخصان Space نفسها.
 
 ```bash
 git clone https://github.com/ysrg2003/ai-provider-router.git
@@ -79,7 +107,15 @@ ai-router --config-dir config --state-db /tmp/router.db \
 
 ## 5. التشغيل عبر Docker
 
-يوجد `Dockerfile` جذري لـCLI و`.dockerignore` يمنع `.env` وDB وartifacts من الصورة. نفّذ build في جهاز أو CI يحتوي Docker:
+يوجد `Dockerfile` جذري لـCLI و`.dockerignore` يمنع `.env` وDB وartifacts من الصورة. نفّذ build في جهاز أو CI يحتوي Docker. أنشئ `.env` كما في القسم المحلي، وبالنسبة إلى ChatGPT تأكد من وجود:
+
+```dotenv
+CHATGPT_API_SECRET_KEY=<نفس API_SECRET_KEY في Space-01 وSpace-02>
+CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
+CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
+```
+
+مرّر `.env` وقت التشغيل فقط؛ لا تنسخه إلى image layers:
 
 ```bash
 docker build -t ai-provider-router:local .

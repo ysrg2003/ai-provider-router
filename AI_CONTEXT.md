@@ -59,15 +59,15 @@ ai-router --config-dir config --state-db /tmp/router.db \
 | `.github/workflows/nvidia-functional.yml` | فحص NVIDIA models |
 | `.github/workflows/chatgpt-spaces-functional.yml` | اختبار ChatGPT replica-01 وreplica-02 |
 
-لا تطبع Secrets أو Authorization headers أو base64 في artifacts. ابدأ بسيناريو واحد، ولا تستخدم `all` قبل مراجعة quota.
+لا تطبع Secrets أو Authorization headers أو base64 في artifacts. ابدأ بسيناريو واحد، ولا تستخدم `all` قبل مراجعة quota. لاستخدام ChatGPT في workflow: ضع `CHATGPT_API_SECRET_KEY` في `${{ secrets.CHATGPT_API_SECRET_KEY }}`، ويمكن وضع `CHATGPT_API_REPLICA_01_BASE_URL` و`CHATGPT_API_REPLICA_02_BASE_URL` في `${{ vars.* }}`؛ إن غابت Variables فالقيم الافتراضية في `config/providers.json` تعمل.
 
 ### التشغيل المحلي
 
-استخدم `.venv` و`.env` غير المتعقب. SQLite default هو `data/ai_router.db`، وللتجارب استخدم `/tmp/router.db`. لا تشارك DB بين workers متوازية بلا locking أو state contract.
+استخدم `.venv` و`.env` غير المتعقب. لإعداد ChatGPT الأبسط، يضم `.env` `CHATGPT_API_SECRET_KEY` المطابق لـ`API_SECRET_KEY` في Space-01 وSpace-02، مع Base URLs الاختيارية `CHATGPT_API_REPLICA_01_BASE_URL` و`CHATGPT_API_REPLICA_02_BASE_URL`. SQLite default هو `data/ai_router.db`، وللتجارب استخدم `/tmp/router.db`. لا تشارك DB بين workers متوازية بلا locking أو state contract.
 
 ### Docker
 
-`Dockerfile` الجذري يبني CLI فقط. `.dockerignore` يمنع `.env` وDB وartifacts من الصورة. استخدم:
+`Dockerfile` الجذري يبني CLI فقط. `.dockerignore` يمنع `.env` وDB وartifacts من الصورة. ضع `CHATGPT_API_SECRET_KEY` وBase URLs في `.env` ثم مرّرها بـ`--env-file` وقت التشغيل؛ لا تضعها في Dockerfile أو build args. استخدم:
 
 ```bash
 docker build -t ai-provider-router:local .

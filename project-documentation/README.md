@@ -67,7 +67,14 @@ jobs:
 
 #### الخطوة 2: إضافة Secrets وVariables
 
-اذهب في GitHub إلى **Settings → Secrets and variables → Actions**. ضع القيم الحساسة في **Secrets**، ولا تضعها في Variables أو YAML. استخدم أسماء المتغيرات الموجودة في [دليل الأسرار والمتغيرات](../docs/credentials.md). لا تطبع Environment أو Authorization headers في logs.
+اذهب في GitHub إلى **Settings → Secrets and variables → Actions**. ضع `CHATGPT_API_SECRET_KEY` في **Secrets**، ويجب أن تطابق قيمته `API_SECRET_KEY` في Space-01 وSpace-02 عند استخدام key pool المشترك. ضع عناوين Spaces العامة، إذا أردت override، في **Variables**:
+
+```text
+CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
+CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
+```
+
+يمكن ترك Variables فارغة لأن `config/providers.json` يحتوي defaults. لا تضع Cookies أو Storage State الخاصة بالـSpace في Secrets الخاصة بالrouter. استخدم أسماء المتغيرات الأخرى من [دليل الأسرار والمتغيرات](../docs/credentials.md). لا تطبع Environment أو Authorization headers في logs.
 
 #### الخطوة 3: تشغيل workflow الموجود
 
@@ -85,7 +92,17 @@ jobs:
 
 ### 3.2 تشغيل محليًا
 
-المتطلبات هي Python 3.11 أو أحدث وSQLite قابل للكتابة. من terminal نظيف:
+المتطلبات هي Python 3.11 أو أحدث وSQLite قابل للكتابة. من terminal نظيف. بعد نسخ `.env.example`، أضف إعداد ChatGPT الأبسط:
+
+```dotenv
+CHATGPT_API_SECRET_KEY=<نفس API_SECRET_KEY في Space-01 وSpace-02>
+CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
+CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
+```
+
+الـBase URLs اختيارية؛ لا تضع `CHATGPT_COOKIES_NETSCAPE` أو `CHATGPT_STORAGE_STATE_JSON` في router.
+
+من terminal نظيف:
 
 ```bash
 git clone https://github.com/ysrg2003/ai-provider-router.git
@@ -118,17 +135,17 @@ ai-router --config-dir config --state-db /tmp/router-text.db \
 
 ### 3.3 Docker
 
-يحتوي الجذر على `Dockerfile` مخصص لـCLI و`.dockerignore` يمنع `.env` وSQLite وartifacts من دخول الصورة. لا يوجد Docker daemon مثبت في بيئة التطوير الحالية، لذلك يجب تنفيذ build في جهاز أو CI يحتوي Docker.
+يحتوي الجذر على `Dockerfile` مخصص لـCLI و`.dockerignore` يمنع `.env` وSQLite وartifacts من دخول الصورة. أنشئ `.env` كما في التشغيل المحلي، مع `CHATGPT_API_SECRET_KEY` وBase URLs عند استخدام ChatGPT. مرّر الملف وقت التشغيل فقط:
 
 ```bash
 docker build -t ai-provider-router:local .
-docker run --rm \
-  --env-file .env \
-  -v "$PWD/data:/app/data" \
-  ai-provider-router:local \
-  --config-dir config --state-db /app/data/ai_router.db \
-  route-plan --output-type text --user "اكتب إجابة قصيرة"
+docker run --rm --env-file .env -v "$PWD/data:/app/data" \
+  ai-provider-router:local --config-dir config \
+  --state-db /app/data/ai_router.db route-plan \
+  --output-type text --providers chatgpt --user "اكتب إجابة قصيرة"
 ```
+
+لا تضع المفتاح في Dockerfile أو build args أو image layers. لا يوجد Docker daemon مثبت في بيئة التطوير الحالية، لذلك يجب تنفيذ build في جهاز أو CI يحتوي Docker.
 
 لا تضع Secret في `Dockerfile` أو `docker build --build-arg`. استخدم `--env-file` محليًا أو secret store في orchestrator. افحص الصورة والـlogs قبل نشرها.
 
