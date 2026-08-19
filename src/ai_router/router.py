@@ -22,6 +22,18 @@ class UnsupportedOutputType(ValueError):
     pass
 
 
+_PROVIDER_ALIASES = {
+    "gemini": {"google_gemini"},
+    "google_gemini": {"google_gemini"},
+    "hf": {"huggingface"},
+    "huggingface": {"huggingface"},
+    "openrouter": {"openrouter"},
+    "nvidia": {"nvidia"},
+    "chatgpt": {"chatgpt_space_replica_01", "chatgpt_space_replica_02"},
+    "chatgpt_space": {"chatgpt_space_replica_01", "chatgpt_space_replica_02"},
+}
+
+
 class AIRouter:
     """Reusable ordered multi-provider JSON router.
 
@@ -51,10 +63,16 @@ class AIRouter:
         user_prompt: str,
         operation: str = "completion",
         chain: str = "default",
+        providers: str | list[str] | tuple[str, ...] | None = None,
+        exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
         errors: list[str] = []
         attempts = 0
-        chain_specs = self.config.model_chain(chain)
+        chain_specs = self._filter_specs(
+            self.config.model_chain(chain),
+            providers=providers,
+            exclude_providers=exclude_providers,
+        )
         for model_spec in chain_specs:
             provider_spec = self.config.providers[model_spec.provider_id]
             adapter = self.adapters[model_spec.provider_id]
@@ -130,6 +148,8 @@ class AIRouter:
         target_language: str,
         source_language: str | None = None,
         operation: str = "translation",
+        providers: str | list[str] | tuple[str, ...] | None = None,
+        exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
         source_hint = f" from {source_language}" if source_language else ""
         prompt = (
@@ -141,6 +161,8 @@ class AIRouter:
             user_prompt=prompt,
             output_type="translation",
             operation=operation,
+            providers=providers,
+            exclude_providers=exclude_providers,
         )
 
     def complete_video_json(
@@ -151,16 +173,22 @@ class AIRouter:
         user_prompt: str,
         operation: str = "video_completion",
         chain: str = "default",
+        providers: str | list[str] | tuple[str, ...] | None = None,
+        exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
         """Run one public video through adapters that support video input."""
         errors: list[str] = []
         attempts = 0
         chain_specs = self.config.model_chain(chain)
-        video_specs = [
-            spec
-            for spec in chain_specs
-            if getattr(self.adapters[spec.provider_id], "complete_video_json", None) is not None
-        ]
+        video_specs = self._filter_specs(
+            [
+                spec
+                for spec in chain_specs
+                if getattr(self.adapters[spec.provider_id], "complete_video_json", None) is not None
+            ],
+            providers=providers,
+            exclude_providers=exclude_providers,
+        )
         for model_spec in video_specs:
             provider_spec = self.config.providers[model_spec.provider_id]
             adapter = self.adapters[model_spec.provider_id]
@@ -234,9 +262,12 @@ class AIRouter:
         user_prompt: str,
         output_type: str = "auto",
         grounding: str | None = None,
+        providers: str | list[str] | tuple[str, ...] | None = None,
+        exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
         intent = detect_intent(user_prompt, output_type=output_type, grounding=grounding)
         route_name, specs = self._resolve_route(intent)
+        specs = self._filter_specs(specs, providers=providers, exclude_providers=exclude_providers)
         return {
             "output_type": intent.output_type,
             "grounding": intent.grounding,
@@ -261,8 +292,16 @@ class AIRouter:
         *,
         user_prompt: str,
         grounding: str | None = None,
+        providers: str | list[str] | tuple[str, ...] | None = None,
+        exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
-        plan = self.route_plan(user_prompt=user_prompt, output_type="live", grounding=grounding)
+        plan = self.route_plan(
+            user_prompt=user_prompt,
+            output_type="live",
+            grounding=grounding,
+            providers=providers,
+            exclude_providers=exclude_providers,
+        )
         if not plan["models"]:
             raise UnsupportedOutputType("No Live model is configured")
         return {
@@ -290,6 +329,8 @@ class AIRouter:
         chain: str | None = None,
         latitude: float | None = None,
         longitude: float | None = None,
+        providers: str | list[str] | tuple[str, ...] | None = None,
+        exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
         intent = detect_intent(user_prompt, output_type=output_type, grounding=grounding)
         if chain:
@@ -302,6 +343,7 @@ class AIRouter:
             route_name = chain
         else:
             route_name, specs = self._resolve_route(intent)
+        specs = self._filter_specs(specs, providers=providers, exclude_providers=exclude_providers)
         if intent.output_type == "live":
             raise UnsupportedOutputType("Live is a WebSocket session; call prepare_live_session()")
         if intent.output_type == "video_generation":
@@ -326,6 +368,42 @@ class AIRouter:
             output_dimensionality=output_dimensionality,
             input_parts=input_parts,
         )
+
+    def _resolve_provider_ids(self, selector: str | list[str] | tuple[str, ...] | None) -> set[str] | None:
+        if selector is None:
+            return None
+        raw_items = [selector] if isinstance(selector, str) else list(selector)
+        items = [item.strip().casefold() for value in raw_items for item in value.split(",") if item.strip()]
+        if not items:
+            raise ValueError("Provider selector cannot be empty")
+        matched: set[str] = set()
+        for item in items:
+            if item in self.config.providers:
+                matched.add(item)
+                continue
+            alias_ids = _PROVIDER_ALIASES.get(item)
+            if alias_ids is None:
+                available = ", ".join(sorted(self.config.providers))
+                raise ValueError(f"Unknown provider selector '{item}'. Available provider IDs: {available}")
+            matched.update(provider_id for provider_id in alias_ids if provider_id in self.config.providers)
+        return matched
+
+    def _filter_specs(
+        self,
+        specs: list[ModelSpec],
+        *,
+        providers: str | list[str] | tuple[str, ...] | None = None,
+        exclude_providers: str | list[str] | tuple[str, ...] | None = None,
+    ) -> list[ModelSpec]:
+        allowed = self._resolve_provider_ids(providers)
+        denied = self._resolve_provider_ids(exclude_providers) or set()
+        if allowed is not None and allowed & denied:
+            overlap = ", ".join(sorted(allowed & denied))
+            raise ValueError(f"Provider is both allowed and excluded: {overlap}")
+        filtered = [spec for spec in specs if (allowed is None or spec.provider_id in allowed) and spec.provider_id not in denied]
+        if (providers is not None or exclude_providers is not None) and not filtered:
+            raise UnsupportedOutputType("No configured models remain after provider filters")
+        return filtered
 
     def _resolve_route(self, intent: RequestIntent) -> tuple[str, list[ModelSpec]]:
         grounded_name = f"{intent.output_type}_grounded_{intent.grounding}" if intent.grounding else intent.output_type

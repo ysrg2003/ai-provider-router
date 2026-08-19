@@ -8,6 +8,17 @@ _OUTPUT_TYPES = ["auto", "text", "image", "audio", "embedding", "video_analysis"
 _GROUNDING_TYPES = ["search", "maps"]
 
 
+def _add_provider_filters(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--providers",
+        help="Comma-separated provider IDs or aliases to allow, e.g. gemini,huggingface,openrouter,nvidia",
+    )
+    parser.add_argument(
+        "--exclude-providers",
+        help="Comma-separated provider IDs or aliases to exclude, e.g. gemini",
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Config-driven multi-provider AI router")
     parser.add_argument("--config-dir", default="config")
@@ -20,11 +31,13 @@ def parse_args() -> argparse.Namespace:
     call.add_argument("--operation", default="cli_call")
     call.add_argument("--system", required=True)
     call.add_argument("--user", required=True)
+    _add_provider_filters(call)
 
     route = sub.add_parser("route-plan")
     route.add_argument("--output-type", choices=_OUTPUT_TYPES, default="auto")
     route.add_argument("--grounding", choices=_GROUNDING_TYPES)
     route.add_argument("--user", required=True)
+    _add_provider_filters(route)
 
     auto = sub.add_parser("call-auto")
     auto.add_argument("--output-type", choices=_OUTPUT_TYPES, default="auto")
@@ -39,6 +52,7 @@ def parse_args() -> argparse.Namespace:
     auto.add_argument("--output-dimensionality", type=int)
     auto.add_argument("--latitude", type=float)
     auto.add_argument("--longitude", type=float)
+    _add_provider_filters(auto)
     return parser.parse_args()
 
 
@@ -50,7 +64,13 @@ def main() -> int:
             print(json.dumps(router.summary(), ensure_ascii=False, indent=2))
             return 0
         if args.command == "route-plan":
-            result = router.route_plan(user_prompt=args.user, output_type=args.output_type, grounding=args.grounding)
+            result = router.route_plan(
+                user_prompt=args.user,
+                output_type=args.output_type,
+                grounding=args.grounding,
+                providers=args.providers,
+                exclude_providers=args.exclude_providers,
+            )
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
         if args.command == "call-auto":
@@ -67,6 +87,8 @@ def main() -> int:
                 output_dimensionality=args.output_dimensionality,
                 latitude=args.latitude,
                 longitude=args.longitude,
+                providers=args.providers,
+                exclude_providers=args.exclude_providers,
             )
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 0
@@ -75,6 +97,8 @@ def main() -> int:
             operation=args.operation,
             system_prompt=args.system,
             user_prompt=args.user,
+            providers=args.providers,
+            exclude_providers=args.exclude_providers,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0

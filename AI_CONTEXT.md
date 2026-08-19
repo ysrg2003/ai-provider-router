@@ -133,7 +133,15 @@ python3 -m unittest discover -s tests -v
 
 لـlive smoke استخدم workflow يدويًا أو `scripts/live_smoke.py`؛ workflow يحقن Gemini/HF/OpenRouter/NVIDIA من GitHub Secrets فقط، ويقبل scenarios مثل `nvidia` و`translation`. live test ليس جزءًا من CI offline؛ سجّل status/model/route والأحجام فقط، ولا تسجل base64 أو headers أو prompts الحساسة. لتدقيق كل النماذج استخدم [`scripts/capability_audit.py`](scripts/capability_audit.py) وworkflow [`capability-audit.yml`](.github/workflows/capability-audit.yml): جرد 82 سجلًا فريدًا، نفذ 57 probe حيًا، وسجل 25 route-only للصور والصوت والفيديو والـlive والـmethods المتخصصة.
 
-## 10. بروتوكول تعديل المشروع
+## 10. اختيار providers لكل طلب
+
+يقبل router وCLI `providers` كـallowlist و`exclude_providers` كـdenylist على مستوى الطلب. aliases الحالية هي `gemini`/`google_gemini` و`hf`/`huggingface` و`openrouter` و`nvidia` و`chatgpt`. تمر الفلاتر عبر `route_plan`, `complete_auto`, `complete_json`, `complete_video_json`, و`translate_text`، وتحافظ على ترتيب models داخل provider المسموح.
+
+يوقف router الطلب إذا كان provider موجودًا في القائمتين، أو alias غير معروف، أو لم يبق model مناسب للمسار. عدم تمرير الفلاتر يحافظ على السلوك السابق. هذه الميزة لا تنشئ credentials ولا تتجاوز quota أو capability contract.
+
+أمثلة CLI موثقة في [`project-documentation/configuration-guide.md`](project-documentation/configuration-guide.md#اختيار-providers-لكل-طلب) وREADME؛ الاختبارات في `tests/test_router.py` تثبت allowlist وdenylist والتعارض والقائمة الفارغة.
+
+## 11. بروتوكول تعديل المشروع
 
 قبل تعديل provider أو model:
 

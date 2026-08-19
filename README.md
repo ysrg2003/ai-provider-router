@@ -808,6 +808,27 @@ git ls-files .env
 
 للتفاصيل القابلة لإعادة الإنتاج، راجع [دليل التشغيل](docs/operations.md) و[كتالوج النماذج والحدود](docs/model-catalog.md). يحتوي دليل التشغيل على روابط GitHub Actions وتقارير smoke المنزوعة الحساسية، ولا يحتوي قيم المفاتيح.
 
+# اختيار providers لكل طلب
+
+يمكنك تقييد أي طلب إلى مزودين محددين أو استبعاد مزود واحد دون تعديل ملفات `config`. استخدم aliases: `gemini`، `huggingface` أو `hf`، `openrouter`، و`nvidia`.
+
+```bash
+# Gemini فقط
+python3 -m ai_router.cli.main --config-dir config route-plan \
+  --output-type text --providers gemini --user 'اكتب إجابة قصيرة'
+
+# كل شيء ما عدا Gemini
+python3 -m ai_router.cli.main --config-dir config route-plan \
+  --output-type text --exclude-providers gemini --user 'اكتب إجابة قصيرة'
+
+# Hugging Face ثم OpenRouter ثم NVIDIA فقط، بهذا الترتيب داخل route
+python3 -m ai_router.cli.main --config-dir config call-auto \
+  --output-type text --providers huggingface,openrouter,nvidia \
+  --operation selected_provider_call --user 'أجب بإيجاز عن الذكاء الاصطناعي'
+```
+
+`route-plan` يعرض models المختارة دون network request. أما `call-auto` فينفذ الطلب باستخدام القائمة المسموحة فقط. إذا تقاطع allowlist مع denylist أو لم يبق model مناسب للمسار، يوقف router الطلب بخطأ واضح. عدم تمرير أي خيار يحافظ على السلوك السابق. التفاصيل في [دليل الإعداد](project-documentation/configuration-guide.md#اختيار-providers-لكل-طلب).
+
 # تكامل ChatGPT Spaces كمصدر أول
 
 يستخدم router نسختين مستقلتين من `chatgpt-api` المنشورتين على Hugging Face كأول مصادر HTTP لمسارات `text` و`text_grounded_search` و`image` و`image_grounded_search`. الترتيب هو `replica-01` ثم `replica-02`. لا يحتاج router إلى Cookies أو Playwright محليًا؛ فهو يستدعي `POST /v1/chat/completions` ويقرأ Secret من البيئة فقط.

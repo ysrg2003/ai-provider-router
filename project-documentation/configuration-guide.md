@@ -86,6 +86,86 @@ python3 -m ai_router.cli.main --config-dir config route-plan \
 
 Expected result: JSON فيه `output_type`, `grounding`, `route`, وقائمة models/tools. إذا كانت القائمة فارغة، أضف capability إلى config فقط بعد اختبار adapter.
 
+## اختيار providers لكل طلب
+
+يمكن للمستخدم تقييد الطلب إلى providers محددة دون تعديل `config/models.json`. تعمل الفلاتر على مستوى الطلب فقط، وتحافظ على ترتيب models والـfallback داخل providers المسموحة.
+
+### Allowlist — السماح بقائمة محددة
+
+استخدم `--providers` مع قائمة مفصولة بفواصل. يمكن استخدام provider IDs أو aliases التالية:
+
+| Alias | Provider المستهدف |
+|---|---|
+| `gemini` أو `google_gemini` | Gemini |
+| `hf` أو `huggingface` | Hugging Face |
+| `openrouter` | OpenRouter |
+| `nvidia` | NVIDIA |
+| `chatgpt` | ChatGPT replica-01 وreplica-02 |
+
+لجعل الطلب يستخدم Gemini فقط:
+
+```bash
+python3 -m ai_router.cli.main --config-dir config --state-db /tmp/gemini-only.db \
+  call-auto --output-type text \
+  --providers gemini \
+  --operation gemini_only \
+  --user 'أجب بجملة واحدة: ما عاصمة اليابان؟'
+```
+
+وللسماح بمسار من Hugging Face ثم OpenRouter ثم NVIDIA فقط:
+
+```bash
+python3 -m ai_router.cli.main --config-dir config --state-db /tmp/non-gemini.db \
+  call-auto --output-type text \
+  --providers huggingface,openrouter,nvidia \
+  --operation non_gemini_fallback \
+  --user 'أجب بإيجاز عن مفهوم الاستدلال في النماذج اللغوية'
+```
+
+### Denylist — استبعاد provider
+
+استخدم `--exclude-providers` عندما تريد إبقاء بقية route مع استبعاد مزود واحد. مثال: كل providers المتاحة باستثناء Gemini:
+
+```bash
+python3 -m ai_router.cli.main --config-dir config --state-db /tmp/no-gemini.db \
+  call-auto --output-type text \
+  --exclude-providers gemini \
+  --operation without_gemini \
+  --user 'أجب بإيجاز عن آخر تطورات الذكاء الاصطناعي'
+```
+
+يمكن استخدام الفلاتر أيضًا مع `route-plan` لمعاينة النتيجة دون إرسال network request:
+
+```bash
+python3 -m ai_router.cli.main --config-dir config route-plan \
+  --output-type text \
+  --providers huggingface,openrouter,nvidia \
+  --user 'اكتب إجابة قصيرة'
+```
+
+إذا استُخدم `--providers` و`--exclude-providers` معًا، يجب ألا يتقاطعَا. عند وجود تقاطع أو alias غير معروف أو عدم بقاء أي model مناسب للمسار، يوقف router الطلب بخطأ واضح بدل تنفيذ fallback غير مقصود. عدم تمرير أي خيار يبقي السلوك السابق دون تغيير.
+
+### الاستخدام من Python
+
+تقبل `AIRouter.complete_auto` و`route_plan` و`complete_json` و`complete_video_json` و`translate_text` المعاملين `providers` و`exclude_providers`:
+
+```python
+from ai_router import AIRouter
+
+router = AIRouter(config_dir="config", state_db="/tmp/provider-filter.db")
+try:
+    result = router.complete_auto(
+        user_prompt="اكتب إجابة قصيرة عن Gemini",
+        output_type="text",
+        providers=["huggingface", "openrouter", "nvidia"],
+        operation="selected_providers",
+    )
+finally:
+    router.close()
+```
+
+هذه الميزة لا تنشئ مفاتيح أو providers جديدة؛ يجب أن تكون credentials الخاصة بالمزود المسموح موجودة أصلًا في key pool المناسب. كما أنها لا تتجاوز quota أو capability contract؛ إذا لم يكن للمزود model مناسب للمسار، ستظهر حالة `No configured models remain after provider filters`.
+
 ## تعديل ترتيب provider/model
 
 الترتيب يعيش في `config/models.json`، وليس في `.env`. لتغيير أولوية model موجود:

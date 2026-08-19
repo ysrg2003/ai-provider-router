@@ -230,5 +230,41 @@ class RouterTests(unittest.TestCase):
                 os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
 
 
+class ProviderFilterTests(unittest.TestCase):
+    def test_provider_alias_allowlist_selects_only_requested_provider(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            for alias, provider_id in (("gemini", "google_gemini"), ("hf", "huggingface"), ("openrouter", "openrouter"), ("nvidia", "nvidia")):
+                plan = router.route_plan(user_prompt="write a short answer", providers=alias)
+                self.assertTrue(plan["models"])
+                self.assertEqual({item["provider"] for item in plan["models"]}, {provider_id})
+            router.close()
+
+    def test_provider_denylist_excludes_gemini_but_keeps_other_fallbacks(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            plan = router.route_plan(user_prompt="write a short answer", exclude_providers="gemini")
+            providers = {item["provider"] for item in plan["models"]}
+            self.assertNotIn("google_gemini", providers)
+            self.assertTrue(providers)
+            router.close()
+
+    def test_provider_filter_rejects_conflict_and_unknown_selector(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            with self.assertRaisesRegex(ValueError, "both allowed and excluded"):
+                router.route_plan(user_prompt="write a short answer", providers="nvidia", exclude_providers="nvidia")
+            with self.assertRaisesRegex(ValueError, "Unknown provider selector"):
+                router.route_plan(user_prompt="write a short answer", providers="does-not-exist")
+            router.close()
+
+    def test_provider_filter_fails_when_no_models_remain(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            with self.assertRaisesRegex(Exception, "No configured models remain"):
+                router.route_plan(user_prompt="generate audio", output_type="audio", providers="nvidia")
+            router.close()
+
+
 if __name__ == "__main__":
     unittest.main()
