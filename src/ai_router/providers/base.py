@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import re
 from typing import Any, Protocol
 
@@ -26,6 +27,15 @@ def url_citations_from_text(text: str) -> list[str]:
             if url and url not in seen:
                 seen.add(url)
                 result.append(url)
+        try:
+            structured = json.loads(variant)
+        except (TypeError, ValueError):
+            structured = None
+        if structured is not None:
+            for url in url_citations_from_annotations(structured):
+                if url not in seen:
+                    seen.add(url)
+                    result.append(url)
     return result
 
 
