@@ -79,6 +79,9 @@ class ChatGPTSpaceAdapter:
             raise ProviderError("ChatGPT Space returned invalid JSON", error_class="invalid_or_unknown", retryable=False) from exc
         if not isinstance(payload, dict):
             raise ProviderError("ChatGPT Space returned a non-object JSON value", error_class="invalid_or_unknown", retryable=False)
+        payload.setdefault("annotations", response.payload.get("annotations", []))
+        payload.setdefault("url_citations", response.payload.get("url_citations", []))
+        payload.setdefault("provider_text", response.payload.get("text", ""))
         return ProviderResponse(payload, response.usage)
 
     def generate_image(

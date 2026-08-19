@@ -44,6 +44,21 @@ class SearchContractTests(unittest.TestCase):
         )
         self.assertEqual(response.payload['url_citations'], ['https://www.nasa.gov/eclipse'])
 
+    def test_chatgpt_complete_json_preserves_search_metadata(self):
+        adapter = ChatGPTSpaceAdapter('https://example.invalid')
+        adapter._post = lambda **kwargs: {
+            "choices": [{"message": {"content": '{"sources":[{"url":"https://www.nasa.gov/eclipse"}]}'}}],
+        }
+        response = adapter.complete_json(
+            model='gpt-4o-mini',
+            secret='test-secret',
+            system_prompt='Search.',
+            user_prompt='Return JSON.',
+            timeout_seconds=1,
+        )
+        self.assertEqual(response.payload['url_citations'], ['https://www.nasa.gov/eclipse'])
+        self.assertIn('provider_text', response.payload)
+
     def test_chatgpt_interaction_exposes_structured_body_citations(self):
         adapter = ChatGPTSpaceAdapter('https://example.invalid')
         adapter._post = lambda **kwargs: {
