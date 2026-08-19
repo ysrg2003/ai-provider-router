@@ -52,6 +52,164 @@
         "enabled": true
       }
     ],
+    "nvidia_free": [
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "meta/muse-glimmer-30b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/ising-calibration-1.5-31b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "thinkingmachines/inkling",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "poolside/laguna-xs-2.1",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "z-ai/glm-5.2",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "minimaxai/minimax-m3",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "google/diffusiongemma-26b-a4b-it",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "stepfun-ai/step-3.7-flash",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      }
+    ],
     "default": [
       {
         "provider": "google_gemini",
@@ -375,8 +533,163 @@
         ],
         "supports_response_format": true,
         "enabled": true
-      }
-    ],
+      },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "meta/muse-glimmer-30b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/riva-translate-4b-instruct-v2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/ising-calibration-1.5-31b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "thinkingmachines/inkling",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "poolside/laguna-xs-2.1",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "z-ai/glm-5.2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "minimaxai/minimax-m3",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "google/diffusiongemma-26b-a4b-it",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-ultra-550b-a55b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "stepfun-ai/step-3.7-flash",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        }],
     "creative": [
       {
         "provider": "google_gemini",
@@ -670,8 +983,163 @@
         ],
         "supports_response_format": true,
         "enabled": true
-      }
-    ],
+      },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "meta/muse-glimmer-30b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/riva-translate-4b-instruct-v2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/ising-calibration-1.5-31b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "thinkingmachines/inkling",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "poolside/laguna-xs-2.1",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "z-ai/glm-5.2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "minimaxai/minimax-m3",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "google/diffusiongemma-26b-a4b-it",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-ultra-550b-a55b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "stepfun-ai/step-3.7-flash",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        }],
     "cheap": [
       {
         "provider": "google_gemini",
@@ -945,8 +1413,163 @@
         ],
         "supports_response_format": true,
         "enabled": true
-      }
-    ],
+      },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "meta/muse-glimmer-30b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/riva-translate-4b-instruct-v2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/ising-calibration-1.5-31b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "thinkingmachines/inkling",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "poolside/laguna-xs-2.1",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "z-ai/glm-5.2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "minimaxai/minimax-m3",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "google/diffusiongemma-26b-a4b-it",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-ultra-550b-a55b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "stepfun-ai/step-3.7-flash",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        }],
     "openrouter_free": [
       {
         "provider": "openrouter",
@@ -1589,8 +2212,163 @@
         ],
         "supports_response_format": true,
         "enabled": true
-      }
-    ],
+      },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "meta/muse-glimmer-30b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/riva-translate-4b-instruct-v2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/ising-calibration-1.5-31b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "thinkingmachines/inkling",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "poolside/laguna-xs-2.1",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "z-ai/glm-5.2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "minimaxai/minimax-m3",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "google/diffusiongemma-26b-a4b-it",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-ultra-550b-a55b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "stepfun-ai/step-3.7-flash",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        }],
     "text_grounded_search": [
       {
         "provider": "chatgpt_space_replica_01",
@@ -1637,8 +2415,163 @@
         "tools": [
           "search"
         ]
-      }
-    ],
+      },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "meta/muse-glimmer-30b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/riva-translate-4b-instruct-v2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/ising-calibration-1.5-31b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "thinkingmachines/inkling",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "poolside/laguna-xs-2.1",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "z-ai/glm-5.2",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "minimaxai/minimax-m3",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "google/diffusiongemma-26b-a4b-it",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-ultra-550b-a55b",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "stepfun-ai/step-3.7-flash",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        },
+        {
+          "provider": "nvidia",
+          "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+          "method": "json",
+          "input_types": [
+            "text"
+          ],
+          "output_types": [
+            "text"
+          ],
+          "supports_response_format": false,
+          "enabled": true
+        }],
     "text_grounded_maps": [
       {
         "provider": "google_gemini",
@@ -2429,6 +3362,36 @@
       "moderation_catalog_disabled": [
         "nvidia/nemotron-3.5-content-safety:free"
       ]
+    },
+    "nvidia_free": {
+      "source": {
+        "catalog": "https://build.nvidia.com/models",
+        "api_base": "https://integrate.api.nvidia.com/v1",
+        "retrieved_utc": "2026-08-19"
+      },
+      "catalog_free_endpoint_count": 57,
+      "active_text_models": [
+        "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "meta/muse-glimmer-30b",
+        "nvidia/riva-translate-4b-instruct-v2",
+        "nvidia/ising-calibration-1.5-31b",
+        "thinkingmachines/inkling",
+        "poolside/laguna-xs-2.1",
+        "z-ai/glm-5.2",
+        "minimaxai/minimax-m3",
+        "google/diffusiongemma-26b-a4b-it",
+        "nvidia/nemotron-3-ultra-550b-a55b",
+        "stepfun-ai/step-3.7-flash",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+      ],
+      "excluded_specialized_models": [
+        "nvidia/nemotron-3-embed-1b",
+        "nvidia/nemotron-3.5-content-safety",
+        "nvidia/cosmos3-nano",
+        "nvidia/cosmos3-nano-reasoner",
+        "nvidia/synthetic-video-detector"
+      ],
+      "policy": "Snapshot only; Free Endpoint availability, model capabilities, account verification, and rate limits are controlled by NVIDIA and may change. Specialized endpoints require dedicated routes or adapters."
     }
   },
   "openrouter_free_catalog": {

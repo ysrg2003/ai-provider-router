@@ -35,6 +35,7 @@
 | مفتاح Gemini | اختياري | تفعيل مسارات Text وImage وTTS وEmbedding وGrounding بحسب الحصة |
 | مفتاح Hugging Face | اختياري | تفعيل خطة الاحتياط |
 | مفتاح OpenRouter | اختياري | تفعيل 19 نموذجًا مجانيًا موثقًا، منها 16 نموذجًا عامًا نشطًا |
+| مفتاح NVIDIA NIM | اختياري | تفعيل سلسلة NVIDIA Free Endpoint بعد OpenRouter، وفق توفر الحساب والنموذج |
 | Git | اختياري محلياً | استنساخ المشروع وتحديثه |
 | GitHub | اختياري للتشغيل اليدوي، مطلوب للتشغيل التلقائي | حفظ المشروع وتشغيل workflow |
 
@@ -436,7 +437,28 @@ ai-router --config-dir config --state-db /tmp/openrouter-live.db call-json \\
 
 يراجع [كتالوج OpenRouter التفصيلي](docs/openrouter-free.md) كل model ID ومدخلاته ومخرجاته وسياقه وحالة route الخاصة به.
 
-# القسم السادس: تنفيذ أول طلب حقيقي
+# القسم السادس: NVIDIA NIM والنماذج المجانية
+
+أضيف NVIDIA NIM بعد OpenRouter كمزود OpenAI-compatible. يستخدم العنوان الرسمي `https://integrate.api.nvidia.com/v1`، ويقرأ المفتاح من `NVIDIA_API_KEYS_JSON` أو `NVIDIA_API_KEY` كقيمة مفردة. لا تضع مفتاح `nvapi` في Git أو في frontend:
+
+```dotenv
+NVIDIA_API_KEY=nvapi-ضع_المفتاح_هنا
+NVIDIA_API_KEYS_JSON=[]
+```
+
+توجد القائمة الحالية ومسار التحقق في [docs/nvidia-free.md](docs/nvidia-free.md). أضيفت النماذج النصية ذات Free Endpoint الظاهرة في snapshot كـfallback بعد OpenRouter، بينما لا تدخل النماذج المتخصصة للصوت أو الفيديو أو embedding أو image-only في route النص العام. إذا لم تضع مفتاح NVIDIA، يتجاوز router المزود تلقائيًا ويستمر إلى البديل التالي.
+
+لا تعتبر `Free Endpoint` وعدًا دائمًا أو استخدامًا تجاريًا بلا حدود. NVIDIA قد تطلب تحقق الحساب أو الهاتف، وقد تختلف quota وrate limits حسب النموذج والحساب وحركة المرور. لاختبار سلسلة NVIDIA وحدها بعد إضافة المفتاح:
+
+```bash
+ai-router --config-dir config --state-db /tmp/nvidia-free.db call-auto \\
+  --chain nvidia_free \\
+  --output-type text \\
+  --operation nvidia_free_smoke \\
+  --user 'Return exactly: NVIDIA free chain works'
+```
+
+# القسم السابع: تنفيذ أول طلب حقيقي
 
 ## الخطوة 12: تشغيل ملخص جديد للتأكد من قراءة المفاتيح
 

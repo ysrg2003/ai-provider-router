@@ -52,6 +52,18 @@ class ModelCatalogTests(unittest.TestCase):
         )
         self.assertNotIn("gemini-2.5-pro-preview-tts", [item["model"] for item in self.models["output_routes"]["audio"]])
 
+    def test_nvidia_free_catalog_snapshot_and_order_are_present(self):
+        reference = self.models["reference_catalog"]["nvidia_free"]
+        self.assertEqual(reference["catalog_free_endpoint_count"], 57)
+        self.assertEqual(reference["source"]["api_base"], "https://integrate.api.nvidia.com/v1")
+        self.assertEqual(len(reference["active_text_models"]), 12)
+        self.assertEqual(
+            [item["model"] for item in self.models["model_chains"]["nvidia_free"]],
+            reference["active_text_models"],
+        )
+        self.assertIn("minimaxai/minimax-m3", reference["active_text_models"])
+        self.assertNotIn("nvidia", {item["provider"] for item in self.models["output_routes"]["image"]})
+
     def test_openrouter_free_catalog_and_order_are_present(self):
         reference = self.models["reference_catalog"]["openrouter_free"]
         self.assertEqual(reference["count"], 19)

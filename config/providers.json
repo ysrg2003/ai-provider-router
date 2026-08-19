@@ -50,6 +50,14 @@
       "base_url": "https://openrouter.ai/api/v1",
       "key_pool": "openrouter_default",
       "default_timeout_seconds": 120
+    },
+    {
+      "id": "nvidia",
+      "kind": "openai_compatible",
+      "enabled": true,
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "key_pool": "nvidia_default",
+      "default_timeout_seconds": 120
     }
   ]
 }

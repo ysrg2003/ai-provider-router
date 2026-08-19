@@ -140,6 +140,17 @@ MY_GEMINI_KEYS=[{"id":"gemini-1","key":"المفتاح","project":"project-a"}]
 AI_ROUTER_MY_PROVIDER_KEYS_JSON=[{"id":"my-key-1","key":"المفتاح","project":"my-project"}]
 ```
 
+## NVIDIA NIM
+
+أضيف NVIDIA NIM كمزود `openai_compatible` بعد OpenRouter. يستخدم `https://integrate.api.nvidia.com/v1`، ويقرأ المفتاح من `NVIDIA_API_KEYS_JSON` أو من `NVIDIA_API_KEY` كـfallback. لا تضع المفتاح في JSON أو Git:
+
+```dotenv
+NVIDIA_API_KEY=nvapi-REPLACE_ME
+NVIDIA_API_KEYS_JSON=[]
+```
+
+توجد قائمة النماذج ومسار التشغيل في `docs/nvidia-free.md`. عند غياب المفتاح يتجاوز router NVIDIA وينتقل إلى المزود التالي، وعند quota أو transient failure يطبق cooldown وfallback المعتاد.
+
 ## أريد إضافة مزود API مختلف تماماً
 
 إذا لم يكن المزود يستخدم Gemini REST أو OpenAI-compatible، لا تحاول تغيير `models.json` فقط. يجب إنشاء adapter جديد داخل `src/ai_router/providers/`، ثم تسجيل نوعه في `src/ai_router/router.py`. اقرأ قسم **إضافة مزود جديد** في README الرئيسي قبل تنفيذ ذلك.
