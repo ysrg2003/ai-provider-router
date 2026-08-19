@@ -86,8 +86,9 @@ class ChatGPTSpaceAdapter:
         elif provider_annotations:
             payload["annotations"] = provider_annotations
         payload_urls = payload.get("url_citations", [])
+        parsed_field_urls = url_citations_from_annotations(payload)
         merged_urls: list[str] = []
-        for url in [*response.payload.get("url_citations", []), *(payload_urls if isinstance(payload_urls, list) else [])]:
+        for url in [*response.payload.get("url_citations", []), *(payload_urls if isinstance(payload_urls, list) else []), *parsed_field_urls]:
             if url not in merged_urls:
                 merged_urls.append(url)
         payload["url_citations"] = merged_urls
