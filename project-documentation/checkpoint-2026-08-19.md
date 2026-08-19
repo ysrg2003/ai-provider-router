@@ -2,27 +2,29 @@
 
 ## هوية النقطة
 
-هذه النقطة تحفظ الحالة بعد إصلاح generation recovery وDOM stabilization وimage contract، ثم تشخيص session state داخل Spaces الثلاثة. أُجريت اختبارات حية محدودة دون تكرار الصور بلا داعٍ. آخر commit منشور في router هو `63e6b33`، وتوجد تغييرات التوثيق الأخيرة محليًا تمهيدًا لcommit/release التالي.
+هذه النقطة تحفظ الحالة بعد إصلاح generation recovery وDOM stabilization وimage contract، ثم تشخيص session state داخل Spaces الثلاثة والتحقق المستقل من bytes الصور. أُجريت طلبات الصورة مرة واحدة فقط لكل replica-01 وreplica-02. آخر commit منشور في router هو `119998b`.
 
 | العنصر | القيمة |
 |---|---|
 | المستودع | `ysrg2003/ai-provider-router` |
 | الفرع | `main` |
-| آخر router commit منشور | `45d2da0` — `fix: distinguish visible sg reauthentication controls` |
+| آخر router commit منشور | `119998b` — `docs: record independent ChatGPT image byte verification` |
 | آخر source commit منشور | `eddbfda` — `fix: ignore hidden auth marker noise in diagnostics` |
 | workflow الشامل | [32245401088](https://github.com/ysrg2003/ai-provider-router/actions/runs/32245401088) |
 | workflow المحدود لـreplica-04 | [32247225620](https://github.com/ysrg2003/ai-provider-router/actions/runs/32247225620) |
+| workflow image-only المستقل | [32251162719](https://github.com/ysrg2003/ai-provider-router/actions/runs/32251162719) |
 | artifact الشامل | [`chatgpt-spaces-functional-32245401088.json`](chatgpt-spaces-functional-32245401088.json) |
+| artifact image-only | [`chatgpt-spaces-functional-32251162719.json`](chatgpt-spaces-functional-32251162719.json) |
 
 ## الحالة المثبتة
 
 | Space | النص | البحث الحي | الصورة | التفسير |
 |---|---|---|---|---|
-| `chatgpt-api-replica-01` | passed | passed | passed | المسارات الثلاثة نجحت بعد إصلاح output_type/image extraction. |
-| `chatgpt-api-replica-02` | passed | passed | passed | المسارات الثلاثة نجحت بعد إصلاح output_type/image extraction. |
+| `chatgpt-api-replica-01` | passed | passed | **not verified** | HTTP 200 وgeneration بدأ، لكن آخر direct response لم يحتوِ image bytes قابلة للفك أو الجلب. |
+| `chatgpt-api-replica-02` | passed | passed | **verified** | وصلت data_url؛ PNG صالح 831230 bytes، أبعاده 1254×1254، وفُحص بصريًا. |
 | `chatgpt-api-replica-04` | re-auth required | re-auth required | لم تُكرر بعد التشخيص | الحساب المقصود هو sg، لكن diagnostics المنقح أثبت زر `log in` مرئيًا فعليًا بحجم 68.2×36 رغم `ready=true` و`input_visible=true`. |
 
-النتيجة الإجمالية في workflow الشامل: **6 passed و3 failed**. اختبار text/search المحدود للنسخة 04 فشل قبل fail-fast بعد نحو 268 ثانية. بعد نشر fail-fast، أعاد طلب نص واحد إلى replica-04 HTTP 503 برسالة `ChatGPT session requires re-authentication; visible auth control detected` خلال `2.881228` ثانية، بدل timeout طويل.
+النتيجة الإجمالية في workflow الشامل: **6 passed و3 failed**. وفي الاختبار المستقل الأخير للصورة فقط، أبلغ workflow عن 2 passed، لكن الفحص البايتي الأقوى أكد replica-02 فقط؛ أما replica-01 فأعادت HTTP 200 دون bytes صورة قابلة للفك. اختبار text/search المحدود للنسخة 04 فشل قبل fail-fast بعد نحو 268 ثانية. بعد نشر fail-fast، أعاد طلب نص واحد إلى replica-04 HTTP 503 برسالة `ChatGPT session requires re-authentication; visible auth control detected` خلال `2.881228` ثانية، بدل timeout طويل.
 
 ## إصلاحات الكود
 
