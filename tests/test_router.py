@@ -231,6 +231,21 @@ class RouterTests(unittest.TestCase):
 
 
 class ProviderFilterTests(unittest.TestCase):
+    def test_no_provider_filter_keeps_all_configured_provider_families(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            plan = router.route_plan(user_prompt="write a short answer")
+            providers = {item["provider"] for item in plan["models"]}
+            self.assertTrue({
+                "chatgpt_space_replica_01",
+                "chatgpt_space_replica_02",
+                "google_gemini",
+                "huggingface",
+                "openrouter",
+                "nvidia",
+            }.issubset(providers))
+            router.close()
+
     def test_provider_alias_allowlist_selects_only_requested_provider(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")

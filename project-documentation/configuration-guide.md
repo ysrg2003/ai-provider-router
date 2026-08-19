@@ -88,7 +88,7 @@ Expected result: JSON فيه `output_type`, `grounding`, `route`, وقائمة m
 
 ## اختيار providers لكل طلب
 
-يمكن للمستخدم تقييد الطلب إلى providers محددة دون تعديل `config/models.json`. تعمل الفلاتر على مستوى الطلب فقط، وتحافظ على ترتيب models والـfallback داخل providers المسموحة.
+يمكن للمستخدم تقييد الطلب إلى providers محددة دون تعديل `config/models.json`. تعمل الفلاتر على مستوى الطلب فقط، وتحافظ على ترتيب models والـfallback داخل providers المسموحة. **إذا لم يحدد المستخدم `--providers` ولا `--exclude-providers`، يستخدم router جميع providers المتاحة افتراضيًا** وفق ترتيب route الحالي.
 
 ### Allowlist — السماح بقائمة محددة
 
@@ -143,7 +143,7 @@ python3 -m ai_router.cli.main --config-dir config route-plan \
   --user 'اكتب إجابة قصيرة'
 ```
 
-إذا استُخدم `--providers` و`--exclude-providers` معًا، يجب ألا يتقاطعَا. عند وجود تقاطع أو alias غير معروف أو عدم بقاء أي model مناسب للمسار، يوقف router الطلب بخطأ واضح بدل تنفيذ fallback غير مقصود. عدم تمرير أي خيار يبقي السلوك السابق دون تغيير.
+إذا استُخدم `--providers` و`--exclude-providers` معًا، يجب ألا يتقاطعَا. عند وجود تقاطع أو alias غير معروف أو عدم بقاء أي model مناسب للمسار، يوقف router الطلب بخطأ واضح بدل تنفيذ fallback غير مقصود. **عدم تمرير أي خيار هو الوضع الافتراضي الشامل**: لا تتم إزالة أي provider من route.
 
 ### الاستخدام من Python
 

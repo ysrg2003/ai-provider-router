@@ -135,7 +135,7 @@ python3 -m unittest discover -s tests -v
 
 ## 10. اختيار providers لكل طلب
 
-يقبل router وCLI `providers` كـallowlist و`exclude_providers` كـdenylist على مستوى الطلب. aliases الحالية هي `gemini`/`google_gemini` و`hf`/`huggingface` و`openrouter` و`nvidia` و`chatgpt`. تمر الفلاتر عبر `route_plan`, `complete_auto`, `complete_json`, `complete_video_json`, و`translate_text`، وتحافظ على ترتيب models داخل provider المسموح.
+يقبل router وCLI `providers` كـallowlist و`exclude_providers` كـdenylist على مستوى الطلب. **عند غياب الخيارين يستخدم جميع providers المتاحة افتراضيًا** وفق ترتيب route. aliases الحالية هي `gemini`/`google_gemini` و`hf`/`huggingface` و`openrouter` و`nvidia` و`chatgpt`. تمر الفلاتر عبر `route_plan`, `complete_auto`, `complete_json`, `complete_video_json`, و`translate_text`، وتحافظ على ترتيب models داخل provider المسموح.
 
 يوقف router الطلب إذا كان provider موجودًا في القائمتين، أو alias غير معروف، أو لم يبق model مناسب للمسار. عدم تمرير الفلاتر يحافظ على السلوك السابق. هذه الميزة لا تنشئ credentials ولا تتجاوز quota أو capability contract.
 

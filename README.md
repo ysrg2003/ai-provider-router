@@ -810,7 +810,7 @@ git ls-files .env
 
 # اختيار providers لكل طلب
 
-يمكنك تقييد أي طلب إلى مزودين محددين أو استبعاد مزود واحد دون تعديل ملفات `config`. استخدم aliases: `gemini`، `huggingface` أو `hf`، `openrouter`، و`nvidia`.
+يمكنك تقييد أي طلب إلى مزودين محددين أو استبعاد مزود واحد دون تعديل ملفات `config`. **إذا لم تمرر أي خيار، يستخدم router كل providers المتاحة افتراضيًا** وفق ترتيب routes. استخدم aliases: `gemini`، `huggingface` أو `hf`، `openrouter`، و`nvidia`.
 
 ```bash
 # Gemini فقط
@@ -827,7 +827,7 @@ python3 -m ai_router.cli.main --config-dir config call-auto \
   --operation selected_provider_call --user 'أجب بإيجاز عن الذكاء الاصطناعي'
 ```
 
-`route-plan` يعرض models المختارة دون network request. أما `call-auto` فينفذ الطلب باستخدام القائمة المسموحة فقط. إذا تقاطع allowlist مع denylist أو لم يبق model مناسب للمسار، يوقف router الطلب بخطأ واضح. عدم تمرير أي خيار يحافظ على السلوك السابق. التفاصيل في [دليل الإعداد](project-documentation/configuration-guide.md#اختيار-providers-لكل-طلب).
+`route-plan` يعرض models المختارة دون network request. أما `call-auto` فينفذ الطلب باستخدام القائمة المسموحة فقط. إذا تقاطع allowlist مع denylist أو لم يبق model مناسب للمسار، يوقف router الطلب بخطأ واضح. عدم تمرير أي خيار يعني **الوضع الافتراضي الشامل** واستخدام جميع providers المتاحة. التفاصيل في [دليل الإعداد](project-documentation/configuration-guide.md#اختيار-providers-لكل-طلب).
 
 # تكامل ChatGPT Spaces كمصدر أول
 
