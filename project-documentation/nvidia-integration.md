@@ -115,6 +115,12 @@ Expected success: JSON فيه `route` و`intent`. قد يختار route provider
 
 **آخر نتيجة موثقة:** التشغيل [32217577979](https://github.com/ysrg2003/ai-provider-router/actions/runs/32217577979) على `main` اكتمل بنجاح؛ artifact المنقح سجل `scenario_filter=nvidia` و`route=nvidia_free` و`status=passed` و`loaded_key_counts.nvidia=1` وJSON field باسم `ok`. لم تُحفظ قيمة المفتاح أو Authorization header. هذه النتيجة تثبت completion نصيًا عبر السلسلة الحالية، ولا تثبت capabilities غير النصية.
 
+## Step 7: الاختبار الوظيفي لكل نموذج
+
+للاختبار الواقعي، يشغّل [`../scripts/nvidia_functional_smoke.py`](../scripts/nvidia_functional_smoke.py) سؤالين عربيين لكل نموذج في `nvidia_free`: سؤال معرفة عن عاصمة اليابان، ومسألة حسابية تتطلب استدلالًا. لا يكتفي الاختبار بHTTP 200؛ يشترط JSON صالحًا ووجود `answer` غير فارغ في الاختبارين. يستخدم workflow [`../.github/workflows/nvidia-functional.yml`](../.github/workflows/nvidia-functional.yml) المفتاح من GitHub Secrets، ويقبل من 1 إلى 3 عمال متوازيين، ويرفع تقريرًا منقحًا لمدة 14 يومًا.
+
+هذا الاختبار لا يدّعي اختبار البحث الحي؛ NVIDIA adapter الحالي لا يرسل search tool إلى `/chat/completions`. لذلك يسجل التقرير البحث كـ`not_supported_by_nvidia_adapter` بدل تحويل غياب الأداة إلى نجاح زائف. كما لا يختبر الصور لأن أي نموذج NVIDIA لم يُضف إلى `output_routes.image`.
+
 ## تحديث model جديد
 
 1. أضف entry إلى catalog مع source/status/evidence، دون key.

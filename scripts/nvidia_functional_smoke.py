@@ -1,0 +1,101 @@
+from __future__ import annotations
+
+import concurrent.futures
+import json
+import os
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from ai_router.config import RouterConfig  # noqa: E402
+from ai_router.providers.base import ProviderError  # noqa: E402
+from ai_router.providers.openai_compatible import OpenAICompatibleAdapter  # noqa: E402
+
+FACTUAL_PROMPT = (
+    "أجب عن السؤال التالي ككائن JSON فقط بالمفاتيح answer وconfidence وkey_fact. "
+    "السؤال: ما عاصمة اليابان؟ لا تضف Markdown أو نصًا خارج JSON."
+)
+REASONING_PROMPT = (
+    "حل المسألة التالية ثم أجب ككائن JSON فقط بالمفاتيح answer وreasoning_summary وkey_fact. "
+    "لدى سارة 3 صناديق، في كل صندوق 4 كرات، ثم أضافت كرتين إلى كل صندوق. كم كرة أصبحت لديها؟ "
+    "لا تضف Markdown أو نصًا خارج JSON."
+)
+
+
+def run_model(adapter: OpenAICompatibleAdapter, model: str, secret: str) -> dict[str, Any]:
+    started = time.monotonic()
+    result: dict[str, Any] = {
+        "model": model,
+        "status": "passed",
+        "factual": {},
+        "reasoning": {},
+    }
+    for label, prompt in (("factual", FACTUAL_PROMPT), ("reasoning", REASONING_PROMPT)):
+        try:
+            response = adapter.complete_json(
+                model=model,
+                secret=secret,
+                system_prompt="Return exactly one JSON object. Do not include secrets or Markdown.",
+                user_prompt=prompt,
+                timeout_seconds=120,
+                supports_response_format=False,
+            )
+            payload = response.payload
+            answer = payload.get("answer")
+            result[label] = {
+                "status": "passed" if answer not in (None, "") else "invalid",
+                "keys": sorted(str(key) for key in payload.keys()),
+                "answer_present": answer not in (None, ""),
+                "answer_excerpt": str(answer)[:240] if answer not in (None, "") else "",
+            }
+            if result[label]["status"] != "passed":
+                result["status"] = "failed"
+        except ProviderError as exc:
+            result[label] = {
+                "status": "failed",
+                "error_class": exc.error_class,
+                "status_code": exc.status_code,
+            }
+            result["status"] = "failed"
+        except Exception as exc:  # noqa: BLE001
+            result[label] = {"status": "failed", "error_type": type(exc).__name__}
+            result["status"] = "failed"
+    result["duration_seconds"] = round(time.monotonic() - started, 2)
+    return result
+
+
+def main() -> int:
+    config = RouterConfig.load(ROOT / "config")
+    keys = config.keys_for("nvidia")
+    if not keys:
+        print(json.dumps({"status": "blocked", "reason": "NVIDIA key is not configured"}))
+        return 2
+    models = [spec.model for spec in config.model_chain("nvidia_free")]
+    adapter = OpenAICompatibleAdapter("nvidia", config.providers["nvidia"].base_url)
+    max_workers = max(1, min(int(os.getenv("NVIDIA_FUNCTIONAL_WORKERS", "3")), 3))
+    results: list[dict[str, Any]] = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(run_model, adapter, model, keys[0].secret) for model in models]
+        for future in futures:
+            results.append(future.result())
+    results.sort(key=lambda item: models.index(item["model"]))
+    passed = sum(item["status"] == "passed" for item in results)
+    payload = {
+        "status": "completed",
+        "test_type": "functional_text",
+        "models_tested": len(results),
+        "models_passed_both_prompts": passed,
+        "prompts": ["factual_knowledge_arabic", "arithmetic_reasoning_arabic"],
+        "search_test": {"status": "not_supported_by_nvidia_adapter", "reason": "No search tool is sent to the NVIDIA OpenAI-compatible endpoint."},
+        "results": results,
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0 if passed == len(results) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
