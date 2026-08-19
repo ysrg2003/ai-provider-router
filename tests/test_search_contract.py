@@ -12,6 +12,13 @@ class SearchContractTests(unittest.TestCase):
             ['https://www.nasa.gov/eclipse', 'https://example.org/page'],
         )
 
+    def test_url_citations_from_annotations_normalizes_bare_domains(self):
+        annotations = [{"url": "www.nasa.gov/eclipse"}, {"href": "example.org/page"}]
+        self.assertEqual(
+            url_citations_from_annotations(annotations),
+            ['https://www.nasa.gov/eclipse', 'https://example.org/page'],
+        )
+
     def test_url_citations_from_annotations_reads_structured_url_fields(self):
         annotations = [
             {"type": "url_citation", "url": "https://www.nasa.gov/eclipse"},
