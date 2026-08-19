@@ -9,14 +9,17 @@ _URL_RE = re.compile(r"https?://[^\s<>\"']+")
 
 
 def url_citations_from_text(text: str) -> list[str]:
-    """Return unique explicit HTTP(S) URLs present in provider text, preserving order."""
+    """Return unique explicit HTTP(S) URLs, including JSON-escaped slash forms."""
     seen: set[str] = set()
     result: list[str] = []
-    for raw in _URL_RE.findall(str(text or "")):
-        url = raw.rstrip(".,;:!?)]}\\\"")
-        if url and url not in seen:
-            seen.add(url)
-            result.append(url)
+    raw_text = str(text or "")
+    variants = (raw_text, raw_text.replace("\\/", "/"), raw_text.replace("\\u002F", "/"))
+    for variant in variants:
+        for raw in _URL_RE.findall(variant):
+            url = raw.rstrip(".,;:!?)]}\\\"")
+            if url and url not in seen:
+                seen.add(url)
+                result.append(url)
     return result
 
 

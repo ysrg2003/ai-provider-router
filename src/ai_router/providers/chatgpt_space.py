@@ -224,9 +224,24 @@ class ChatGPTSpaceAdapter:
             content = body["choices"][0]["message"].get("content", "")
         except (KeyError, IndexError, TypeError) as exc:
             raise ProviderError("ChatGPT Space returned no assistant text", error_class="invalid_or_unknown", retryable=False) from exc
-        if content is None:
-            return ""
-        return str(content)
+
+        def flatten(value: Any) -> str:
+            if value is None:
+                return ""
+            if isinstance(value, str):
+                return value
+            if isinstance(value, list):
+                return "\\n".join(part for part in (flatten(item) for item in value) if part)
+            if isinstance(value, dict):
+                for key in ("text", "content", "value"):
+                    if key in value:
+                        extracted = flatten(value[key])
+                        if extracted:
+                            return extracted
+                return json.dumps(value, ensure_ascii=False)
+            return str(value)
+
+        return flatten(content)
 
     @staticmethod
     def _body(response: requests.Response) -> dict[str, Any]:
