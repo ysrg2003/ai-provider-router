@@ -17,6 +17,7 @@ _OUTPUT_MARKERS: dict[str, tuple[str, ...]] = {
     "audio": ("text to speech", "tts", "voice", "audio output", "صوت", "صوتي", "اقرأ بصوت", "تحويل النص إلى كلام"),
     "video_generation": ("generate video", "create a video", "video generation", "توليد فيديو", "إنشاء فيديو"),
     "video_analysis": ("analyze video", "summarize video", "video understanding", "حلل الفيديو", "لخص الفيديو", "فهم الفيديو"),
+    "translation": ("translate", "translation", "ترجم", "ترجمة", "ترجم إلى", "ترجم من"),
     "image": ("generate image", "create an image", "draw", "image generation", "صورة", "صور", "ارسم", "توليد صورة", "إنشاء صورة"),
 }
 

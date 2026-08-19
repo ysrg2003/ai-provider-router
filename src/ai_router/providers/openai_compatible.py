@@ -46,6 +46,39 @@ class OpenAICompatibleAdapter:
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise ProviderError(f"OpenAI-compatible provider returned invalid JSON: {body}", error_class="invalid_or_unknown", retryable=False) from exc
 
+    def complete_text(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int) -> ProviderResponse:
+        endpoint = f"{self.base_url}/chat/completions"
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "stream": False,
+        }
+        try:
+            response = requests.post(
+                endpoint,
+                headers={"Authorization": f"Bearer {secret}", "Content-Type": "application/json"},
+                json=payload,
+                timeout=timeout_seconds,
+            )
+        except requests.RequestException as exc:
+            raise ProviderError(str(exc), error_class="transient") from exc
+        body = self._body(response)
+        if response.status_code >= 400:
+            raise self._http_error(response.status_code, body)
+        try:
+            content = body["choices"][0]["message"]["content"]
+            if isinstance(content, list):
+                content = "".join(str(part.get("text", "")) if isinstance(part, dict) else str(part) for part in content)
+            text = str(content).strip()
+            if not text:
+                raise ValueError("empty text content")
+            return ProviderResponse({"output_type": "translation", "text": text, "translation": text}, body.get("usage", {}))
+        except (KeyError, IndexError, TypeError, ValueError) as exc:
+            raise ProviderError(f"OpenAI-compatible provider returned empty text: {body}", error_class="invalid_or_unknown", retryable=False) from exc
+
     @staticmethod
     def _body(response: requests.Response) -> dict[str, Any]:
         try:

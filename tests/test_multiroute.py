@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,7 @@ from ai_router.intent import detect_intent
 from ai_router.providers.base import ProviderResponse
 from ai_router.providers.chatgpt_space import ChatGPTSpaceAdapter
 from ai_router.providers.gemini import GeminiAdapter
+from ai_router.providers.openai_compatible import OpenAICompatibleAdapter
 
 
 class FakeResponse:
@@ -34,6 +36,27 @@ class IntentTests(unittest.TestCase):
     def test_maps_detection_precedes_generic_search(self):
         intent = detect_intent("ابحث في خرائط Google عن مطاعم قريبة مني")
         self.assertEqual(intent.grounding, "maps")
+
+    def test_translation_detection(self):
+        intent = detect_intent("ترجم هذا النص إلى العربية")
+        self.assertEqual(intent.output_type, "translation")
+        self.assertEqual(intent.confidence, "heuristic")
+
+
+class OpenAICompatibleTranslationTests(unittest.TestCase):
+    def test_complete_text_uses_raw_completion_contract(self):
+        adapter = OpenAICompatibleAdapter("nvidia", "https://integrate.api.nvidia.com/v1")
+        response = FakeResponse({"choices": [{"message": {"content": "هذه هي الترجمة"}}], "usage": {"total_tokens": 3}})
+        with patch("ai_router.providers.openai_compatible.requests.post", return_value=response) as post:
+            result = adapter.complete_text(
+                model="nvidia/riva-translate-4b-instruct-v2",
+                secret="secret",
+                system_prompt="Translate only.",
+                user_prompt="Translate this.",
+                timeout_seconds=30,
+            )
+        self.assertEqual(result.payload["translation"], "هذه هي الترجمة")
+        self.assertNotIn("response_format", post.call_args.kwargs["json"])
 
 
 class ChatGPTSpaceAdapterTests(unittest.TestCase):
@@ -213,6 +236,7 @@ class RouterRoutePlanTests(unittest.TestCase):
             image_plan = router.route_plan(user_prompt="أنشئ صورة لمدينة مستقبلية")
             audio_plan = router.route_plan(user_prompt="حوّل هذا النص إلى صوت", output_type="audio")
             search_plan = router.route_plan(user_prompt="ما آخر الأخبار مع مصادر حديثة؟")
+            translation_plan = router.route_plan(user_prompt="ترجم هذا إلى العربية")
             live_plan = router.route_plan(user_prompt="أريد محادثة صوتية مباشرة")
             video_plan = router.route_plan(user_prompt="توليد فيديو سينمائي")
             self.assertEqual(image_plan["output_type"], "image")
@@ -228,6 +252,9 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(audio_plan["models"][0]["input_types"], ["text"])
             self.assertEqual(audio_plan["models"][0]["output_types"], ["audio"])
             self.assertEqual(search_plan["route"], "text_grounded_search")
+            self.assertEqual(translation_plan["route"], "translation")
+            self.assertEqual(translation_plan["models"][0]["model"], "nvidia/riva-translate-4b-instruct-v2")
+            self.assertEqual(translation_plan["models"][0]["method"], "translation")
             self.assertEqual(
                 [item["provider"] for item in search_plan["models"][:3]],
                 ["chatgpt_space_replica_01", "chatgpt_space_replica_02", "chatgpt_space"],
@@ -257,6 +284,29 @@ class RouterRoutePlanTests(unittest.TestCase):
                 router.close()
             finally:
                 os.environ.pop("AI_ROUTER_CHATGPT_KEYS_JSON", None)
+
+    def test_complete_auto_executes_translation_route(self):
+        previous = os.environ.get("NVIDIA_API_KEY")
+        os.environ["NVIDIA_API_KEY"] = "translation-secret"
+        try:
+            with tempfile.TemporaryDirectory() as temp:
+                router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+                with patch.object(
+                    router.adapters["nvidia"],
+                    "complete_text",
+                    return_value=ProviderResponse({"output_type": "translation", "text": "This is translated", "translation": "This is translated"}, {}),
+                ) as complete:
+                    result = router.complete_auto(user_prompt="ترجم هذا إلى الإنجليزية", output_type="translation")
+                self.assertEqual(result["route"], "translation")
+                self.assertEqual(result["intent"], "translation")
+                self.assertEqual(result["translation"], "This is translated")
+                self.assertEqual(complete.call_args.kwargs["model"], "nvidia/riva-translate-4b-instruct-v2")
+                router.close()
+        finally:
+            if previous is None:
+                os.environ.pop("NVIDIA_API_KEY", None)
+            else:
+                os.environ["NVIDIA_API_KEY"] = previous
 
     def test_complete_auto_passes_grounding_tool(self):
         import os

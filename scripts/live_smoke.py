@@ -16,6 +16,7 @@ SCENARIOS = {
     "text": {"user_prompt": "Return JSON with exactly one field ok set to true.", "output_type": "text"},
     "openrouter": {"user_prompt": "Return JSON with exactly one field ok set to true.", "output_type": "text", "chain": "openrouter_free"},
     "nvidia": {"user_prompt": "Return JSON with exactly one field ok set to true.", "output_type": "text", "chain": "nvidia_free"},
+    "translation": {"user_prompt": "Translate to Arabic and return only the translation: The capital of France is Paris.", "output_type": "translation"},
     "search": {"user_prompt": "What is the current UTC date? Use Google Search grounding and cite sources.", "output_type": "text", "grounding": "search"},
     "maps": {"user_prompt": "Name one well-known landmark near these coordinates and explain briefly.", "output_type": "text", "grounding": "maps", "latitude": 24.7136, "longitude": 46.6753},
     "image": {"user_prompt": "Create a simple blue circle on a white background.", "output_type": "image"},
@@ -38,7 +39,7 @@ def summarize(name: str, result: dict[str, Any]) -> dict[str, Any]:
         first = embeddings[0] if embeddings else {}
         values = first.get("values") if isinstance(first, dict) else first
         summary.update({"embedding_count": len(embeddings), "dimensions": len(values or [])})
-    elif output_type == "text":
+    elif output_type in {"text", "translation"}:
         text = result.get("text", result.get("response", ""))
         summary.update(
             {

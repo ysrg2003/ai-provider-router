@@ -3398,6 +3398,21 @@
         "enabled": false,
         "reason": "Guardrail model; not a general-purpose generation fallback."
       }
+    ],
+    "translation": [
+      {
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
+        "method": "translation",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      }
     ]
   },
   "reference_catalog": {
@@ -3576,6 +3591,14 @@
           "meta/llama-3.1-8b-instruct"
         ],
         "search_status": "not_supported_by_nvidia_adapter"
+      },
+      "translation_route": {
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
+        "method": "translation",
+        "status": "enabled_and_functionally_verified",
+        "search": "not_supported",
+        "image": "not_supported"
       }
     }
   },

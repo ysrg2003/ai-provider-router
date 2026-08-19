@@ -123,6 +123,26 @@ class AIRouter:
         self.store.checkpoint()
         raise AllProvidersFailed("All configured provider/model/key attempts failed: " + " | ".join(errors[-12:]))
 
+    def translate_text(
+        self,
+        *,
+        text: str,
+        target_language: str,
+        source_language: str | None = None,
+        operation: str = "translation",
+    ) -> dict[str, Any]:
+        source_hint = f" from {source_language}" if source_language else ""
+        prompt = (
+            f"Translate the following text{source_hint} to {target_language}. "
+            "Return only the translation, with no explanation or quotation marks.\n\n"
+            f"{text}"
+        )
+        return self.complete_auto(
+            user_prompt=prompt,
+            output_type="translation",
+            operation=operation,
+        )
+
     def complete_video_json(
         self,
         *,
@@ -436,6 +456,14 @@ class AIRouter:
     ) -> Any:
         if spec.method == "json":
             return adapter.complete_json(
+                model=spec.model,
+                secret=secret,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                timeout_seconds=timeout_seconds,
+            )
+        if spec.method == "translation":
+            return adapter.complete_text(
                 model=spec.model,
                 secret=secret,
                 system_prompt=system_prompt,
