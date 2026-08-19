@@ -1,0 +1,15 @@
+{
+  "http_status": 200,
+  "top_level_keys": [
+    "choices",
+    "created",
+    "id",
+    "images",
+    "model",
+    "object",
+    "usage"
+  ],
+  "kind": "search",
+  "content_preview": "آخر إصدار معلن من Anthropic هو Claude Sonnet 5، أُعلن عنه في 30 يونيو 2026. \nanthropic.com\n\nالإعلان الرسمي من Anthropic",
+  "status": "passed_nonempty"
+}

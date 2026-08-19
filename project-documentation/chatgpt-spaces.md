@@ -180,3 +180,14 @@ Expected success: artifact صورة صالح أو data URL normalized. إذا ظ
 | replica-04 | لم تُلمس؛ ما زالت تحتاج إعادة مصادقة يدوية |
 
 سجل الأدلة التفصيلي موجود في [`replica-01-image-final-verification-2026-08-19.md`](replica-01-image-final-verification-2026-08-19.md). بعد reset، يجب إرسال محاولة صورة واحدة فقط والتحقق من `images[].data_url` وفك base64 وفحص MIME والأبعاد. إذا عادت رسالة quota، يجب الانتظار بدل تكرار الطلب؛ وإذا عادت صورة فعلية مع `images=[]`، عندها فقط تُراجع image DOM diagnostics redacted.
+
+## live smoke للنسختين 01 و02 — 2026-08-19
+
+بعد readiness check أعاد `ready=true` للنسختين، نُفذت الحالات بالتسلسل: نص، بحث حي، ثم صورة واحدة فقط لكل نسخة. النتائج الحية:
+
+| Space | النص | البحث الحي | الصورة |
+|---|---|---|---|
+| replica-01 | passed، HTTP 200، `LIVE_TEXT_OK` | passed_nonempty، HTTP 200، إجابة مع مصدر | quota، HTTP 200، `images_count=0` |
+| replica-02 | passed، HTTP 200، `LIVE_TEXT_OK` | passed، HTTP 200، إجابة مع مصدر | quota، HTTP 200، `images_count=0` |
+
+في حالتي الصورة، احتوى `choices[0].message.content` على رسالة `You've hit the Free plan limit for image generations requests...`. لذلك لم تُحفظ صورة جديدة ولم تُرسل retries إضافية. هذا لا يلغي الدليل التاريخي السابق الذي فُك فيه PNG صالح من replica-02؛ لكنه يثبت أن **حالة quota الحالية تمنع إعادة التحقق من الصورة في النسختين**. التفاصيل والـartifacts الآمنة في [`live-test-report-2026-08-19.md`](live-test-report-2026-08-19.md) والمجلد [`live-verification-2026-08-19`](live-verification-2026-08-19).

@@ -49,4 +49,8 @@
 
 ## الملفات والأدلة
 
-الأدلة الحية المنقحة في [`browser-evidence-2026-08-19.md`](browser-evidence-2026-08-19.md)، وملخص النتائج في [`chatgpt-spaces.md`](chatgpt-spaces.md)، والتحليل البرمجي في [`chatgpt-generation-recovery.md`](chatgpt-generation-recovery.md)، وخطة remediation في [`generation-recovery-remediation-plan.md`](generation-recovery-remediation-plan.md). لا تعتبر هذه النقطة replica-04 ناجحة؛ هي تثبت أن مشكلة الكود والـretry storm عولجت، وأن العائق المتبقي هو session authentication داخل Space.
+الأدلة الحية المنقحة في [`browser-evidence-2026-08-19.md`](browser-evidence-2026-08-19.md)، وملخص النتائج في [`chatgpt-spaces.md`](chatgpt-spaces.md)، والتحليل البرمجي في [`chatgpt-generation-recovery.md`](chatgpt-generation-recovery.md)، وتقرير live smoke الجديد في [`live-test-report-2026-08-19.md`](live-test-report-2026-08-19.md)، وخطة remediation في [`generation-recovery-remediation-plan.md`](generation-recovery-remediation-plan.md). لا تعتبر هذه النقطة replica-04 ناجحة؛ هي تثبت أن مشكلة الكود والـretry storm عولجت، وأن العائق المتبقي هو session authentication داخل Space.
+
+## live smoke الأخير للنسختين 01 و02
+
+في 2026-08-19، وبعد readiness check ناجح، نجح النص والبحث الحي في replica-01 وreplica-02. أُرسل طلب صورة واحد فقط لكل نسخة؛ كلاهما أعاد HTTP 200 مع `images=[]` ورسالة ChatGPT Free plan image-generation limit. لذلك تُصنف الصورة في هذه الجولة `quota`، ولا تُرسل طلبات إضافية قبل reset. هذه النتيجة لا تلغي الدليل التاريخي الذي فك PNG صالحًا من replica-02؛ إنها تصف حالة quota وقت الاختبار الحالي.

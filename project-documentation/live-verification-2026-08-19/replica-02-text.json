@@ -1,0 +1,15 @@
+{
+  "http_status": 200,
+  "top_level_keys": [
+    "choices",
+    "created",
+    "id",
+    "images",
+    "model",
+    "object",
+    "usage"
+  ],
+  "kind": "text",
+  "content_preview": "LIVE_TEXT_OK",
+  "status": "passed"
+}

@@ -1,0 +1,16 @@
+{
+  "http_status": 200,
+  "top_level_keys": [
+    "choices",
+    "created",
+    "id",
+    "images",
+    "model",
+    "object",
+    "usage"
+  ],
+  "kind": "image",
+  "content_preview": "You've hit the Free plan limit for image generations requests. You can create more images when the limit resets in 5 hours and 56 minutes.",
+  "images_count": 0,
+  "status": "quota"
+}

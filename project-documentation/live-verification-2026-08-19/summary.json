@@ -1,0 +1,103 @@
+{
+  "started_at_utc": "2026-08-19T12:54:19.255809+00:00",
+  "scope": "replica-01 and replica-02 only; one image request per replica",
+  "spaces": {
+    "replica-01": {
+      "text": {
+        "http_status": 200,
+        "top_level_keys": [
+          "choices",
+          "created",
+          "id",
+          "images",
+          "model",
+          "object",
+          "usage"
+        ],
+        "kind": "text",
+        "content_preview": "LIVE_TEXT_OK",
+        "status": "passed"
+      },
+      "search": {
+        "http_status": 200,
+        "top_level_keys": [
+          "choices",
+          "created",
+          "id",
+          "images",
+          "model",
+          "object",
+          "usage"
+        ],
+        "kind": "search",
+        "content_preview": "آخر إصدار معلن من Anthropic هو Claude Sonnet 5، أُعلن عنه في 30 يونيو 2026. \nanthropic.com\n\nالإعلان الرسمي من Anthropic",
+        "status": "passed_nonempty"
+      },
+      "image": {
+        "http_status": 200,
+        "top_level_keys": [
+          "choices",
+          "created",
+          "id",
+          "images",
+          "model",
+          "object",
+          "usage"
+        ],
+        "kind": "image",
+        "content_preview": "You've hit the Free plan limit for image generations requests. You can create more images when the limit resets in 16 hours and 49 minutes.",
+        "images_count": 0,
+        "status": "quota"
+      }
+    },
+    "replica-02": {
+      "text": {
+        "http_status": 200,
+        "top_level_keys": [
+          "choices",
+          "created",
+          "id",
+          "images",
+          "model",
+          "object",
+          "usage"
+        ],
+        "kind": "text",
+        "content_preview": "LIVE_TEXT_OK",
+        "status": "passed"
+      },
+      "search": {
+        "http_status": 200,
+        "top_level_keys": [
+          "choices",
+          "created",
+          "id",
+          "images",
+          "model",
+          "object",
+          "usage"
+        ],
+        "kind": "search",
+        "content_preview": "آخر إصدار معلن من Anthropic هو Claude Opus 5 (أُعلن عنه في 24 يوليو 2026)، وهو أحدث إصدار من سلسلة Claude المتاحة علنًا وفق ملاحظات الإصدار الرسمية. \nsupport.claude.com\n\nالمصدر: \nsupport.claude.com",
+        "status": "passed"
+      },
+      "image": {
+        "http_status": 200,
+        "top_level_keys": [
+          "choices",
+          "created",
+          "id",
+          "images",
+          "model",
+          "object",
+          "usage"
+        ],
+        "kind": "image",
+        "content_preview": "You've hit the Free plan limit for image generations requests. You can create more images when the limit resets in 5 hours and 56 minutes.",
+        "images_count": 0,
+        "status": "quota"
+      }
+    }
+  },
+  "finished_at_utc": "2026-08-19T12:55:25.020559+00:00"
+}

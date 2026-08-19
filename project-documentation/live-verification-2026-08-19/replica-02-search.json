@@ -1,0 +1,15 @@
+{
+  "http_status": 200,
+  "top_level_keys": [
+    "choices",
+    "created",
+    "id",
+    "images",
+    "model",
+    "object",
+    "usage"
+  ],
+  "kind": "search",
+  "content_preview": "آخر إصدار معلن من Anthropic هو Claude Opus 5 (أُعلن عنه في 24 يوليو 2026)، وهو أحدث إصدار من سلسلة Claude المتاحة علنًا وفق ملاحظات الإصدار الرسمية. \nsupport.claude.com\n\nالمصدر: \nsupport.claude.com",
+  "status": "passed"
+}
