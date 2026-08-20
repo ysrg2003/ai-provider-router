@@ -334,7 +334,7 @@ class RouterRoutePlanTests(unittest.TestCase):
                 with patch.object(
                     router.adapters["chatgpt_space_replica_01"],
                     "complete_interaction_text",
-                    return_value=ProviderResponse({"output_type": "text", "text": "grounded"}, {}),
+                    return_value=ProviderResponse({"output_type": "text", "text": "grounded https://example.org/news", "url_citations": ["https://example.org/news"]}, {}),
                 ) as complete:
                     result = router.complete_auto(user_prompt="ما آخر الأخبار؟", output_type="text", grounding="search")
                 self.assertEqual(result["route"], "text_grounded_search")

@@ -488,6 +488,12 @@ class AIRouter:
                         if url not in normalized_urls:
                             normalized_urls.append(url)
                     response.payload["url_citations"] = normalized_urls
+                    if intent.grounding == "search" and intent.output_type == "text" and not normalized_urls:
+                        raise ProviderError(
+                            "Grounded search returned no URL citations",
+                            error_class="invalid_or_unknown",
+                            retryable=True,
+                        )
                     response.payload["route"] = route_name
                     response.payload["intent"] = intent.output_type
                     response.payload["provider"] = spec.provider_id

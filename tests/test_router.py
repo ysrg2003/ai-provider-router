@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from ai_router import AIRouter
+from ai_router import AIRouter, AllProvidersFailed
 from ai_router.config import ModelSpec
 from ai_router.providers.base import ProviderError, ProviderResponse
 
@@ -59,6 +59,22 @@ class RouterTests(unittest.TestCase):
             keys = router.config.keys_for("google_gemini")
             self.assertEqual([key.key_id for key in keys], ["wrapped-1", "wrapped-2"])
             self.assertEqual([key.secret for key in keys], ["one", "two"])
+            router.close()
+
+    def test_grounded_search_without_citations_is_not_provider_success(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ["AI_ROUTER_CHATGPT_KEYS_JSON"] = json.dumps([{"id": "chatgpt-test", "key": "chatgpt-secret", "project": "p1"}])
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([{"id": "gemini-test", "key": "gemini-secret", "project": "p2"}])
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            empty = ProviderResponse({"output_type": "text", "text": "I searched but found no qualifying citations.", "url_citations": []}, {})
+            calls = []
+            def fake(*, model, secret, system_prompt, user_prompt, timeout_seconds, tools=None):
+                calls.append((model, secret))
+                return empty
+            with patch.object(router.adapters["chatgpt_space_replica_01"], "complete_interaction_text", side_effect=fake), patch.object(router.adapters["chatgpt_space_replica_02"], "complete_interaction_text", side_effect=fake), patch.object(router.adapters["google_gemini"], "complete_interaction_text", side_effect=fake):
+                with self.assertRaisesRegex(AllProvidersFailed, "no URL citations"):
+                    router.complete_auto(user_prompt="Search for cited sources.", output_type="text", grounding="search", operation="grounded-test")
+            self.assertGreaterEqual(len(calls), 3)
             router.close()
 
     def test_rotation_moves_to_next_key_and_records_state(self) -> None:
