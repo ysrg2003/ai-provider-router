@@ -26,7 +26,7 @@
 - uses: actions/checkout@v4
   with:
     repository: ysrg2003/ai-provider-router
-    ref: v1.2.27-default-all-providers
+    ref: c5ef573
     path: ai-provider-router
 - uses: actions/setup-python@v5
   with:
@@ -54,9 +54,7 @@ env:
   CHATGPT_API_REPLICA_02_BASE_URL: ${{ vars.CHATGPT_API_REPLICA_02_BASE_URL }}
 ```
 
-قيمة ال CHATGPT_API_SECRET_KEY ضعها : gptkey0 
-لأنها يجب ان تتوافق مع الموجودة في HF spaces
-إذا لم تنشئ Variables، سيستخدم router العناوين الافتراضية من config. أما Cookies وStorage State الخاصة بـChatGPT فتبقى داخل Space ولا تُضاف إلى GitHub Secrets الخاصة بالrouter.
+ضع في `CHATGPT_API_SECRET_KEY` القيمة السرية التي أنشأتها أنت داخل Spaces، أو استخدم `AI_ROUTER_CHATGPT_KEYS_JSON` كـpool JSON. لا تضع قيمة حقيقية في README أو Issues أو logs، ولا تستخدم هذا المستودع لتجاوز quota. إذا لم تنشئ Variables، سيستخدم router العناوين الافتراضية من config. أما Cookies وStorage State الخاصة بـChatGPT فتبقى داخل Space ولا تُضاف إلى GitHub Secrets الخاصة بالrouter.
 
 ### 3.3 تشغيل أول تحقق
 
@@ -134,7 +132,7 @@ docker run --rm --env-file .env -v "$PWD/data:/app/data" \
 ثبّت tag ثم استورد `AIRouter`:
 
 ```bash
-python -m pip install "git+https://github.com/ysrg2003/ai-provider-router.git@v1.2.27-default-all-providers"
+python -m pip install "git+https://github.com/ysrg2003/ai-provider-router.git@c5ef573"
 ```
 
 ```python
@@ -190,7 +188,23 @@ ai-router --config-dir config call-auto \
 
 aliases هي `gemini`/`google_gemini`، `hf`/`huggingface`، `openrouter`، `nvidia`، و`chatgpt`. لا يستخدم router network request في `route-plan`. يرفض alias غير معروف، تقاطع allowlist وdenylist، أو عدم بقاء model مناسب.
 
-## 8. الأسرار والمتغيرات
+## 8. grounded search وعقد citations
+
+المسار `text_grounded_search` ليس route عامة لكل provider؛ ترتيبه الحالي هو `chatgpt_space_replica_01` ثم `chatgpt_space_replica_02` ثم `google_gemini`. يستخدم ChatGPT Space prompt صريحًا للبحث ولا يستقبل `google_search` tool، لأن endpoint الخاص به يحول tool marker إلى `tool_calls` غير منفذة. يستقبل Gemini وحده `google_search` tool في هذا المسار.
+
+يجب على adapter أو provider أن يعيد واحدًا أو أكثر من `url_citations` الصالحة. يقوم router بدمج citations من annotations وbody metadata وcontent blocks وJSON المضمن والحقول المنظمة، ويرفض grounded success بلا citations عبر `ProviderError`. لا تُعد روابط النص العادي مصدرًا موثوقًا إلا إذا وصلت إلى الحقل الموحد بعد تطبيعها. نماذج NVIDIA تبقى متاحة في routes العامة، لكنها ليست fallback صامتًا داخل `text_grounded_search`.
+
+مثال route plan دون network request:
+
+```bash
+ai-router --config-dir config --state-db /tmp/router.db route-plan \\
+  --output-type text --grounding search \\
+  --user "Find direct official sources about solar eclipses"
+```
+
+التحقق الحقيقي يتطلب فحص `url_citations` و`provider` و`model` و`route` في JSON، لا الاكتفاء بنجاح HTTP أو route plan. عند غياب citations، انتقل إلى provider التالي ثم سجّل `AllProvidersFailed` إذا فشل route كله.
+
+## 9. الأسرار والمتغيرات
 
 | الاسم | التصنيف | الوظيفة |
 |---|---|---|
@@ -206,7 +220,7 @@ aliases هي `gemini`/`google_gemini`، `hf`/`huggingface`، `openrouter`، `nvi
 
 راجع [دليل الاعتمادات الكامل](docs/credentials.md)، فهو يشرح لكل قيمة: لماذا نحتاجها، كيف نحصل عليها، الصلاحيات، placeholder، التخزين المحلي/GitHub، health check، expiry، rotation وrevocation. لا تضع `.env` أو tokens أو Cookies أو Storage State في Git.
 
-## 9. بنية المشروع
+## 10. بنية المشروع
 
 | المسار | الوظيفة |
 |---|---|
@@ -226,7 +240,7 @@ aliases هي `gemini`/`google_gemini`، `hf`/`huggingface`، `openrouter`، `nvi
 | `Dockerfile` | CLI image |
 | `pyproject.toml` | package وentrypoint |
 
-## 10. الاختبار
+## 11. الاختبار
 
 ```bash
 python3 -m json.tool config/providers.json >/dev/null
@@ -238,7 +252,7 @@ git diff --check
 
 الاختبارات offline لا تثبت quota أو session الخارجية. للـlive استخدم workflow محدودًا وسجّل status/provider/model/error class فقط.
 
-## 11. الاستكشاف والأمان
+## 12. الاستكشاف والأمان
 
 | العرض | الإجراء الأول |
 |---|---|
@@ -251,7 +265,7 @@ git diff --check
 
 لا تعيد image generation بلا حدود. بعد exposure، revoke/rotate من المصدر ثم حدّث Secret store وافحص Git history.
 
-## 12. خريطة التوثيق
+## 13. خريطة التوثيق
 
 ابدأ بـ[فهرس project-documentation](project-documentation/README.md)، ثم [AI_CONTEXT](AI_CONTEXT.md)، ثم [credentials](docs/credentials.md)، ثم [configuration guide](project-documentation/configuration-guide.md)، ثم [troubleshooting](project-documentation/troubleshooting.md).
 
