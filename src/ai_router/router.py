@@ -466,7 +466,7 @@ class AIRouter:
                         system_prompt=system_prompt,
                         user_prompt=user_prompt,
                         timeout_seconds=provider_spec.timeout_seconds or self.config.policy.request_timeout_seconds,
-                        tools=tools,
+                        tools=tools if not intent.grounding or intent.grounding in spec.tools else [],
                         image_data=image_data,
                         image_mime_type=image_mime_type,
                         video_uri=video_uri,

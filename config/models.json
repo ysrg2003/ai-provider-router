@@ -2384,10 +2384,7 @@
         "output_types": [
           "text"
         ],
-        "enabled": true,
-        "tools": [
-          "search"
-        ]
+        "enabled": true
       },
       {
         "provider": "chatgpt_space_replica_02",
@@ -2399,10 +2396,7 @@
         "output_types": [
           "text"
         ],
-        "enabled": true,
-        "tools": [
-          "search"
-        ]
+        "enabled": true
       },
       {
         "provider": "google_gemini",

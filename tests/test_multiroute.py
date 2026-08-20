@@ -275,7 +275,9 @@ class RouterRoutePlanTests(unittest.TestCase):
                 [item["provider"] for item in search_plan["models"][:2]],
                 ["chatgpt_space_replica_01", "chatgpt_space_replica_02"],
             )
-            self.assertEqual(search_plan["models"][0]["tools"], ["search"])
+            self.assertEqual(search_plan["models"][0]["tools"], [])
+            self.assertEqual(search_plan["models"][1]["tools"], [])
+            self.assertEqual(search_plan["models"][2]["tools"], ["search"])
             self.assertEqual(live_plan["output_type"], "live")
             self.assertEqual(video_plan["output_type"], "video_generation")
             router.close()
@@ -338,7 +340,7 @@ class RouterRoutePlanTests(unittest.TestCase):
                 ) as complete:
                     result = router.complete_auto(user_prompt="ما آخر الأخبار؟", output_type="text", grounding="search")
                 self.assertEqual(result["route"], "text_grounded_search")
-                self.assertEqual(complete.call_args.kwargs["tools"], [{"type": "google_search"}])
+                self.assertEqual(complete.call_args.kwargs["tools"], [])
                 router.close()
             finally:
                 os.environ.pop("AI_ROUTER_CHATGPT_KEYS_JSON", None)
