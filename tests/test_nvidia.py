@@ -71,14 +71,20 @@ class NvidiaRouterTests(unittest.TestCase):
             self.assertTrue(openrouter_indexes)
             self.assertTrue(nvidia_indexes)
             self.assertGreater(min(nvidia_indexes), max(openrouter_indexes))
-        for route_name in ('text', 'text_grounded_search'):
-            entries = models['output_routes'][route_name]
-            openrouter_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'openrouter']
-            nvidia_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'nvidia']
-            self.assertTrue(nvidia_indexes)
-            if openrouter_indexes:
-                self.assertGreater(min(nvidia_indexes), max(openrouter_indexes))
-            self.assertEqual(max(nvidia_indexes), len(entries) - 1)
+        entries = models['output_routes']['text']
+        openrouter_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'openrouter']
+        nvidia_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'nvidia']
+        self.assertTrue(nvidia_indexes)
+        if openrouter_indexes:
+            self.assertGreater(min(nvidia_indexes), max(openrouter_indexes))
+        self.assertEqual(max(nvidia_indexes), len(entries) - 1)
+
+        grounded_entries = models['output_routes']['text_grounded_search']
+        self.assertEqual(
+            [item['provider'] for item in grounded_entries],
+            ['chatgpt_space_replica_01', 'chatgpt_space_replica_02', 'google_gemini'],
+        )
+        self.assertFalse(any(item['provider'] == 'nvidia' for item in grounded_entries))
         self.assertFalse(any(item['provider'] == 'nvidia' for item in models['output_routes']['image']))
         all_nvidia_models = [item['model'] for item in models['model_chains']['nvidia_free']]
         self.assertNotIn('nvidia/riva-translate-4b-instruct-v2', all_nvidia_models)
