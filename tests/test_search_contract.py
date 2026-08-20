@@ -30,6 +30,13 @@ class SearchContractTests(unittest.TestCase):
             ['https://www.nasa.gov/eclipse', 'https://example.org/page'],
         )
 
+    def test_url_citations_from_annotations_reads_tool_content_blocks(self):
+        value = {"tool_output": {"content": [{"annotation": "https://www.nasa.gov/eclipse"}, {"text": "Source: https://example.org/page"}]}}
+        self.assertEqual(
+            url_citations_from_annotations(value),
+            ["https://www.nasa.gov/eclipse", "https://example.org/page"],
+        )
+
     def test_url_citations_from_annotations_accepts_direct_url_strings(self):
         self.assertEqual(
             url_citations_from_annotations(["https://www.nasa.gov/eclipse", "https://example.org/page"]),
