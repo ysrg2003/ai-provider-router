@@ -30,6 +30,13 @@ class SearchContractTests(unittest.TestCase):
             ['https://www.nasa.gov/eclipse', 'https://example.org/page'],
         )
 
+    def test_url_citations_from_annotations_reads_sources_and_videos_containers(self):
+        value = {"sources": [{"url": "https://nasa.gov/eclipse"}], "videos": [{"youtube_url": "https://www.youtube.com/watch?v=abcdefghijk"}]}
+        self.assertEqual(
+            url_citations_from_annotations(value),
+            ["https://nasa.gov/eclipse", "https://www.youtube.com/watch?v=abcdefghijk"],
+        )
+
     def test_url_citations_from_annotations_reads_tool_content_blocks(self):
         value = {"tool_output": {"content": [{"annotation": "https://www.nasa.gov/eclipse"}, {"text": "Source: https://example.org/page"}]}}
         self.assertEqual(
