@@ -60,14 +60,16 @@ def url_citations_from_annotations(value: Any) -> list[str]:
         elif isinstance(node, list):
             for child in node:
                 visit(child, citation_field=citation_field)
-        elif citation_field and isinstance(node, str):
+        elif isinstance(node, str):
             candidate = node.strip().rstrip(".,;:!?)]}\"'")
-            if candidate and "://" not in candidate and re.match(r"^(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}(?:/|$)", candidate, flags=re.IGNORECASE):
+            looks_like_url = "://" in candidate or bool(re.match(r"^(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}(?:/|$)", candidate, flags=re.IGNORECASE))
+            if (citation_field or looks_like_url) and candidate and "://" not in candidate and re.match(r"^(?:www\.)?[a-z0-9.-]+\.[a-z]{2,}(?:/|$)", candidate, flags=re.IGNORECASE):
                 candidate = "https://" + candidate
-            for url in url_citations_from_text(candidate):
-                if url not in seen:
-                    seen.add(url)
-                    result.append(url)
+            if citation_field or looks_like_url:
+                for url in url_citations_from_text(candidate):
+                    if url not in seen:
+                        seen.add(url)
+                        result.append(url)
 
     visit(value)
     return result
