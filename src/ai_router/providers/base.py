@@ -27,11 +27,20 @@ def url_citations_from_text(text: str) -> list[str]:
             if url and url not in seen:
                 seen.add(url)
                 result.append(url)
+        structured_values: list[Any] = []
         try:
-            structured = json.loads(variant)
+            structured_values.append(json.loads(variant))
         except (TypeError, ValueError):
-            structured = None
-        if structured is not None:
+            decoder = json.JSONDecoder()
+            for index, char in enumerate(variant):
+                if char not in "[{":
+                    continue
+                try:
+                    value, _ = decoder.raw_decode(variant[index:])
+                    structured_values.append(value)
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    continue
+        for structured in structured_values:
             for url in url_citations_from_annotations(structured):
                 if url not in seen:
                     seen.add(url)

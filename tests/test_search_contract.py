@@ -29,6 +29,10 @@ class SearchContractTests(unittest.TestCase):
             ['https://www.nasa.gov/eclipse', 'https://example.org/page'],
         )
 
+    def test_url_citations_from_text_extracts_embedded_json(self):
+        text = 'Search result summary: {"sources":[{"url":"www.nasa.gov/eclipse"}]} End.'
+        self.assertEqual(url_citations_from_text(text), ['https://www.nasa.gov/eclipse'])
+
     def test_url_citations_from_text_unescapes_json_slashes(self):
         text = r'{"sources":[{"url":"https:\/\/www.nasa.gov\/eclipse"}]}'
         self.assertEqual(url_citations_from_text(text), ['https://www.nasa.gov/eclipse'])
