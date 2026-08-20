@@ -2,6 +2,7 @@ import unittest
 
 from ai_router.providers.base import url_citations_from_annotations, url_citations_from_text
 from ai_router.providers.chatgpt_space import ChatGPTSpaceAdapter
+from ai_router.providers.gemini import GeminiAdapter
 
 
 class SearchContractTests(unittest.TestCase):
@@ -85,6 +86,22 @@ class SearchContractTests(unittest.TestCase):
             tools=[{"type": "search"}],
         )
         self.assertEqual(response.payload['url_citations'], ['https://www.nasa.gov/eclipse', 'https://example.org/primary'])
+
+    def test_gemini_interaction_exposes_body_urls_as_url_citations(self):
+        adapter = GeminiAdapter('https://example.invalid')
+        adapter._post_interactions = lambda **kwargs: {
+            "steps": [{"type": "model_output", "content": [{"type": "text", "text": 'A grounded result.'}]}],
+            "groundingMetadata": {"groundingChunks": [{"web": {"uri": "https://www.youtube.com/watch?v=abcdefghijk"}}]},
+        }
+        response = adapter.complete_interaction_text(
+            model='gemini-2.5-flash',
+            secret='test-secret',
+            system_prompt='Search.',
+            user_prompt='Return JSON.',
+            timeout_seconds=1,
+            tools=[{"type": "search"}],
+        )
+        self.assertEqual(response.payload['url_citations'], ['https://www.youtube.com/watch?v=abcdefghijk'])
 
     def test_chatgpt_interaction_exposes_text_urls_as_url_citations(self):
         adapter = ChatGPTSpaceAdapter('https://example.invalid')
