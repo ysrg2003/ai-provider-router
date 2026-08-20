@@ -501,7 +501,9 @@ class AIRouter:
                     return response.payload
                 except ProviderError as exc:
                     errors.append(f"{spec.provider_id}/{spec.model}/{key.key_id}: {exc.error_class}/{exc.status_code or '-'}: {exc}")
-                    cooldown = self.config.policy.cooldowns_seconds.get(exc.error_class, 300)
+                    # Missing citations and invalid JSON are operation-specific contract failures,
+                    # not provider outages. Do not cool the key before the next independent search.
+                    cooldown = 0 if exc.error_class == "invalid_or_unknown" else self.config.policy.cooldowns_seconds.get(exc.error_class, 300)
                     self.store.record_failure(
                         provider=spec.provider_id,
                         model=spec.model,

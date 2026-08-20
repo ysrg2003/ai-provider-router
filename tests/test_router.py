@@ -82,6 +82,7 @@ class RouterTests(unittest.TestCase):
                 with self.assertRaisesRegex(AllProvidersFailed, "no URL citations"):
                     router.complete_auto(user_prompt="Search for cited sources.", output_type="text", grounding="search", operation="grounded-test")
             self.assertGreaterEqual(len(calls), 3)
+            self.assertFalse(router.store.is_cooling("chatgpt_space_replica_01", "gpt-4o-mini", "chatgpt-test", "p1"))
             router.close()
 
     def test_rotation_moves_to_next_key_and_records_state(self) -> None:
