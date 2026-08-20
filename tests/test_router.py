@@ -13,6 +13,13 @@ from ai_router.providers.base import ProviderError, ProviderResponse
 
 
 class RouterTests(unittest.TestCase):
+    def test_all_provider_failures_keep_initial_errors_visible(self) -> None:
+        errors = [f"chatgpt_space_replica_01/{index}: auth/401" for index in range(12)] + [f"google_gemini/{index}: transient/500" for index in range(12)]
+        visible_errors = errors if len(errors) <= 24 else [*errors[:6], f"... {len(errors) - 18} intermediate attempts omitted ...", *errors[-12:]]
+        rendered = " | ".join(visible_errors)
+        self.assertIn("chatgpt_space_replica_01/0", rendered)
+        self.assertIn("google_gemini/11", rendered)
+
     def test_config_is_separate_and_summary_redacts_secrets(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([{"id": "first", "key": "SECRET_VALUE", "project": "p1"}])

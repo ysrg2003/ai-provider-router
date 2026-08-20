@@ -527,7 +527,8 @@ class AIRouter:
             if attempts >= self.config.policy.max_attempts:
                 break
         self.store.checkpoint()
-        raise AllProvidersFailed("All output-route attempts failed: " + " | ".join(errors[-12:]))
+        visible_errors = errors if len(errors) <= 24 else [*errors[:6], f"... {len(errors) - 18} intermediate attempts omitted ...", *errors[-12:]]
+        raise AllProvidersFailed("All output-route attempts failed: " + " | ".join(visible_errors))
 
     @staticmethod
     def _invoke_output(
