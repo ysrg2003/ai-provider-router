@@ -26,7 +26,7 @@
 - uses: actions/checkout@v4
   with:
     repository: ysrg2003/ai-provider-router
-    ref: c5ef573
+    ref: 0b7c851
     path: ai-provider-router
 - uses: actions/setup-python@v5
   with:
@@ -132,7 +132,7 @@ docker run --rm --env-file .env -v "$PWD/data:/app/data" \
 ثبّت tag ثم استورد `AIRouter`:
 
 ```bash
-python -m pip install "git+https://github.com/ysrg2003/ai-provider-router.git@c5ef573"
+python -m pip install "git+https://github.com/ysrg2003/ai-provider-router.git@0b7c851"
 ```
 
 ```python
