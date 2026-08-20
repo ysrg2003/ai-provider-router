@@ -56,7 +56,7 @@ def url_citations_from_annotations(value: Any) -> list[str]:
     def visit(node: Any, *, citation_field: bool = False) -> None:
         if isinstance(node, dict):
             for key, child in node.items():
-                visit(child, citation_field=citation_field or str(key).lower() in {"url", "uri", "source_url", "link", "href"})
+                visit(child, citation_field=citation_field or str(key).lower() in {"url", "uri", "source_url", "link", "href", "source", "canonical_url", "website"})
         elif isinstance(node, list):
             for child in node:
                 visit(child, citation_field=citation_field)
