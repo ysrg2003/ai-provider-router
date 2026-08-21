@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 
-from .base import ProviderError, ProviderResponse
+from .base import ProviderError, ProviderResponse, url_citations_from_annotations, url_citations_from_text
 
 
 class ChatGPTSpaceAdapter:
@@ -40,11 +40,17 @@ class ChatGPTSpaceAdapter:
         messages.append({"role": "user", "content": effective_prompt})
         body = self._post(model=model, secret=secret, messages=messages, timeout_seconds=timeout_seconds, tools=tools)
         text = self._text_from_body(body)
+        url_citations = url_citations_from_text(text)
+        structured_nodes = [body.get("annotations"), body.get("citations"), body.get("choices")]
+        for url in url_citations_from_annotations(structured_nodes):
+            if url not in url_citations:
+                url_citations.append(url)
         return ProviderResponse(
             {
                 "output_type": "text",
                 "text": text,
-                "annotations": [],
+                "annotations": body.get("annotations", []),
+                "url_citations": url_citations,
                 "images": body.get("images", []),
             },
             body.get("usage", {}),
@@ -73,6 +79,20 @@ class ChatGPTSpaceAdapter:
             raise ProviderError("ChatGPT Space returned invalid JSON", error_class="invalid_or_unknown", retryable=False) from exc
         if not isinstance(payload, dict):
             raise ProviderError("ChatGPT Space returned a non-object JSON value", error_class="invalid_or_unknown", retryable=False)
+        provider_annotations = response.payload.get("annotations", [])
+        payload_annotations = payload.get("annotations", [])
+        if provider_annotations and payload_annotations:
+            payload["annotations"] = [provider_annotations, payload_annotations]
+        elif provider_annotations:
+            payload["annotations"] = provider_annotations
+        payload_urls = payload.get("url_citations", [])
+        parsed_field_urls = url_citations_from_annotations(payload)
+        merged_urls: list[str] = []
+        for url in [*response.payload.get("url_citations", []), *(payload_urls if isinstance(payload_urls, list) else []), *parsed_field_urls]:
+            if url not in merged_urls:
+                merged_urls.append(url)
+        payload["url_citations"] = merged_urls
+        payload["provider_text"] = response.payload.get("text", "")
         return ProviderResponse(payload, response.usage)
 
     def generate_image(
@@ -223,9 +243,24 @@ class ChatGPTSpaceAdapter:
             content = body["choices"][0]["message"].get("content", "")
         except (KeyError, IndexError, TypeError) as exc:
             raise ProviderError("ChatGPT Space returned no assistant text", error_class="invalid_or_unknown", retryable=False) from exc
-        if content is None:
-            return ""
-        return str(content)
+
+        def flatten(value: Any) -> str:
+            if value is None:
+                return ""
+            if isinstance(value, str):
+                return value
+            if isinstance(value, list):
+                return "\\n".join(part for part in (flatten(item) for item in value) if part)
+            if isinstance(value, dict):
+                for key in ("text", "content", "value"):
+                    if key in value:
+                        extracted = flatten(value[key])
+                        if extracted:
+                            return extracted
+                return json.dumps(value, ensure_ascii=False)
+            return str(value)
+
+        return flatten(content)
 
     @staticmethod
     def _body(response: requests.Response) -> dict[str, Any]:

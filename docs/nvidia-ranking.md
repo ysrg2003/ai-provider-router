@@ -37,7 +37,7 @@
 
 ## ترتيب router
 
-يظهر هذا الترتيب في `config/models.json` داخل `model_chains.nvidia_free`. وتُضاف السلسلة بعد OpenRouter في `default` و`creative` و`cheap` ومساري `text` و`text_grounded_search`. لا تدخل نماذج NVIDIA في `output_routes.image`، لأن Free Endpoint لا يعني أن النموذج مولد صور.
+يظهر هذا الترتيب في `config/models.json` داخل `model_chains.nvidia_free`. وتُضاف السلسلة بعد OpenRouter في `default` و`creative` و`cheap` ومسار `text` فقط. لا تدخل نماذج NVIDIA في `text_grounded_search` لأن هذا route يتطلب أداة بحث و`url_citations` موحّدة، ولا تدخل في `output_routes.image` لأن Free Endpoint لا يعني أن النموذج مولد صور.
 
 ## دليل الاختيار السريع
 

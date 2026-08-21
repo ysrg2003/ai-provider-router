@@ -6,7 +6,7 @@ from typing import Any
 
 from .config import ModelSpec, RouterConfig
 from .intent import RequestIntent, detect_intent
-from .providers.base import ProviderAdapter, ProviderError
+from .providers.base import ProviderAdapter, ProviderError, url_citations_from_annotations, url_citations_from_text
 from .providers.chatgpt_space import ChatGPTSpaceAdapter
 from .providers.gemini import GeminiAdapter
 from .providers.openai_compatible import OpenAICompatibleAdapter
@@ -466,7 +466,7 @@ class AIRouter:
                         system_prompt=system_prompt,
                         user_prompt=user_prompt,
                         timeout_seconds=provider_spec.timeout_seconds or self.config.policy.request_timeout_seconds,
-                        tools=tools,
+                        tools=tools if not intent.grounding or intent.grounding in spec.tools else [],
                         image_data=image_data,
                         image_mime_type=image_mime_type,
                         video_uri=video_uri,
@@ -482,12 +482,28 @@ class AIRouter:
                         operation=operation,
                         usage=response.usage,
                     )
+                    existing_urls = response.payload.get("url_citations", [])
+                    normalized_urls: list[str] = []
+                    for url in [*(existing_urls if isinstance(existing_urls, list) else []), *url_citations_from_annotations(response.payload), *url_citations_from_text(response.payload.get("text") or response.payload.get("provider_text") or "")]:
+                        if url not in normalized_urls:
+                            normalized_urls.append(url)
+                    response.payload["url_citations"] = normalized_urls
+                    if intent.grounding == "search" and intent.output_type == "text" and not normalized_urls:
+                        raise ProviderError(
+                            "Grounded search returned no URL citations",
+                            error_class="invalid_or_unknown",
+                            retryable=True,
+                        )
                     response.payload["route"] = route_name
                     response.payload["intent"] = intent.output_type
+                    response.payload["provider"] = spec.provider_id
+                    response.payload["model"] = spec.model
                     return response.payload
                 except ProviderError as exc:
                     errors.append(f"{spec.provider_id}/{spec.model}/{key.key_id}: {exc.error_class}/{exc.status_code or '-'}: {exc}")
-                    cooldown = self.config.policy.cooldowns_seconds.get(exc.error_class, 300)
+                    # Missing citations and invalid JSON are operation-specific contract failures,
+                    # not provider outages. Do not cool the key before the next independent search.
+                    cooldown = 0 if exc.error_class == "invalid_or_unknown" else self.config.policy.cooldowns_seconds.get(exc.error_class, 300)
                     self.store.record_failure(
                         provider=spec.provider_id,
                         model=spec.model,
@@ -513,7 +529,8 @@ class AIRouter:
             if attempts >= self.config.policy.max_attempts:
                 break
         self.store.checkpoint()
-        raise AllProvidersFailed("All output-route attempts failed: " + " | ".join(errors[-12:]))
+        visible_errors = errors if len(errors) <= 24 else [*errors[:6], f"... {len(errors) - 18} intermediate attempts omitted ...", *errors[-12:]]
+        raise AllProvidersFailed("All output-route attempts failed: " + " | ".join(visible_errors))
 
     @staticmethod
     def _invoke_output(
