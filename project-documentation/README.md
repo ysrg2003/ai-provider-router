@@ -302,3 +302,7 @@ python3 -m ai_router.cli.main --config-dir config --state-db /tmp/router.db summ
 [2]: https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions "GitHub Actions Secrets"
 [3]: https://docs.docker.com/engine/reference/builder/ "Dockerfile reference"
 [4]: https://huggingface.co/docs/hub/spaces-overview "Hugging Face Spaces"
+
+## 14. تقارير تحقق حديثة
+
+- [إصلاح النصوص الطويلة في replica-02](replica-02-long-prompt-fix-2026-08-21.md): السبب الجذري، stack trace المنقح، الإصلاح، ونتيجة اختبار 1,500 حرف.
