@@ -173,7 +173,10 @@ class BrowserGateway:
             if auth_required and not self.settings.manual_login_mode:
                 raise RuntimeError("ChatGPT session requires re-authentication")
             if auth_required:
-                LOGGER.warning("ChatGPT manual login mode is active; Space requires one-time browser login")
+                self.ready = False
+                self.startup_error = "ChatGPT manual login is required"
+                LOGGER.warning("ChatGPT manual login mode is active; complete one-time browser login through noVNC")
+                return
             self.ready = True
             self.startup_error = None
             LOGGER.info("ChatGPT browser gateway is ready; loaded %d cookies", accepted)
