@@ -165,6 +165,11 @@ class BrowserGateway:
             await self._wait_for_page_settled(self.settings.ready_timeout_seconds)
             if not await self.find_input(self.settings.ready_timeout_seconds):
                 raise RuntimeError("ChatGPT input was not found; session may be expired")
+            startup_signals = await self.session_diagnostics()
+            auth_controls = startup_signals.get("visible_auth_controls", [])
+            markers = startup_signals.get("markers", {})
+            if auth_controls or any(markers.get(marker) for marker in ("log in", "تسجيل الدخول", "session expired", "انتهت الجلسة", "challenge", "verify")):
+                raise RuntimeError("ChatGPT session requires re-authentication")
             self.ready = True
             self.startup_error = None
             LOGGER.info("ChatGPT browser gateway is ready; loaded %d cookies", accepted)
