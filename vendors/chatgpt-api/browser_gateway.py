@@ -162,6 +162,7 @@ class BrowserGateway:
                 wait_until="domcontentloaded",
                 timeout=int(self.settings.ready_timeout_seconds * 1000),
             )
+            await self._wait_for_page_settled(self.settings.ready_timeout_seconds)
             if not await self.find_input(self.settings.ready_timeout_seconds):
                 raise RuntimeError("ChatGPT input was not found; session may be expired")
             self.ready = True
@@ -308,6 +309,22 @@ class BrowserGateway:
         self.playwright = None
         self.page = None
 
+    async def _wait_for_page_settled(self, timeout_seconds: float = 30) -> None:
+        """Wait for document load and give ChatGPT's client shell bounded time to settle."""
+        if self.page is None:
+            return
+        bounded_timeout = max(5_000, min(45_000, int(timeout_seconds * 1000)))
+        try:
+            await self.page.wait_for_load_state("load", timeout=bounded_timeout)
+        except Exception:
+            LOGGER.debug("ChatGPT document load did not settle within the startup window")
+        # ChatGPT can keep background connections open, so networkidle is advisory only.
+        try:
+            await self.page.wait_for_load_state("networkidle", timeout=min(bounded_timeout, 12_000))
+        except Exception:
+            LOGGER.debug("ChatGPT networkidle was not reached; continuing with DOM readiness checks")
+        await asyncio.sleep(0.5)
+
     async def find_input(self, timeout_seconds: float = 15) -> Any | None:
         if self.page is None:
             return None
@@ -414,6 +431,7 @@ class BrowserGateway:
             await self.page.goto("https://chatgpt.com/", wait_until="domcontentloaded", timeout=60_000)
         else:
             await self.page.wait_for_load_state("domcontentloaded", timeout=30_000)
+        await self._wait_for_page_settled(30)
         self.image_data_cache.clear()
         if not await self.find_input(20):
             raise RuntimeError("ChatGPT input was not found after starting a fresh conversation")
@@ -518,6 +536,38 @@ class BrowserGateway:
                 sequential_timeout = max(20_000, min(60_000, 20_000 + len(prompt) * 10))
                 await input_box.press_sequentially(prompt, delay=0, timeout=sequential_timeout)
         await input_box.dispatch_event("input", {"inputType": "insertText", "data": prompt})
+        input_deadline = time.monotonic() + max(10.0, min(45.0, 10.0 + len(prompt) / 100.0))
+        while time.monotonic() < input_deadline:
+            current_content = await input_box.evaluate(
+                "(el) => String(el.innerText ?? el.textContent ?? el.value ?? '')"
+            )
+            if current_content.strip() == prompt.strip():
+                return
+            await asyncio.sleep(0.25)
+        raise RuntimeError("ChatGPT composer did not stabilize with the full prompt")
+
+    async def _wait_for_enabled_send_control(self, timeout_seconds: float = 30) -> Any | None:
+        """Wait for ChatGPT's visible send control to become enabled after input."""
+        if self.page is None:
+            return None
+        send_button = self.page.locator(
+            '#composer-submit-button, '
+            'button[data-testid="send-button"], '
+            'button[aria-label*="Send prompt" i], '
+            'button[aria-label="Send" i], '
+            'button[aria-label*="إرسال" i]'
+        )
+        deadline = time.monotonic() + timeout_seconds
+        while time.monotonic() < deadline:
+            try:
+                for send_index in range(await send_button.count()):
+                    candidate = send_button.nth(send_index)
+                    if await candidate.is_visible() and await candidate.is_enabled():
+                        return candidate
+            except Exception:
+                pass
+            await asyncio.sleep(0.5)
+        return None
 
     async def _submit_prompt(self, prompt: str, previous_count: int) -> None:
         submitted = False
@@ -538,15 +588,47 @@ class BrowserGateway:
                 except Exception:
                     await input_box.click(timeout=8_000, force=True)
                 await self._populate_input(input_box, prompt)
+                send_control = await self._wait_for_enabled_send_control(30)
+                if send_control is not None:
+                    try:
+                        await send_control.click(timeout=8_000)
+                    except Exception:
+                        await send_control.click(timeout=8_000, force=True)
+                    button_confirmed = False
+                    for _ in range(16):
+                        await asyncio.sleep(0.5)
+                        if await self._submission_started(previous_count):
+                            button_confirmed = True
+                            break
+                    if button_confirmed:
+                        LOGGER.info("ChatGPT prompt submitted after waiting for enabled send control")
+                        submitted = True
+                        break
                 await asyncio.sleep(0.2)
                 await input_box.focus()
-                await self.page.keyboard.press("Enter", delay=20)
-                await asyncio.sleep(1.2)
+                try:
+                    # Dispatch Enter directly to the active editor so the browser
+                    # receives the key event on the prompt element itself.
+                    await input_box.press("Enter", delay=20)
+                except Exception:
+                    # Keep the page-level keyboard path as a compatibility fallback
+                    # for editor implementations that do not support locator.press.
+                    await self.page.keyboard.press("Enter", delay=20)
+                submission_confirmed = False
+                # ChatGPT may need several seconds after Enter before the stop
+                # control, assistant node, or cleared composer becomes observable.
+                # Wait in short intervals before deciding that Enter did not submit.
+                for _ in range(16):
+                    await asyncio.sleep(0.5)
+                    if await self._submission_started(previous_count):
+                        submission_confirmed = True
+                        break
                 enter_started_generation = await self._generation_active()
                 enter_created_assistant = await self._assistant_count() > previous_count
-                if enter_started_generation or enter_created_assistant:
+                if submission_confirmed or enter_started_generation or enter_created_assistant:
                     LOGGER.info(
-                        "ChatGPT prompt submitted with Enter; generation=%s assistant_count_increased=%s",
+                        "ChatGPT prompt submitted with Enter; confirmed=%s generation=%s assistant_count_increased=%s",
+                        submission_confirmed,
                         enter_started_generation,
                         enter_created_assistant,
                     )
