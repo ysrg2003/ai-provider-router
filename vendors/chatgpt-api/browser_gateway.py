@@ -28,6 +28,7 @@ class BrowserSettings:
     headless: bool
     request_timeout_seconds: float
     ready_timeout_seconds: float
+    manual_login_mode: bool = False
 
 
 def parse_netscape_cookies(cookie_text: str) -> list[dict[str, Any]]:
@@ -94,7 +95,7 @@ class BrowserGateway:
                 return
 
         cookies = parse_netscape_cookies(self.settings.cookies_netscape)
-        if storage_state is None and not cookies:
+        if storage_state is None and not cookies and not self.settings.manual_login_mode:
             self.startup_error = "CHATGPT_COOKIES_NETSCAPE or CHATGPT_STORAGE_STATE_JSON is required"
             LOGGER.error("Browser unavailable: no session state secret is configured")
             return
@@ -152,7 +153,7 @@ class BrowserGateway:
                         accepted += 1
                     except Exception:
                         LOGGER.warning("Skipped one invalid cookie entry")
-                if accepted == 0:
+                if accepted == 0 and not self.settings.manual_login_mode:
                     raise RuntimeError("No cookie entries could be loaded")
 
             self.page = await self.context.new_page()
@@ -168,8 +169,11 @@ class BrowserGateway:
             startup_signals = await self.session_diagnostics()
             auth_controls = startup_signals.get("visible_auth_controls", [])
             markers = startup_signals.get("markers", {})
-            if auth_controls or any(markers.get(marker) for marker in ("log in", "تسجيل الدخول", "session expired", "انتهت الجلسة", "challenge", "verify")):
+            auth_required = bool(auth_controls or any(markers.get(marker) for marker in ("log in", "تسجيل الدخول", "session expired", "انتهت الجلسة", "challenge", "verify")))
+            if auth_required and not self.settings.manual_login_mode:
                 raise RuntimeError("ChatGPT session requires re-authentication")
+            if auth_required:
+                LOGGER.warning("ChatGPT manual login mode is active; Space requires one-time browser login")
             self.ready = True
             self.startup_error = None
             LOGGER.info("ChatGPT browser gateway is ready; loaded %d cookies", accepted)
@@ -1083,8 +1087,9 @@ def browser_settings_from_env() -> BrowserSettings:
     return BrowserSettings(
         cookies_netscape=os.getenv("CHATGPT_COOKIES_NETSCAPE", ""),
         storage_state_json=os.getenv("CHATGPT_STORAGE_STATE_JSON", ""),
-        profile_path=os.getenv("CHATGPT_PROFILE_PATH", "/tmp/chatgpt-profile"),
+        profile_path=os.getenv("CHATGPT_PROFILE_PATH", "/data/chatgpt-profile"),
         headless=os.getenv("CHATGPT_HEADLESS", "true").lower() in {"1", "true", "yes"},
         request_timeout_seconds=float(os.getenv("CHATGPT_REQUEST_TIMEOUT", "210")),
         ready_timeout_seconds=float(os.getenv("CHATGPT_READY_TIMEOUT", "180")),
+        manual_login_mode=os.getenv("CHATGPT_MANUAL_LOGIN_MODE", "false").lower() in {"1", "true", "yes"},
     )
