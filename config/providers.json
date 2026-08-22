@@ -1,24 +1,6 @@
 {
   "providers": [
     {
-      "id": "chatgpt_space_replica_01",
-      "kind": "chatgpt_space",
-      "enabled": true,
-      "base_url": "https://yousefsg-chatgpt-api-replica-01.hf.space",
-      "base_url_env": "CHATGPT_API_REPLICA_01_BASE_URL",
-      "key_pool": "chatgpt_space_default",
-      "default_timeout_seconds": 540
-    },
-    {
-      "id": "chatgpt_space_replica_02",
-      "kind": "chatgpt_space",
-      "enabled": true,
-      "base_url": "https://yousefsg-chatgpt-api-replica-02.hf.space",
-      "base_url_env": "CHATGPT_API_REPLICA_02_BASE_URL",
-      "key_pool": "chatgpt_space_default",
-      "default_timeout_seconds": 540
-    },
-    {
       "id": "google_gemini",
       "kind": "gemini_rest",
       "enabled": true,
@@ -48,6 +30,15 @@
       "enabled": true,
       "base_url": "https://integrate.api.nvidia.com/v1",
       "key_pool": "nvidia_default",
+      "default_timeout_seconds": 120
+    },
+    {
+      "id": "groq",
+      "kind": "openai_compatible",
+      "enabled": true,
+      "base_url": "https://api.groq.com/openai/v1",
+      "base_url_env": "GROQ_BASE_URL",
+      "key_pool": "groq_default",
       "default_timeout_seconds": 120
     }
   ]

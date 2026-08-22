@@ -44,8 +44,6 @@ jobs:
 
       - name: Run capability audit
         env:
-          AI_ROUTER_CHATGPT_KEYS_JSON: ${{ secrets.AI_ROUTER_CHATGPT_KEYS_JSON }}
-          CHATGPT_API_SECRET_KEY: ${{ secrets.CHATGPT_API_SECRET_KEY }}
           AI_ROUTER_GEMINI_KEYS_JSON: ${{ secrets.AI_ROUTER_GEMINI_KEYS_JSON }}
           AI_ROUTER_HF_KEYS_JSON: ${{ secrets.AI_ROUTER_HF_KEYS_JSON }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -60,7 +58,6 @@ jobs:
           CAPABILITY_AUDIT_STATE_DB: /tmp/capability-audit.db
         run: |
           set -euo pipefail
-          test -n "${AI_ROUTER_CHATGPT_KEYS_JSON}${CHATGPT_API_SECRET_KEY}${AI_ROUTER_GEMINI_KEYS_JSON}${AI_ROUTER_HF_KEYS_JSON}${HF_TOKEN}${AI_ROUTER_OPENROUTER_KEYS_JSON}${OPENROUTER_API_KEYS_JSON}${OPENROUTER_API_KEY}${NVIDIA_API_KEYS_JSON}${NVIDIA_API_KEY}"
           mkdir -p artifacts
           PYTHONPATH=src python scripts/capability_audit.py > artifacts/capability-audit.json
           grep -q '"status": "completed"' artifacts/capability-audit.json

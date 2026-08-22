@@ -1,12 +1,5 @@
 {
   "key_pools": {
-    "chatgpt_space_default": {
-      "env": "AI_ROUTER_CHATGPT_KEYS_JSON",
-      "fallback_env": "CHATGPT_API_SECRET_KEY",
-      "format": "json_array_or_single_token",
-      "rotation": "ordered",
-      "cooldown_state": "sqlite"
-    },
     "gemini_default": {
       "env": "AI_ROUTER_GEMINI_KEYS_JSON",
       "format": "json_array",
@@ -30,6 +23,13 @@
     "nvidia_default": {
       "env": "NVIDIA_API_KEYS_JSON",
       "fallback_env": "NVIDIA_API_KEY",
+      "format": "json_array_or_single_token",
+      "rotation": "ordered",
+      "cooldown_state": "sqlite"
+    },
+    "groq_default": {
+      "env": "GROQ_API_KEYS_JSON",
+      "fallback_env": "GROQ_API_KEY",
       "format": "json_array_or_single_token",
       "rotation": "ordered",
       "cooldown_state": "sqlite"

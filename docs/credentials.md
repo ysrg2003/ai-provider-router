@@ -8,7 +8,6 @@
 
 | المجموعة | تعريف الاسم | القراءة البرمجية | الاستخدام الخارجي |
 |---|---|---|---|
-| ChatGPT | `config/key_pools.json` → `chatgpt_space_default` | `RouterConfig.keys_for()` → `ChatGPTSpaceAdapter` | `chatgpt-spaces-functional.yml` أو `.env` |
 | Gemini | `config/key_pools.json` → `gemini_default` | `RouterConfig.keys_for()` → `GeminiAdapter` | `live-smoke.yml` أو `.env` |
 | Hugging Face | `config/key_pools.json` → `huggingface_default` | `RouterConfig.keys_for()` → `OpenAICompatibleAdapter` | `live-smoke.yml` أو `.env` |
 | OpenRouter | `config/key_pools.json` → `openrouter_default` | `RouterConfig.keys_for()` → `OpenAICompatibleAdapter` | `live-smoke.yml` أو `.env` |
@@ -17,38 +16,23 @@
 
 | الاسم | التصنيف | مطلوب؟ | يقرأه | مكانه الآمن |
 |---|---|---|---|---|
-| `CHATGPT_API_SECRET_KEY` | secret | اختياري إذا كان ChatGPT route مطلوبًا | `chatgpt_space_default` | local `.env` أو GitHub Secret |
-| `AI_ROUTER_CHATGPT_KEYS_JSON` | secret pool | اختياري، بديل/أعلى أولوية من single key | `chatgpt_space_default` | local `.env` أو GitHub Secret |
 | `AI_ROUTER_GEMINI_KEYS_JSON` | secret pool | اختياري | `gemini_default` | local `.env` أو GitHub Secret |
 | `AI_ROUTER_HF_KEYS_JSON` / `HF_TOKEN` | secret pool/single fallback | اختياري | `huggingface_default` | local `.env` أو GitHub Secret |
 | `AI_ROUTER_OPENROUTER_KEYS_JSON` / `OPENROUTER_API_KEY` | secret pool/single fallback | اختياري | `openrouter_default` | local `.env` أو GitHub Secret |
 | `NVIDIA_API_KEYS_JSON` / `NVIDIA_API_KEY` | secret pool/single fallback | اختياري | `nvidia_default` | local `.env` أو GitHub Secret |
-| `CHATGPT_API_REPLICA_01_BASE_URL`, `CHATGPT_API_REPLICA_02_BASE_URL` | non-secret routing variables | اختياري إذا كانت القيم الافتراضية صحيحة | `providers.json` عبر `base_url_env` | `.env` أو GitHub Variable |
 
-## خريطة ChatGPT Space قبل قراءة البطاقات
 
-بطاقتا ChatGPT في router تخصان Space محددتين، وليستا خدمة واحدة غامضة:
 
 | بطاقة Secret | Space المقابلة | Base URL | Provider ID | مصدر الإنشاء |
 |---|---|---|---|---|
-| `CHATGPT_API_SECRET_KEY` أو عنصر في `AI_ROUTER_CHATGPT_KEYS_JSON` | `Yousefsg/chatgpt-api-replica-01` | `https://yousefsg-chatgpt-api-replica-01.hf.space` | `chatgpt_space_replica_01` | نسخة Docker من `vendors/chatgpt-api` أو `ysrg2003/chatgpt-api` |
-| `CHATGPT_API_SECRET_KEY` أو عنصر في `AI_ROUTER_CHATGPT_KEYS_JSON` | `Yousefsg/chatgpt-api-replica-02` | `https://yousefsg-chatgpt-api-replica-02.hf.space` | `chatgpt_space_replica_02` | نفس source revision في Space مستقلة |
 
-خطوات إنشاء كل Space، رفع الملفات، ضبط `API_SECRET_KEY` و`CHATGPT_COOKIES_NETSCAPE`، readiness، والربط بالrouter موثقة بالتفصيل في [docs/chatgpt-vendor-secrets.md](chatgpt-vendor-secrets.md). لا تنقل Cookies أو Storage State إلى router.
 
-في config الحالي يشترك providerان في `chatgpt_space_default`؛ لذلك الإعداد الأبسط هو أن تقبل Space-01 وSpace-02 قيمة `API_SECRET_KEY` نفسها ويضعها router في `CHATGPT_API_SECRET_KEY`. إذا كانت لكل Space قيمة مختلفة، يجب فصل key pools/provider config كتغيير هندسي مستقل؛ لا تضع القيمتين عشوائيًا في pool مشترك لأن router قد يجرب قيمة غير مناسبة على Space أخرى.
 
-## بطاقة `CHATGPT_API_SECRET_KEY`
 
-**Exact name:** `CHATGPT_API_SECRET_KEY`.
 
-**Classification:** سر API داخلي للاتصال بـChatGPT Space، وليس ChatGPT session cookie.
 
-**Required or optional:** اختياري؛ يصبح مطلوبًا عندما تريد تشغيل ChatGPT provider ولا توجد قيمة صالحة في `AI_ROUTER_CHATGPT_KEYS_JSON`.
 
-**Used by:** key pool `chatgpt_space_default`، الذي يربط `chatgpt_space_replica_01` و`chatgpt_space_replica_02`.
 
-**Where to obtain it:** أنشئ أو اعرض قيمة `API_SECRET_KEY` من إعدادات كل Space في Hugging Face. يجب أن تتطابق القيمة مع Secret الذي تقبله Spaces، ولا علاقة لها بـCookies أو `CHATGPT_STORAGE_STATE_JSON` داخل Space.
 
 **Account and permissions:** تحتاج صلاحية إدارة Space المقابل في Hugging Face. لا تحتاج هذه القيمة إلى صلاحيات GitHub.
 
@@ -57,12 +41,9 @@
 1. افتح Space المطلوب في Hugging Face.
 2. ادخل إلى **Settings → Variables and secrets**.
 3. أنشئ أو راجع Secret باسم `API_SECRET_KEY`.
-4. استخدم القيمة نفسها في بيئة router باسم `CHATGPT_API_SECRET_KEY`.
 5. كرر الخطوات لكل Space فقط إذا كانت Spaces لا تشترك في القيمة؛ لا تنسخ Storage State بين الحسابات.
 
-**Safe placeholder and format:** `CHATGPT_API_SECRET_KEY=<space-api-secret>`.
 
-**Exact storage location:** local `.env` غير المتعقب، أو GitHub Secret باسم `CHATGPT_API_SECRET_KEY`، أو pool JSON باسم `AI_ROUTER_CHATGPT_KEYS_JSON`.
 
 **How the code reads it:** `config/key_pools.json` يحدد `fallback_env`; `src/ai_router/config.py` يقرأ single token إذا لم توجد array صالحة.
 
@@ -80,15 +61,12 @@
 
 **What to do after accidental exposure:** غيّر Secret فورًا في كل Space متأثرة، حدّث router، افحص Git history، ولا تكتفِ بحذف الرسالة أو الملف المحلي.
 
-## بطاقة `AI_ROUTER_CHATGPT_KEYS_JSON`
 
-**Exact name:** `AI_ROUTER_CHATGPT_KEYS_JSON`.
 
 **Classification:** secret key pool.
 
 **Required or optional:** اختياري؛ يتيح keys مرتبة بدل single fallback.
 
-**Used by:** `chatgpt_space_default` في `config/key_pools.json`.
 
 **Where to obtain it:** استخدم قيم `API_SECRET_KEY` الصحيحة التي أنشأتها في Spaces، أو pool داخلي منفصل لكل مشروع حسب سياسة الأمان.
 
@@ -101,7 +79,6 @@
 3. شغّل `summary`؛ يجب أن يظهر عدد keys منقحًا دون values.
 4. نفّذ اختبارًا محدودًا للنص، ثم راقب cooldown/rotation في SQLite.
 
-**Safe placeholder and format:** `AI_ROUTER_CHATGPT_KEYS_JSON=["<space-key-1>","<space-key-2>"]`.
 
 **Exact storage location:** `.env` غير المتعقب أو GitHub Secret. لا تضع array في `config/key_pools.json`؛ الملف يضم اسم المتغير فقط.
 
@@ -111,7 +88,6 @@
 
 **Expected success:** router يختار key صالحًا ويسجل success في SQLite دون كشف key.
 
-**Common failure and fix:** JSON غير صالح أو field غير معروف؛ استخدم array بسيطة من strings أو wrapper موثق. لا تخلط ChatGPT keys مع NVIDIA/Gemini keys.
 
 **Expiry:** حسب secret المصدر.
 
@@ -291,7 +267,6 @@
 
 ## بطاقات متغيرات غير سرية
 
-### `CHATGPT_API_REPLICA_01_BASE_URL`, `CHATGPT_API_REPLICA_02_BASE_URL`
 
 هذه base URLs ليست secrets بحد ذاتها، ويستخدمها `providers.json` عبر `base_url_env`. يجب أن تكون HTTPS URLs لـSpace الصحيحة. القيمة الافتراضية موجودة في `.env.example`، ويمكن override محليًا أو عبر GitHub Variables. تحقق من `/health` أو أول response قبل تغييرها. الخطأ الشائع هو وضع key داخل URL أو خلط replica مع Storage State؛ Storage State لا يوضع في router config.
 
@@ -313,3 +288,24 @@ python3 -m ai_router.cli.main --config-dir config --state-db /tmp/router-smoke.d
 ```
 
 نجاح `summary` يثبت تحميل config فقط. النجاح الحقيقي هو JSON response من `call-auto`. عند الفشل، سجّل provider/model/status/error class فقط؛ لا تسجل key أو Authorization header أو base64 أو Cookies.
+
+## بطاقة `GROQ_API_KEY` و`GROQ_API_KEYS_JSON`
+
+**الاسم الدقيق:** `GROQ_API_KEY` لمفتاح واحد، أو `GROQ_API_KEYS_JSON` كمصفوفة مرتبة من المفاتيح. يقرأ `config/key_pools.json` المصفوفة أولًا، ثم يستخدم `GROQ_API_KEY` كـfallback إذا لم توجد مصفوفة.
+
+**الوظيفة:** مصادقة طلبات Groq إلى `https://api.groq.com/openai/v1`. لا تضع المفتاح في `config/providers.json`؛ الملف يحتوي Base URL واسم key pool فقط.
+
+**الحصول عليه خطوة بخطوة:**
+
+1. افتح [GroqCloud Console](https://console.groq.com/).
+2. أنشئ حسابًا أو سجّل الدخول.
+3. افتح قسم **API Keys**.
+4. أنشئ مفتاحًا جديدًا باسم يوضح المشروع.
+5. انسخ المفتاح مرة واحدة إلى مدير أسرار آمن؛ لا تضعه في README أو Issue أو Git.
+6. للتشغيل المحلي خزّنه في ملف `.env` غير متعقب بصيغة `GROQ_API_KEY=gsk_<token>`.
+7. في GitHub Actions خزّنه من **Settings → Secrets and variables → Actions → Secrets** باسم `GROQ_API_KEY`.
+8. عند استخدام أكثر من مفتاح، خزّن JSON مثل `GROQ_API_KEYS_JSON=["<groq-key-1>","<groq-key-2>"]` في Secret واحد.
+
+**اختبار آمن:** بعد ضبط المفتاح، نفّذ `python scripts/groq_models.py --write config/groq_catalog.json` لاكتشاف القائمة، ثم `python scripts/groq_functional.py` لإرسال smoke واحد لكل نموذج نصي مفعّل. تظهر أسماء النماذج والحالات فقط ولا يظهر المفتاح أو محتوى الرد.
+
+**التدوير والإلغاء:** أنشئ مفتاحًا جديدًا، اختبره، استبدل Secret، ثم احذف المفتاح القديم من GroqCloud. إذا ظهر المفتاح في سجل أو ملف، ألغِه فورًا وأنشئ بديلًا؛ حذف الملف وحده لا يلغي المفتاح.

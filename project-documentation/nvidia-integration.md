@@ -98,7 +98,6 @@ python3 -m ai_router.cli.main \
   --user 'Return exactly: NVIDIA router works'
 ```
 
-Expected success: JSON فيه `route` و`intent`. قد يختار route providerًا أسبق مثل ChatGPT أو Gemini؛ لا تعتبر ذلك فشل NVIDIA. لاختبار NVIDIA تحديدًا استخدم chain الذي يحتوي `nvidia_free` عبر Python API أو عطّل providers الأخرى مؤقتًا في نسخة config خارج Git.
 
 ## Step 6: اختبار NVIDIA من GitHub Actions
 

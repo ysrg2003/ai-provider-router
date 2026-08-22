@@ -14,10 +14,10 @@ from ai_router.providers.base import ProviderError, ProviderResponse
 
 class RouterTests(unittest.TestCase):
     def test_all_provider_failures_keep_initial_errors_visible(self) -> None:
-        errors = [f"chatgpt_space_replica_01/{index}: auth/401" for index in range(12)] + [f"google_gemini/{index}: transient/500" for index in range(12)]
+        errors = [f"openrouter/{index}: auth/401" for index in range(12)] + [f"google_gemini/{index}: transient/500" for index in range(12)]
         visible_errors = errors if len(errors) <= 24 else [*errors[:6], f"... {len(errors) - 18} intermediate attempts omitted ...", *errors[-12:]]
         rendered = " | ".join(visible_errors)
-        self.assertIn("chatgpt_space_replica_01/0", rendered)
+        self.assertIn("openrouter/0", rendered)
         self.assertIn("google_gemini/11", rendered)
 
     def test_config_is_separate_and_summary_redacts_secrets(self) -> None:
@@ -70,7 +70,7 @@ class RouterTests(unittest.TestCase):
 
     def test_grounded_search_without_citations_is_not_provider_success(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
-            os.environ["AI_ROUTER_CHATGPT_KEYS_JSON"] = json.dumps([{"id": "chatgpt-test", "key": "chatgpt-secret", "project": "p1"}])
+            os.environ["AI_ROUTER_OPENROUTER_KEYS_JSON"] = json.dumps([{"id": "openrouter-test", "key": "openrouter-secret", "project": "p1"}])
             os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([{"id": "gemini-test", "key": "gemini-secret", "project": "p2"}])
             router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
             empty = ProviderResponse({"output_type": "text", "text": "I searched but found no qualifying citations.", "url_citations": []}, {})
@@ -78,12 +78,13 @@ class RouterTests(unittest.TestCase):
             def fake(*, model, secret, system_prompt, user_prompt, timeout_seconds, tools=None):
                 calls.append((model, secret))
                 return empty
-            with patch.object(router.adapters["chatgpt_space_replica_01"], "complete_interaction_text", side_effect=fake), patch.object(router.adapters["chatgpt_space_replica_02"], "complete_interaction_text", side_effect=fake), patch.object(router.adapters["google_gemini"], "complete_interaction_text", side_effect=fake):
+            with patch.object(router.adapters["google_gemini"], "complete_interaction_text", side_effect=fake):
                 with self.assertRaisesRegex(AllProvidersFailed, "no URL citations"):
                     router.complete_auto(user_prompt="Search for cited sources.", output_type="text", grounding="search", operation="grounded-test")
-            self.assertGreaterEqual(len(calls), 3)
-            self.assertFalse(router.store.is_cooling("chatgpt_space_replica_01", "gpt-4o-mini", "chatgpt-test", "p1"))
+            self.assertGreaterEqual(len(calls), 1)
+            self.assertFalse(router.store.is_cooling("google_gemini", "gemini-2.5-flash", "openrouter-test", "p1"))
             router.close()
+            os.environ.pop("AI_ROUTER_OPENROUTER_KEYS_JSON", None)
 
     def test_rotation_moves_to_next_key_and_records_state(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -261,8 +262,6 @@ class ProviderFilterTests(unittest.TestCase):
             plan = router.route_plan(user_prompt="write a short answer")
             providers = {item["provider"] for item in plan["models"]}
             self.assertTrue({
-                "chatgpt_space_replica_01",
-                "chatgpt_space_replica_02",
                 "google_gemini",
                 "huggingface",
                 "openrouter",
@@ -273,7 +272,7 @@ class ProviderFilterTests(unittest.TestCase):
     def test_provider_alias_allowlist_selects_only_requested_provider(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
-            for alias, provider_id in (("gemini", "google_gemini"), ("hf", "huggingface"), ("openrouter", "openrouter"), ("nvidia", "nvidia")):
+            for alias, provider_id in (("gemini", "google_gemini"), ("hf", "huggingface"), ("openrouter", "openrouter"), ("nvidia", "nvidia"), ("groq", "groq")):
                 plan = router.route_plan(user_prompt="write a short answer", providers=alias)
                 self.assertTrue(plan["models"])
                 self.assertEqual({item["provider"] for item in plan["models"]}, {provider_id})

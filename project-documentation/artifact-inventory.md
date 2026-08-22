@@ -15,7 +15,6 @@
 | `config/policies.json` | retry policy | attempts/backoff/cooldown | منخفضة | سلوك الفشل |
 | `src/ai_router/router.py` | orchestration code | route resolution وfallback وfilters وstate | منخفضة | التنفيذ الأساسي |
 | `src/ai_router/config.py` | config loader | `.env` وJSON وkey parsing وredacted summary | منخفضة | boundary config |
-| `src/ai_router/providers/` | adapters | contracts مع Gemini/OpenAI-compatible/ChatGPT | منخفضة | outbound integrations |
 | `src/ai_router/store.py` | persistence code | SQLite cursor/cooldown/stats | metadata تشغيلية | state lifecycle |
 | `src/ai_router/cli/main.py` | CLI entrypoint | commands وflags وprovider selectors | منخفضة | تشغيل المستخدم |
 | `scripts/` | operational scripts | live smoke وcapability audit وfunctional tests | قد تتعامل مع Secrets عبر env | CI/manual operations |
@@ -23,10 +22,7 @@
 | `.github/workflows/` | automation | offline CI وmanual live workflows | Secrets injected at runtime | GitHub operation |
 | `Dockerfile` | container recipe | تشغيل CLI في صورة Python 3.11 | منخفضة | Docker option |
 | `.dockerignore` | container boundary | منع `.env` وDB وartifacts | منخفضة | secret/data hygiene |
-| `vendors/chatgpt-api/` | vendored source | ChatGPT gateway source snapshot | قد يحتوي env examples | منفصل عن router orchestration |
 | `project-documentation/live-verification-2026-08-19/` | redacted evidence | نتائج smoke التاريخية | يجب ألا تحتوي secrets/base64 | evidence only |
 | `project-documentation/*.png` | image evidence | artifact بصري تاريخي | راجع المحتوى قبل النشر | evidence only |
 
 ## حدود الجرد
-
-ملفات `vendors/chatgpt-api/` تملك runtime وSecrets مختلفة عن router؛ لا تخلط `CHATGPT_STORAGE_STATE_JSON` أو Cookies الخاصة بها مع `.env` الخاص بالrouter. ملفات `data/*.db` و`.env` وartifacts التشغيلية ليست مصادر توثيق عامة، ويجب أن تبقى خارج Git أو منقحة قبل الإرفاق.

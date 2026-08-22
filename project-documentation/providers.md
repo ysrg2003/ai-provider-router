@@ -10,26 +10,20 @@
 
 | Provider ID | Kind | Base URL | Key pool | Default timeout | الاستخدام |
 |---|---|---|---|---:|---|
-| `chatgpt_space_replica_01` | `chatgpt_space` | `CHATGPT_API_REPLICA_01_BASE_URL` | `chatgpt_space_default` | 540s | أول ChatGPT replica |
-| `chatgpt_space_replica_02` | `chatgpt_space` | `CHATGPT_API_REPLICA_02_BASE_URL` | `chatgpt_space_default` | 540s | ثاني ChatGPT replica |
 | `google_gemini` | `gemini_rest` | Google `v1beta` | `gemini_default` | 180s | Gemini text/multimodal |
 | `huggingface` | `openai_compatible` | Hugging Face `/v1` | `huggingface_default` | 90s | HF inference |
 | `openrouter` | `openai_compatible` | OpenRouter `/api/v1` | `openrouter_default` | 120s | OpenRouter/free catalog |
 | `nvidia` | `openai_compatible` | NVIDIA `/v1` | `nvidia_default` | 120s | NVIDIA Free Endpoint models |
 
-## ChatGPT Spaces
 
 ### الاستخدام والعقد
 
-adapter `ChatGPTSpaceAdapter` يرسل interaction text إلى Space، ويضيف جملة البحث المطلوبة عندما يملك route أداة `search`. في الصور يرفع timeout إلى حد أدنى 540 ثانية، يستخدم محاولات محدودة، يبحث عن image candidates، ويدعم `data_url` أو تنزيل `src` عند الحاجة. النص والبحث لا يعتمدان على HTML inspection؛ فحص الصورة فقط يحتاج التقاط artifact بعد اكتمال generation.
 
 ### التشغيل
 
-لكل Space base URL متغير مستقل، بينما API secret pool يمر عبر `AI_ROUTER_CHATGPT_KEYS_JSON` أو fallback `CHATGPT_API_SECRET_KEY`. Cookies وStorage State تبقى داخل Space runtime ولا يجب نسخها إلى router أو Git. افتح [`../docs/chatgpt-space.md`](../docs/chatgpt-space.md) للتفاصيل والنتائج التاريخية.
 
 ### الفشل والاستعادة
 
-`401/403` يدل غالبًا على API secret غير متطابق أو session state منتهي داخل Space. `429` أو رسالة Free plan image limit quota من ChatGPT ليست مشكلة rotation في router؛ fallback قد يحاول Space أخرى، لكن quotas قد تكون مرتبطة بالخدمة أو الجلسة ولا تتحول تلقائيًا إلى quota جديدة. timeout في الصورة يُعالج أولًا بالمهلة الطويلة وعدم إعادة الطلبات بلا حدود.
 
 ## Gemini
 
@@ -70,3 +64,15 @@ NVIDIA يستخدم OpenAI-compatible `/v1/chat/completions` وkey pool `NVIDIA_
 ## إضافة provider أو model
 
 إضافة model في adapter موجود غالبًا config-only: أضف model spec، ضعه في chain/route مناسب، أضف test لترتيبه وcapability، ثم نفّذ live smoke محدودًا. إضافة provider kind جديد تتطلب adapter، تسجيل kind في `AIRouter.__init__`, error mapping، key pool، config، tests، ودليل credential. لا تضع secret في JSON ولا تعدل `base_url` بإضافة token.
+
+## Groq
+
+Groq يستخدم `OpenAICompatibleAdapter` على `https://api.groq.com/openai/v1`، ويقرأ `GROQ_API_KEYS_JSON` أو fallback المفرد `GROQ_API_KEY`. أُضيفت النماذج التي أعادها endpoint الحي وكانت قابلة لاختبار chat completions إلى chains النص والترجمة. لا تُضاف نماذج Whisper أو Orpheus أو Guard/Safeguard إلى مسارات النص لأنها تحتاج عقدًا مختلفًا.
+
+النماذج النصية المفعّلة في آخر اكتشاف هي: `openai/gpt-oss-120b`، `qwen/qwen3.6-27b`، `groq/compound`، `groq/compound-mini`، `openai/gpt-oss-20b`، و`allam-2-7b`. هذه القائمة snapshot وقت الاكتشاف وليست ضمانًا دائمًا للتوفر أو الحصة.
+
+يستخدم `scripts/groq_models.py` endpoint `/models` لحفظ catalog منزوع الأسرار، ويستخدم `scripts/groq_functional.py` طلبًا واحدًا bounded لكل نموذج نصي. نماذج GPT OSS تحتاج `max_completion_tokens` كافيًا لأن جزءًا من الميزانية قد يذهب إلى reasoning قبل `message.content`.
+
+Groq لا يُدرج تلقائيًا في `text_grounded_search`؛ وجود chat completions لا يعني وجود بحث ويب. البحث الحي الحالي يعتمد على provider يملك أداة search صريحة، بينما Groq مناسب للنص والترجمة ضمن هذا المشروع.
+
+عند `401/403` أعد إصدار مفتاح Groq، وعند `429` احترم rate limits وانتقل إلى key/model آخر عبر policy. لا تعتبر نجاح `/models` دليلًا على نجاح كل model؛ يجب تنفيذ smoke على `chat/completions` وتسجيل status وshape فقط دون حفظ الرد أو المفتاح.

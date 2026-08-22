@@ -1,0 +1,80 @@
+{
+  "provider": "groq",
+  "retrieved_at_utc": "2026-08-22T06:53:31.634312+00:00",
+  "base_url": "https://api.groq.com/openai/v1",
+  "count": 6,
+  "results": [
+    {
+      "model": "openai/gpt-oss-120b",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "status": "passed",
+      "http_status": 200,
+      "latency_ms": 3043.1,
+      "response_shape": {
+        "choices": 1,
+        "content_nonempty": true,
+        "usage_present": true
+      }
+    },
+    {
+      "model": "qwen/qwen3.6-27b",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "status": "passed",
+      "http_status": 200,
+      "latency_ms": 4242.4,
+      "response_shape": {
+        "choices": 1,
+        "content_nonempty": true,
+        "usage_present": true
+      }
+    },
+    {
+      "model": "groq/compound",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "status": "passed",
+      "http_status": 200,
+      "latency_ms": 4469.2,
+      "response_shape": {
+        "choices": 1,
+        "content_nonempty": true,
+        "usage_present": true
+      }
+    },
+    {
+      "model": "groq/compound-mini",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "status": "passed",
+      "http_status": 200,
+      "latency_ms": 6352.1,
+      "response_shape": {
+        "choices": 1,
+        "content_nonempty": true,
+        "usage_present": true
+      }
+    },
+    {
+      "model": "openai/gpt-oss-20b",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "status": "passed",
+      "http_status": 200,
+      "latency_ms": 3967.7,
+      "response_shape": {
+        "choices": 1,
+        "content_nonempty": true,
+        "usage_present": true
+      }
+    },
+    {
+      "model": "allam-2-7b",
+      "endpoint": "https://api.groq.com/openai/v1/chat/completions",
+      "status": "passed",
+      "http_status": 200,
+      "latency_ms": 4436.8,
+      "response_shape": {
+        "choices": 1,
+        "content_nonempty": true,
+        "usage_present": true
+      }
+    }
+  ]
+}

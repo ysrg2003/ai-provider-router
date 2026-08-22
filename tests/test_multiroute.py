@@ -7,7 +7,6 @@ from unittest.mock import patch
 from ai_router import AIRouter
 from ai_router.intent import detect_intent
 from ai_router.providers.base import ProviderResponse
-from ai_router.providers.chatgpt_space import ChatGPTSpaceAdapter
 from ai_router.providers.gemini import GeminiAdapter
 from ai_router.providers.openai_compatible import OpenAICompatibleAdapter
 
@@ -57,119 +56,6 @@ class OpenAICompatibleTranslationTests(unittest.TestCase):
             )
         self.assertEqual(result.payload["translation"], "هذه هي الترجمة")
         self.assertNotIn("response_format", post.call_args.kwargs["json"])
-
-
-class ChatGPTSpaceAdapterTests(unittest.TestCase):
-    def test_text_search_prefix_and_auth_header(self):
-        adapter = ChatGPTSpaceAdapter("https://space.example")
-        response = FakeResponse({"choices": [{"message": {"content": "grounded"}}], "usage": {"total_tokens": 3}})
-        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response) as post:
-            result = adapter.complete_interaction_text(
-                model="gpt-4o-mini",
-                secret="secret",
-                system_prompt="",
-                user_prompt="ما آخر موديل؟",
-                timeout_seconds=300,
-                tools=[{"type": "google_search"}],
-            )
-        self.assertEqual(result.payload["text"], "grounded")
-        self.assertEqual(post.call_args.args[0], "https://space.example/v1/chat/completions")
-        self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer secret")
-        self.assertEqual(post.call_args.kwargs["json"]["messages"][0]["content"], "ابحث في الويب بحث حي: ما آخر موديل؟")
-
-    def test_image_candidate_filter_rejects_favicon(self):
-        adapter = ChatGPTSpaceAdapter("https://space.example")
-        self.assertFalse(adapter._is_generated_image({"src": "https://www.google.com/s2/favicons?domain=example.com", "alt": ""}))
-        self.assertTrue(adapter._is_generated_image({"src": "https://chatgpt.com/backend-api/estuary/content?id=file_123", "alt": "Generated image"}))
-
-    def test_image_retries_when_first_response_has_no_images(self):
-        adapter = ChatGPTSpaceAdapter("https://space.example")
-        empty = FakeResponse({"choices": [{"message": {"content": "still generating"}}]})
-        success = FakeResponse({
-            "choices": [{"message": {"content": "done"}}],
-            "images": [{"data_url": "data:image/png;base64,aW1hZ2U=", "alt": "Generated image"}],
-        })
-        with patch("ai_router.providers.chatgpt_space.requests.post", side_effect=[empty, success]) as post, patch("ai_router.providers.chatgpt_space.time.sleep") as sleep:
-            result = adapter.generate_image(
-                model="gpt-4o-mini",
-                secret="secret",
-                prompt="draw a cat",
-                timeout_seconds=30,
-            )
-        self.assertEqual(result.payload["data_base64"], "aW1hZ2U=")
-        self.assertEqual(post.call_count, 2)
-        sleep.assert_called_once_with(20)
-        self.assertEqual(post.call_args_list[0].kwargs["timeout"], 540)
-
-    def test_image_quota_response_is_terminal(self):
-        adapter = ChatGPTSpaceAdapter("https://space.example")
-        response = FakeResponse({"choices": [{"message": {"content": "You've hit the Free plan limit for image generations requests."}}]})
-        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response), patch("ai_router.providers.chatgpt_space.time.sleep") as sleep:
-            with self.assertRaisesRegex(Exception, "quota") as raised:
-                adapter.generate_image(
-                    model="gpt-4o-mini",
-                    secret="secret",
-                    prompt="draw a cat",
-                    timeout_seconds=30,
-                )
-        self.assertEqual(raised.exception.error_class, "quota")
-        sleep.assert_not_called()
-
-    def test_image_src_fallback_is_downloaded(self):
-        adapter = ChatGPTSpaceAdapter("https://space.example")
-        response = FakeResponse({
-            "choices": [{"message": {"content": "done"}}],
-            "images": [{"src": "https://cdn.example/image.png", "alt": "Generated image"}],
-        })
-        download = FakeResponse({})
-        download.content = b"png-bytes"
-        download.headers = {"content-type": "image/png"}
-        download.raise_for_status = lambda: None
-        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response), patch("ai_router.providers.chatgpt_space.requests.get", return_value=download) as get:
-            result = adapter.generate_image(
-                model="gpt-4o-mini",
-                secret="secret",
-                prompt="draw a cat",
-                timeout_seconds=30,
-            )
-        self.assertEqual(result.payload["output_type"], "image")
-        self.assertEqual(result.payload["mime_type"], "image/png")
-        self.assertEqual(result.payload["data_base64"], "cG5nLWJ5dGVz")
-        self.assertEqual(get.call_args.args[0], "https://cdn.example/image.png")
-
-    def test_image_data_url_without_src_or_alt_is_accepted(self):
-        adapter = ChatGPTSpaceAdapter("https://space.example")
-        response = FakeResponse({
-            "choices": [{"message": {"content": "done"}}],
-            "images": [{"data_url": "data:image/png;base64,aW1hZ2U="}],
-        })
-        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response):
-            result = adapter.generate_image(
-                model="gpt-4o-mini",
-                secret="secret",
-                prompt="draw a cat",
-                timeout_seconds=30,
-            )
-        self.assertEqual(result.payload["data_base64"], "aW1hZ2U=")
-
-    def test_image_data_url_is_normalized(self):
-        adapter = ChatGPTSpaceAdapter("https://space.example")
-        response = FakeResponse({
-            "choices": [{"message": {"content": "done"}}],
-            "images": [{"data_url": "data:image/png;base64,aW1hZ2U=", "alt": "Generated image"}],
-        })
-        with patch("ai_router.providers.chatgpt_space.requests.post", return_value=response) as post:
-            result = adapter.generate_image(
-                model="gpt-4o-mini",
-                secret="secret",
-                prompt="draw a cat",
-                timeout_seconds=30,
-            )
-        self.assertEqual(result.payload["output_type"], "image")
-        self.assertEqual(result.payload["data_base64"], "aW1hZ2U=")
-        self.assertEqual(result.payload["mime_type"], "image/png")
-        self.assertEqual(post.call_args.kwargs["json"]["output_type"], "image")
-        self.assertNotIn("stream", post.call_args.kwargs["json"])
 
 
 class GeminiMultimodalAdapterTests(unittest.TestCase):
@@ -257,11 +143,8 @@ class RouterRoutePlanTests(unittest.TestCase):
             video_plan = router.route_plan(user_prompt="توليد فيديو سينمائي")
             self.assertEqual(image_plan["output_type"], "image")
             self.assertEqual(image_plan["route"], "image")
-            self.assertEqual(
-                [item["provider"] for item in image_plan["models"][:2]],
-                ["chatgpt_space_replica_01", "chatgpt_space_replica_02"],
-            )
-            self.assertEqual(image_plan["models"][0]["model"], "gpt-4o-mini")
+            self.assertEqual(image_plan["models"][0]["provider"], "google_gemini")
+            self.assertEqual(image_plan["models"][0]["model"], "gemini-3-pro-image")
             self.assertEqual(image_plan["models"][0]["input_types"], ["text", "image"])
             self.assertEqual(image_plan["models"][0]["output_types"], ["image", "text"])
             self.assertEqual(audio_plan["models"][0]["model"], "gemini-3.1-flash-tts-preview")
@@ -271,13 +154,8 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(translation_plan["route"], "translation")
             self.assertEqual(translation_plan["models"][0]["model"], "nvidia/riva-translate-4b-instruct-v2")
             self.assertEqual(translation_plan["models"][0]["method"], "translation")
-            self.assertEqual(
-                [item["provider"] for item in search_plan["models"][:2]],
-                ["chatgpt_space_replica_01", "chatgpt_space_replica_02"],
-            )
-            self.assertEqual(search_plan["models"][0]["tools"], [])
-            self.assertEqual(search_plan["models"][1]["tools"], [])
-            self.assertEqual(search_plan["models"][2]["tools"], ["search"])
+            self.assertEqual(search_plan["models"][0]["provider"], "google_gemini")
+            self.assertEqual(search_plan["models"][0]["tools"], ["search"])
             self.assertEqual(live_plan["output_type"], "live")
             self.assertEqual(video_plan["output_type"], "video_generation")
             router.close()
@@ -286,22 +164,21 @@ class RouterRoutePlanTests(unittest.TestCase):
         import os
 
         with tempfile.TemporaryDirectory() as temp:
-            os.environ["AI_ROUTER_CHATGPT_KEYS_JSON"] = '[{"id":"image-key","key":"secret","project":"p1"}]'
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = '[{"id":"image-key","key":"secret","project":"p1"}]'
             try:
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
                 with patch.object(
-                    router.adapters["chatgpt_space_replica_01"],
+                    router.adapters["google_gemini"],
                     "generate_image",
                     return_value=ProviderResponse({"output_type": "image", "data_base64": "aW1hZ2U="}, {}),
                 ) as generate:
                     result = router.complete_auto(user_prompt="أنشئ صورة لقطة")
                 self.assertEqual(result["route"], "image")
                 self.assertEqual(result["intent"], "image")
-                self.assertEqual(generate.call_args.kwargs["model"], "gpt-4o-mini")
-
+                self.assertEqual(generate.call_args.kwargs["model"], "gemini-3-pro-image")
                 router.close()
             finally:
-                os.environ.pop("AI_ROUTER_CHATGPT_KEYS_JSON", None)
+                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
 
     def test_complete_auto_executes_translation_route(self):
         previous = os.environ.get("NVIDIA_API_KEY")
@@ -330,20 +207,20 @@ class RouterRoutePlanTests(unittest.TestCase):
         import os
 
         with tempfile.TemporaryDirectory() as temp:
-            os.environ["AI_ROUTER_CHATGPT_KEYS_JSON"] = '[{"id":"search-key","key":"secret","project":"p1"}]'
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = '[{"id":"search-key","key":"secret","project":"p1"}]'
             try:
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
                 with patch.object(
-                    router.adapters["chatgpt_space_replica_01"],
+                    router.adapters["google_gemini"],
                     "complete_interaction_text",
                     return_value=ProviderResponse({"output_type": "text", "text": "grounded https://example.org/news", "url_citations": ["https://example.org/news"]}, {}),
                 ) as complete:
                     result = router.complete_auto(user_prompt="ما آخر الأخبار؟", output_type="text", grounding="search")
                 self.assertEqual(result["route"], "text_grounded_search")
-                self.assertEqual(complete.call_args.kwargs["tools"], [])
+                self.assertEqual(complete.call_args.kwargs["tools"], [{"type": "google_search"}])
                 router.close()
             finally:
-                os.environ.pop("AI_ROUTER_CHATGPT_KEYS_JSON", None)
+                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
 
     def test_summary_exposes_output_routes_without_secrets(self):
         with tempfile.TemporaryDirectory() as temp:

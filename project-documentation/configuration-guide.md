@@ -47,10 +47,6 @@ Expected result: `summary` يعمل دون طباعة القيمة. إذا ظه�
 
 | المتغير | النوع | default/format | consumer | الأثر |
 |---|---|---|---|---|
-| `CHATGPT_API_REPLICA_01_BASE_URL` | non-secret URL | replica-01 URL | replica-01 | override |
-| `CHATGPT_API_REPLICA_02_BASE_URL` | non-secret URL | replica-02 URL | replica-02 | override |
-| `CHATGPT_API_SECRET_KEY` | secret | empty | ChatGPT key pool fallback | single ChatGPT key |
-| `AI_ROUTER_CHATGPT_KEYS_JSON` | secret array | `[]` | ChatGPT pool | ordered keys |
 | `AI_ROUTER_GEMINI_KEYS_JSON` | secret array | `[]` | Gemini pool | ordered keys |
 | `AI_ROUTER_HF_KEYS_JSON` | secret array | `[]` | HF pool | ordered keys |
 | `HF_TOKEN` | secret fallback | empty | HF pool | single token fallback |
@@ -100,7 +96,6 @@ Expected result: JSON فيه `output_type`, `grounding`, `route`, وقائمة m
 | `hf` أو `huggingface` | Hugging Face |
 | `openrouter` | OpenRouter |
 | `nvidia` | NVIDIA |
-| `chatgpt` | ChatGPT replica-01 وreplica-02 |
 
 لجعل الطلب يستخدم Gemini فقط:
 
@@ -205,7 +200,6 @@ python3 -m ai_router.cli.main --config-dir config --state-db /tmp/fresh-router.d
 | text | `output_routes.text` أو `default` | تنفيذ |
 | translation | `output_routes.translation` | تنفيذ NVIDIA Riva بعقد raw text |
 | grounded search/maps | `tools` في model spec | تنفيذ إن وُجد adapter |
-| image | `output_routes.image` | تنفيذ ChatGPT/Gemini |
 | audio | `output_routes.audio` | تنفيذ Gemini |
 | embedding | `output_routes.embedding` | تنفيذ Gemini |
 | live | `prepare_live_session()` | plan/WebSocket لاحقًا |

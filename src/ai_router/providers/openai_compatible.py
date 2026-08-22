@@ -25,6 +25,8 @@ class OpenAICompatibleAdapter:
         }
         if supports_response_format:
             payload["response_format"] = {"type": "json_object"}
+        if self.provider_id == "groq":
+            payload["max_completion_tokens"] = 1024
         try:
             response = requests.post(
                 endpoint,
@@ -56,6 +58,8 @@ class OpenAICompatibleAdapter:
             ],
             "stream": False,
         }
+        if self.provider_id == "groq":
+            payload["max_completion_tokens"] = 1024
         try:
             response = requests.post(
                 endpoint,

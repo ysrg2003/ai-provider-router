@@ -77,12 +77,15 @@ class NvidiaRouterTests(unittest.TestCase):
         self.assertTrue(nvidia_indexes)
         if openrouter_indexes:
             self.assertGreater(min(nvidia_indexes), max(openrouter_indexes))
-        self.assertEqual(max(nvidia_indexes), len(entries) - 1)
+        groq_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'groq']
+        self.assertTrue(groq_indexes)
+        self.assertGreater(min(groq_indexes), max(nvidia_indexes))
+        self.assertEqual(max(groq_indexes), len(entries) - 1)
 
         grounded_entries = models['output_routes']['text_grounded_search']
         self.assertEqual(
             [item['provider'] for item in grounded_entries],
-            ['chatgpt_space_replica_01', 'chatgpt_space_replica_02', 'google_gemini'],
+            ['google_gemini'],
         )
         self.assertFalse(any(item['provider'] == 'nvidia' for item in grounded_entries))
         self.assertFalse(any(item['provider'] == 'nvidia' for item in models['output_routes']['image']))

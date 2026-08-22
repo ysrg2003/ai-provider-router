@@ -53,7 +53,6 @@ NVIDIA_API_KEYS_JSON=[{"id":"nvidia-key-1","key":"nvapi-REPLACE_ME","project":"d
 
 ## الترتيب وfallback
 
-يأتي NVIDIA بعد OpenRouter في `model_chains.default` و`creative` و`cheap`، وكذلك في `output_routes.text`. لا يدخل NVIDIA في `output_routes.text_grounded_search`: هذا المسار مقيد إلى ChatGPT replicas ثم Gemini لأن العقد يتطلب citations بحث موحّدة، ولا تملك نماذج NVIDIA المفعّلة هنا أداة بحث وعقد citations مثبتين. لا تُضاف نماذج NVIDIA إلى `output_routes.image`؛ فوجود Free Endpoint لا يعني أن endpoint هو مولد صور، ومخرجات الصور تحتاج adapter مخصصًا.
 
 السلوك عند الفشل هو نفسه لبقية OpenAI-compatible providers: `401/403` يصنف كمشكلة مصادقة غير قابلة لإعادة المحاولة، و`429` كـquota، وأخطاء 408/409/425/5xx كـtransient وفق سياسة router. يسجل SQLite الفشل ويطبق cooldown ثم ينتقل إلى provider/model التالي.
 

@@ -2,11 +2,9 @@
 
 ## النتيجة التنفيذية
 
-كان فشل replica-02 عند prompts قريبة من 1,000 حرف ناتجًا عن مسار إدخال بطيء داخل محرر ChatGPT ProseMirror، وليس حدًا ثابتًا لطول prompt أو نفاد quota.
 
 ## الدليل
 
-في `chatgpt-api`، الحد الافتراضي `MAX_PROMPT_CHARS=50000`. إذا تجاوز prompt هذا الحد، يعيد `main.py` HTTP 400 برسالة `Prompt is empty or too large`. أما HTTP 503 الذي ظهر فعليًا فكان ينتج بعد فشل `BrowserGateway._submit_prompt()`.
 
 سجل Space-02 أثبت أن المحرر كان:
 

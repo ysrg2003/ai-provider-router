@@ -29,12 +29,10 @@ Expected result: compile exit 0، summary منقح، وroute-plan يعرض route
 | `429` | Quota/rate | quota أو RPM limit | انتظر cooldown، خفف الطلبات، أو استخدم provider/key مستقلًا؛ لا تعتبر key rotation حلًا إذا quota على الحساب. |
 | `503` | Availability | worker أو Space غير جاهز | افحص health/logs، شغّل provider آخر، وسجل deferred إن تكرر. |
 | timeout text | Network/runtime | Space cold start أو service بطيء | تحقق من base URL وtimeout provider، لا ترفع retries بلا حد. |
-| timeout image | ChatGPT/Gemini | generation بطيء أو DOM/session | انتظر حتى الحد الموثق، افحص artifact بعد اكتمال generation، ولا تكرر الطلب مباشرة. |
 | `AllProvidersFailed` | Router | كل specs/key attempts فشلت أو في cooldown | اقرأ آخر error classes فقط، افحص credentials/routes/state، ثم أعد الاختبار على DB جديد. |
 | router يتجاوز provider مع key صالح | State | key/model في cooldown أو cursor متقدم | راجع state DB، شغّل DB مؤقتًا لتأكيد config، ثم لا تمسح الإنتاج قبل backup. |
 | text يعمل وsearch يفشل | Capability | لا يوجد `search` tool أو session لا تملك grounding | استخدم `route-plan --grounding search`، راجع tools/spec، ثم اختبر Space search وحدها. |
 | text يعمل والصورة تفشل | Image-specific | quota أو image method/artifact parsing | فرّق quota 429 عن parser/timeout؛ افحص `src`/`data_url` في response، ولا تغيّر text config. |
-| ChatGPT Spaces الثلاثة لا تتساوى | Session | cookies/Storage State/account مختلفة | اختبر كل Space منفردة: health، secret، session، browser logs؛ لا تنسخ state بين replicas. |
 | NVIDIA لا يظهر في route | Config/state | لا يوجد `NVIDIA_API_KEY` أو model disabled/cooling | شغّل `summary`، تحقق من key، اقرأ `nvidia_free_catalog.json`، ولا تفعّل غير live-tested. |
 | NVIDIA `/v1/models` يفشل | NVIDIA auth/availability | key مكشوف/منتهي أو account غير مفعّل | ألغِ key القديم، أنشئ جديدًا من NVIDIA Build، اختبر مرة واحدة. |
 | NVIDIA model في catalog لكن completion يفشل | Capability | endpoint متخصص أو model غير متاح للحساب | ابقه disabled/deferred؛ لا تسجله كـtext model. |
@@ -77,7 +75,6 @@ offline test workflow لا يحتاج provider secrets؛ يجب أن ينجح ع
 
 ## تسريب credential أو session
 
-عند تسريب NVIDIA/HF/OpenRouter/Gemini/ChatGPT API key: ألغِه من provider فورًا، أنشئ بديلًا، حدّث GitHub Secret و`.env`، افحص Git history والـartifacts، ثم نفّذ health check واحدًا. عند تسريب Cookie أو Storage State: ألغِ جلسة ChatGPT وأنشئ state جديدة داخل Space؛ لا يكفي تغيير API secret. لا ترسل القيمة إلى issue أو chat أثناء طلب المساعدة.
 
 ## متى تطلب مساعدة؟
 

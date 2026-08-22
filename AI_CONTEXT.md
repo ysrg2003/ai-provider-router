@@ -4,7 +4,6 @@
 
 `ai-provider-router` مشروع Python 3.11+ يقدم مكتبة وCLI لتوجيه طلبات JSON إلى عدة مزودي ذكاء اصطناعي. يختار route أو chain، يمر على model/provider/key بالترتيب، يطبق fallback محدودًا، ويسجل cooldown وcursor وحالة النجاح أو الفشل في SQLite.
 
-المشروع لا يستضيف النماذج ولا ينشئ API keys ولا يضمن توفر كل model خارجي. `route-plan` تخطيط محلي لا يثبت صحة provider؛ البرهان الخارجي هو response أو artifact حقيقي. يستخدم المشروع حاليًا ChatGPT replica-01 وreplica-02 وGemini وHugging Face وOpenRouter وNVIDIA.
 
 المرجع المنشور الأخير هو `v1.2.27-default-all-providers`، وآخر commit موثق في router هو `c5e5a28`. لا توجد Secrets أو Cookies أو Storage State في المستودع.
 
@@ -57,17 +56,13 @@ ai-router --config-dir config --state-db /tmp/router.db \
 | `.github/workflows/live-smoke.yml` | bounded live smoke يدوي |
 | `.github/workflows/capability-audit.yml` | تدقيق model/provider/method |
 | `.github/workflows/nvidia-functional.yml` | فحص NVIDIA models |
-| `.github/workflows/chatgpt-spaces-functional.yml` | اختبار ChatGPT replica-01 وreplica-02 |
 
-لا تطبع Secrets أو Authorization headers أو base64 في artifacts. ابدأ بسيناريو واحد، ولا تستخدم `all` قبل مراجعة quota. لاستخدام ChatGPT في workflow: ضع `CHATGPT_API_SECRET_KEY` في `${{ secrets.CHATGPT_API_SECRET_KEY }}`، ويمكن وضع `CHATGPT_API_REPLICA_01_BASE_URL` و`CHATGPT_API_REPLICA_02_BASE_URL` في `${{ vars.* }}`؛ إن غابت Variables فالقيم الافتراضية في `config/providers.json` تعمل.
 
 ### التشغيل المحلي
 
-استخدم `.venv` و`.env` غير المتعقب. لإعداد ChatGPT الأبسط، يضم `.env` `CHATGPT_API_SECRET_KEY` المطابق لـ`API_SECRET_KEY` في Space-01 وSpace-02، مع Base URLs الاختيارية `CHATGPT_API_REPLICA_01_BASE_URL` و`CHATGPT_API_REPLICA_02_BASE_URL`. SQLite default هو `data/ai_router.db`، وللتجارب استخدم `/tmp/router.db`. لا تشارك DB بين workers متوازية بلا locking أو state contract.
 
 ### Docker
 
-`Dockerfile` الجذري يبني CLI فقط. `.dockerignore` يمنع `.env` وDB وartifacts من الصورة. ضع `CHATGPT_API_SECRET_KEY` وBase URLs في `.env` ثم مرّرها بـ`--env-file` وقت التشغيل؛ لا تضعها في Dockerfile أو build args. استخدم:
 
 ```bash
 docker build -t ai-provider-router:local .
@@ -102,18 +97,13 @@ finally:
 
 ## 5. الأسرار والمتغيرات
 
-المصدر التفصيلي لأسرار router هو [`docs/credentials.md`](docs/credentials.md)، ولإنشاء وتشغيل ChatGPT Space-01 وSpace-02 وفصل Cookies عن router راجع [`docs/chatgpt-vendor-secrets.md`](docs/chatgpt-vendor-secrets.md). سبب 503 للنصوص الطويلة في replica-02 وإصلاحه موثق في [`project-documentation/replica-02-long-prompt-fix-2026-08-21.md`](project-documentation/replica-02-long-prompt-fix-2026-08-21.md): timeout في `press_sequentially(delay=5)` داخل ProseMirror، عولج بـ`keyboard.insert_text()` سريعًا، وتحقق حيًا بطلب 1,500 حرف أعاد HTTP 200. ملفات Space مصدرها repository [`ysrg2003/chatgpt-api`](https://github.com/ysrg2003/chatgpt-api) عند revision `2ac0d0e4f07fb78805b81b2633a33d9e3ab45e42`; النسخة المضمنة `vendors/chatgpt-api` مطابقة لملفات runtime الأساسية. لا تنقل قيمة حقيقية إلى AI_CONTEXT.
 
 | الاسم | النوع | يقرأه | الوظيفة |
 |---|---|---|---|
-| `CHATGPT_API_SECRET_KEY` | Secret | `chatgpt_space_default` fallback | مصادقة HTTP مع ChatGPT Space |
-| `AI_ROUTER_CHATGPT_KEYS_JSON` | Secret JSON | `chatgpt_space_default` | key pool مرتب |
 | `AI_ROUTER_GEMINI_KEYS_JSON` | Secret JSON | `gemini_default` | Gemini API keys |
 | `AI_ROUTER_HF_KEYS_JSON` / `HF_TOKEN` | Secret | `huggingface_default` | Hugging Face keys/fallback |
 | `AI_ROUTER_OPENROUTER_KEYS_JSON` / `OPENROUTER_API_KEY` | Secret | `openrouter_default` | OpenRouter keys/fallback |
 | `NVIDIA_API_KEYS_JSON` / `NVIDIA_API_KEY` | Secret | `nvidia_default` | NVIDIA keys/fallback |
-| `CHATGPT_API_REPLICA_01_BASE_URL` | Variable | `providers.json` | override Space-01 URL |
-| `CHATGPT_API_REPLICA_02_BASE_URL` | Variable | `providers.json` | override Space-02 URL |
 | `AI_ROUTER_CONFIG_DIR` | Variable | CLI/environment | config directory، default `config` |
 | `AI_ROUTER_STATE_DB` | Variable | CLI/environment | SQLite path، default `data/ai_router.db` |
 
@@ -129,17 +119,14 @@ finally:
 | Rules | `src/ai_router/intent.py`, `tools.py` | output type وgrounding tools |
 | Config | `src/ai_router/config.py`, `config/*.json` | providers/models/keys/policies |
 | Contracts | `src/ai_router/providers/base.py` | ProviderResponse وProviderError وadapter interface |
-| Adapters | `src/ai_router/providers/gemini.py`, `openai_compatible.py`, `chatgpt_space.py` | outbound API methods |
 | Persistence | `src/ai_router/store.py` | SQLite cursor/cooldown/stats |
 | Scripts | `scripts/*.py` | live smoke، capability audit، functional tests |
 | Tests | `tests/*.py` | regression والعقود والـcatalog |
 | Automation | `.github/workflows/*.yml` | offline CI وmanual live jobs |
 | Documentation | `README.md`, `docs/`, `project-documentation/` | beginner/ops/engineering docs |
-| Vendor | `vendors/chatgpt-api/` | source snapshot مضمن، دون Secrets |
 
 ## 7. config والعقود
 
-`config/providers.json` يعرّف provider ID وkind وbase URL وkey pool وtimeout. providers الحالية هي ChatGPT replica-01/02 و`google_gemini` و`huggingface` و`openrouter` و`nvidia`.
 
 `config/models.json` يضم `model_chains` و`output_routes`. كل `ModelSpec` يملك provider/model/method/input_types/output_types وtools وresponse-format flags. `config/key_pools.json` يربط pool بمتغيرات البيئة وfallback وrotation. `config/policies.json` يحدد max attempts وbackoff وcooldowns.
 
@@ -164,7 +151,6 @@ CLI أو Python input
 
 ## 9. provider selection
 
-يقبل CLI `--providers` كـallowlist و`--exclude-providers` كـdenylist. aliases: `gemini`/`google_gemini`، `hf`/`huggingface`، `openrouter`، `nvidia`، و`chatgpt`.
 
 عند غياب الخيارين يستخدم جميع providers. يرفض router unknown alias، overlap بين القائمتين، أو عدم بقاء model مناسب. الاختبار الأساسي في `tests/test_router.py`.
 
@@ -174,7 +160,6 @@ CLI أو Python input
 |---|---|
 | `text` | route عام متعدد providers |
 | `text_grounded_search` / maps | عندما يملك spec tool المناسب |
-| `image` | Gemini وChatGPT routes؛ quota خارجية |
 | `audio` | Gemini TTS |
 | `embedding` | Gemini embedding |
 | `translation` | NVIDIA Riva raw-text |
@@ -191,7 +176,6 @@ Capability audit الحالي يفرّق بين live passed وfailed وroute-onl
 ```bash
 python3 -m json.tool config/providers.json >/dev/null
 python3 -m json.tool config/models.json >/dev/null
-python3 -m compileall -q src scripts tests vendors/chatgpt-api
 python3 -m unittest discover -s tests -v
 git diff --check
 ```
@@ -206,7 +190,6 @@ git diff --check
 
 ## 13. الحالة الحالية والمراجع
 
-آخر release موثق هو `v1.2.27-default-all-providers`. أحدث قرار: عدم تمرير provider filters يعني كل providers، مع إمكانية allowlist/denylist لكل طلب. آخر live ChatGPT text/search مثبت في replica-01 وreplica-02؛ image قد يتوقف بسبب ChatGPT Free-plan quota.
 
 القراءة التالية: [`project-documentation/README.md`](project-documentation/README.md)، ثم [`docs/credentials.md`](docs/credentials.md)، ثم [`project-documentation/troubleshooting.md`](project-documentation/troubleshooting.md)، ثم الكود والاختبارات.
 

@@ -8,7 +8,6 @@
 
 ## 2. ما استخداماته؟
 
-يستخدمه مشروع يحتاج إلى تبديل Gemini وHugging Face وOpenRouter وNVIDIA وChatGPT Spaces دون كتابة adapter منفصل لكل تطبيق. يمكن أيضًا اختيار providers لكل طلب، أو استبعاد Gemini، أو استخدام NVIDIA Riva للترجمة، أو تنظيم keys وcooldowns عبر SQLite.
 
 ## 3. مسارات التشغيل
 
@@ -53,7 +52,6 @@ input -> intent/output type -> route/chain -> provider filters
 |---|---|
 | text | route متعدد providers |
 | search/maps | عند وجود tool في model spec |
-| image | Gemini وChatGPT routes، مع quota خارجية |
 | audio/embedding | Gemini routes |
 | translation | NVIDIA Riva route |
 | video analysis | adapter و`video_uri` مطلوبان |
@@ -61,14 +59,12 @@ input -> intent/output type -> route/chain -> provider filters
 
 ## 7. الأمان
 
-كل API keys وtokens وChatGPT session values تبقى في `.env` غير المتعقب أو GitHub Secrets. Base URLs غير سرية ويمكن ضبطها كـVariables. لا تضع Secrets في config JSON أو Docker image أو artifacts.
 
 ## 8. التحقق
 
 ```bash
 python3 -m json.tool config/providers.json >/dev/null
 python3 -m json.tool config/models.json >/dev/null
-python3 -m compileall -q src scripts tests vendors/chatgpt-api
 python3 -m unittest discover -s tests -v
 ```
 

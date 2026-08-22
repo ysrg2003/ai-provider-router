@@ -8,7 +8,7 @@
 
 يستقبل router طلبًا من CLI أو Python، يحدد intent أو يستخدم output type صريحًا، يختار model specs المناسبة، يطبق allowlist/denylist اختيارية للproviders، ثم يرسل الطلب إلى adapter المناسب. عند خطأ قابل للانتقال، يسجل الحالة ويتقدم إلى المرشح التالي وفق policy.
 
-الـproviders المهيأة حاليًا هي ChatGPT replica-01 وreplica-02، Gemini، Hugging Face، OpenRouter، وNVIDIA. عند عدم تحديد provider filter يستخدم router كل providers الموجودة في route وفق ترتيب `config/models.json`.
+الـproviders المهيأة حاليًا هي Groq، Gemini، Hugging Face، OpenRouter، وNVIDIA. عند عدم تحديد provider filter يستخدم router كل providers الموجودة في route وفق ترتيب `config/models.json`.
 
 ## 2. ما استخداماته؟
 
@@ -34,27 +34,25 @@
 - run: python -m pip install ./ai-provider-router
 ```
 
-### 3.2 إضافة Secrets وBase URLs لـChatGPT
+### 3.2 إضافة Secret وBase URL لـGroq
 
-من مستودعك: **Settings → Secrets and variables → Actions → Secrets**، أضف Secret باسم `CHATGPT_API_SECRET_KEY`. يجب أن تكون قيمته مطابقة لقيمة `API_SECRET_KEY` الموجودة في Space-01 وSpace-02 إذا كنت تستخدم key pool المشترك الحالي. لا تضع هذا المفتاح في Variables أو YAML أو logs.
+من مستودعك: **Settings → Secrets and variables → Actions → Secrets**، أضف Secret باسم `GROQ_API_KEY`. احصل عليه من لوحة GroqCloud، ولا تضعه في Variables العامة أو YAML أو logs.
 
-عناوين Spaces عامة وليست Secrets. يمكنك ترك القيم الافتراضية في `config/providers.json`، أو تسجيلها كـGitHub Variables من **Settings → Secrets and variables → Actions → Variables**:
+عنوان Groq الافتراضي مضمّن في `config/providers.json`:
 
 ```text
-CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
-CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
+GROQ_BASE_URL=https://api.groq.com/openai/v1
 ```
 
-واستخدمها في workflow المستهلك هكذا:
+يمكن تغييره كـGitHub Variable عند الحاجة، بينما يبقى المفتاح في Secret:
 
 ```yaml
 env:
-  CHATGPT_API_SECRET_KEY: ${{ secrets.CHATGPT_API_SECRET_KEY }}
-  CHATGPT_API_REPLICA_01_BASE_URL: ${{ vars.CHATGPT_API_REPLICA_01_BASE_URL }}
-  CHATGPT_API_REPLICA_02_BASE_URL: ${{ vars.CHATGPT_API_REPLICA_02_BASE_URL }}
+  GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+  GROQ_BASE_URL: ${{ vars.GROQ_BASE_URL }}
 ```
 
-ضع في `CHATGPT_API_SECRET_KEY` القيمة السرية التي أنشأتها أنت داخل Spaces، أو استخدم `AI_ROUTER_CHATGPT_KEYS_JSON` كـpool JSON. لا تضع قيمة حقيقية في README أو Issues أو logs، ولا تستخدم هذا المستودع لتجاوز quota. إذا لم تنشئ Variables، سيستخدم router العناوين الافتراضية من config. أما Cookies وStorage State الخاصة بـChatGPT فتبقى داخل Space ولا تُضاف إلى GitHub Secrets الخاصة بالrouter.
+يستخدم سكربت `scripts/groq_models.py` المفتاح لاستدعاء `/models` وحفظ catalog منزوع الأسرار. لا تضع قيمة حقيقية في README أو Issues أو logs.
 
 ### 3.3 تشغيل أول تحقق
 
@@ -66,21 +64,20 @@ env:
       route-plan --output-type text --user "اكتب إجابة قصيرة"
 ```
 
-بعد نجاح التخطيط، استخدم `call-auto` في smoke محدود. `test.yml` هو CI offline، بينما `live-smoke.yml` و`capability-audit.yml` و`nvidia-functional.yml` و`chatgpt-spaces-functional.yml` workflows يدوية أو live وتستهلك quota حسب السيناريو.
+بعد نجاح التخطيط، استخدم `call-auto` في smoke محدود. `test.yml` هو CI offline، بينما `live-smoke.yml` و`capability-audit.yml` و`nvidia-functional.yml` workflows يدوية أو live وتستهلك quota حسب السيناريو.
 
 ## 4. التشغيل المحلي
 
 المتطلبات: Python 3.11+، `requests`، `python-dotenv`، SQLite قابل للكتابة، وcredential لمزود واحد على الأقل لأول live call.
 
-للاستخدام الأبسط مع ChatGPT Spaces، ضع في `.env`:
+للاستخدام الأبسط مع Groq، ضع في `.env`:
 
 ```dotenv
-CHATGPT_API_SECRET_KEY=<نفس API_SECRET_KEY في Space-01 وSpace-02>
-CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
-CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
+GROQ_API_KEY=<مفتاح GroqCloud>
+GROQ_BASE_URL=https://api.groq.com/openai/v1
 ```
 
-الـBase URLs اختيارية لأن لها defaults في `config/providers.json`. لا تضع `CHATGPT_COOKIES_NETSCAPE` أو `CHATGPT_STORAGE_STATE_JSON` في `.env` الخاص بالrouter؛ هاتان القيمتان تخصان Space نفسها.
+بعد اكتشاف النماذج، احفظ catalog الناتج في `config/groq_catalog.json` وأضف فقط النماذج التي أعادها endpoint إلى routes النصية. لا تضع API key في Git أو image layers.
 
 ```bash
 git clone https://github.com/ysrg2003/ai-provider-router.git
@@ -107,12 +104,11 @@ ai-router --config-dir config --state-db /tmp/router.db \
 
 ## 5. التشغيل عبر Docker
 
-يوجد `Dockerfile` جذري لـCLI و`.dockerignore` يمنع `.env` وDB وartifacts من الصورة. نفّذ build في جهاز أو CI يحتوي Docker. أنشئ `.env` كما في القسم المحلي، وبالنسبة إلى ChatGPT تأكد من وجود:
+يوجد `Dockerfile` جذري لـCLI و`.dockerignore` يمنع `.env` وDB وartifacts من الصورة. نفّذ build في جهاز أو CI يحتوي Docker. أنشئ `.env` كما في القسم المحلي، وبالنسبة إلى Groq تأكد من وجود:
 
 ```dotenv
-CHATGPT_API_SECRET_KEY=<نفس API_SECRET_KEY في Space-01 وSpace-02>
-CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
-CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
+GROQ_API_KEY=<مفتاح GroqCloud>
+GROQ_BASE_URL=https://api.groq.com/openai/v1
 ```
 
 مرّر `.env` وقت التشغيل فقط؛ لا تنسخه إلى image layers:
@@ -186,11 +182,11 @@ ai-router --config-dir config call-auto \
   --user "أجب بإيجاز عن آخر التطورات"
 ```
 
-aliases هي `gemini`/`google_gemini`، `hf`/`huggingface`، `openrouter`، `nvidia`، و`chatgpt`. لا يستخدم router network request في `route-plan`. يرفض alias غير معروف، تقاطع allowlist وdenylist، أو عدم بقاء model مناسب.
+aliases هي `gemini`/`google_gemini`، `hf`/`huggingface`، `openrouter`، `nvidia`، و`groq`. لا يستخدم router network request في `route-plan`. يرفض alias غير معروف، تقاطع allowlist وdenylist، أو عدم بقاء model مناسب.
 
 ## 8. grounded search وعقد citations
 
-المسار `text_grounded_search` ليس route عامة لكل provider؛ ترتيبه الحالي هو `chatgpt_space_replica_01` ثم `chatgpt_space_replica_02` ثم `google_gemini`. يستخدم ChatGPT Space prompt صريحًا للبحث ولا يستقبل `google_search` tool، لأن endpoint الخاص به يحول tool marker إلى `tool_calls` غير منفذة. يستقبل Gemini وحده `google_search` tool في هذا المسار.
+المسار `text_grounded_search` يحتاج provider يملك أداة بحث فعلية. الترتيب الحالي يضع Gemini في هذا المسار لأنه يدعم `google_search`. Groq لا يُدرج في grounded search تلقائيًا؛ endpoint Groq للنص لا ينفذ بحث الويب وحده، ولذلك يبقى Groq لمسارات النص والترجمة إلى أن يضاف adapter بحث مستقل.
 
 يجب على adapter أو provider أن يعيد واحدًا أو أكثر من `url_citations` الصالحة. يقوم router بدمج citations من annotations وbody metadata وcontent blocks وJSON المضمن والحقول المنظمة، ويرفض grounded success بلا citations عبر `ProviderError`. لا تُعد روابط النص العادي مصدرًا موثوقًا إلا إذا وصلت إلى الحقل الموحد بعد تطبيعها. نماذج NVIDIA تبقى متاحة في routes العامة، لكنها ليست fallback صامتًا داخل `text_grounded_search`.
 
@@ -208,13 +204,12 @@ ai-router --config-dir config --state-db /tmp/router.db route-plan \\
 
 | الاسم | التصنيف | الوظيفة |
 |---|---|---|
-| `CHATGPT_API_SECRET_KEY` | Secret | مصادقة ChatGPT Space |
-| `AI_ROUTER_CHATGPT_KEYS_JSON` | Secret JSON | key pool لـChatGPT |
+| `GROQ_API_KEY` / `GROQ_API_KEYS_JSON` | Secret / Secret JSON | GroqCloud، مع key pool اختياري |
 | `AI_ROUTER_GEMINI_KEYS_JSON` | Secret JSON | Gemini |
 | `AI_ROUTER_HF_KEYS_JSON` / `HF_TOKEN` | Secret | Hugging Face |
 | `AI_ROUTER_OPENROUTER_KEYS_JSON` / `OPENROUTER_API_KEY` | Secret | OpenRouter |
 | `NVIDIA_API_KEYS_JSON` / `NVIDIA_API_KEY` | Secret | NVIDIA |
-| `CHATGPT_API_REPLICA_01_BASE_URL` و`CHATGPT_API_REPLICA_02_BASE_URL` | Variable | override Base URL |
+| `GROQ_BASE_URL` | Variable | override Base URL، والافتراضي `https://api.groq.com/openai/v1` |
 | `AI_ROUTER_CONFIG_DIR` | Variable | مجلد config |
 | `AI_ROUTER_STATE_DB` | Variable | مسار SQLite |
 
@@ -245,7 +240,7 @@ ai-router --config-dir config --state-db /tmp/router.db route-plan \\
 ```bash
 python3 -m json.tool config/providers.json >/dev/null
 python3 -m json.tool config/models.json >/dev/null
-python3 -m compileall -q src scripts tests vendors/chatgpt-api
+python3 -m compileall -q src scripts tests
 python3 -m unittest discover -s tests -v
 git diff --check
 ```

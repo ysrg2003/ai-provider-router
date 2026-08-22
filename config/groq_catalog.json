@@ -1,0 +1,98 @@
+{
+  "provider": "groq",
+  "base_url": "https://api.groq.com/openai/v1",
+  "retrieved_at_utc": "2026-08-22T06:49:48.176798+00:00",
+  "models": [
+    {
+      "id": "allam-2-7b",
+      "owned_by": "SDAIA",
+      "created": 1737672203,
+      "context_window": 4096,
+      "max_completion_tokens": 4096
+    },
+    {
+      "id": "canopylabs/orpheus-arabic-saudi",
+      "owned_by": "Canopy Labs",
+      "created": 1765926439,
+      "context_window": 4000,
+      "max_completion_tokens": 50000
+    },
+    {
+      "id": "canopylabs/orpheus-v1-english",
+      "owned_by": "Canopy Labs",
+      "created": 1766186316,
+      "context_window": 4000,
+      "max_completion_tokens": 50000
+    },
+    {
+      "id": "groq/compound",
+      "owned_by": "Groq",
+      "created": 1756949530,
+      "context_window": 131072,
+      "max_completion_tokens": 8192
+    },
+    {
+      "id": "groq/compound-mini",
+      "owned_by": "Groq",
+      "created": 1756949707,
+      "context_window": 131072,
+      "max_completion_tokens": 8192
+    },
+    {
+      "id": "meta-llama/llama-prompt-guard-2-22m",
+      "owned_by": "Meta",
+      "created": 1748632101,
+      "context_window": 512,
+      "max_completion_tokens": 512
+    },
+    {
+      "id": "meta-llama/llama-prompt-guard-2-86m",
+      "owned_by": "Meta",
+      "created": 1748632165,
+      "context_window": 512,
+      "max_completion_tokens": 512
+    },
+    {
+      "id": "openai/gpt-oss-120b",
+      "owned_by": "OpenAI",
+      "created": 1754408224,
+      "context_window": 131072,
+      "max_completion_tokens": 65536
+    },
+    {
+      "id": "openai/gpt-oss-20b",
+      "owned_by": "OpenAI",
+      "created": 1754407957,
+      "context_window": 131072,
+      "max_completion_tokens": 65536
+    },
+    {
+      "id": "openai/gpt-oss-safeguard-20b",
+      "owned_by": "OpenAI",
+      "created": 1761708789,
+      "context_window": 131072,
+      "max_completion_tokens": 65536
+    },
+    {
+      "id": "qwen/qwen3.6-27b",
+      "owned_by": "Alibaba Cloud",
+      "created": 1778288776,
+      "context_window": 131072,
+      "max_completion_tokens": 16384
+    },
+    {
+      "id": "whisper-large-v3",
+      "owned_by": "OpenAI",
+      "created": 1693721698,
+      "context_window": 448,
+      "max_completion_tokens": 448
+    },
+    {
+      "id": "whisper-large-v3-turbo",
+      "owned_by": "OpenAI",
+      "created": 1728413088,
+      "context_window": 448,
+      "max_completion_tokens": 448
+    }
+  ]
+}

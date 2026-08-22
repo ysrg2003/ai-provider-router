@@ -12,7 +12,6 @@
 
 ## 2. ما استخدامات المشروع؟
 
-يمكن استخدامه عندما يحتاج مشروعك إلى واجهة موحدة بدل كتابة تكامل منفصل مع Gemini وHugging Face وOpenRouter وNVIDIA وChatGPT Spaces. ومن أمثلته اختيار Gemini فقط لطلبات الصور أو الصوت، استخدام NVIDIA للترجمة، ترتيب Hugging Face ثم OpenRouter كـfallback للنص، منع Gemini في بيئة معينة، أو استهلاك نفس route من تطبيق Python أو subprocess من لغة أخرى.
 
 يدعم المشروع أيضًا key rotation مرتبة، cooldown بعد أخطاء quota أو transient، search/maps grounding عند وجود capability مناسبة، وprovider selection لكل طلب عبر `--providers` و`--exclude-providers`. عند غياب الفلترين يستخدم **كل providers المتاحة افتراضيًا** وفق ترتيب route في `config/models.json`.
 
@@ -67,11 +66,8 @@ jobs:
 
 #### الخطوة 2: إضافة Secrets وVariables
 
-اذهب في GitHub إلى **Settings → Secrets and variables → Actions**. ضع `CHATGPT_API_SECRET_KEY` في **Secrets**، ويجب أن تطابق قيمته `API_SECRET_KEY` في Space-01 وSpace-02 عند استخدام key pool المشترك. ضع عناوين Spaces العامة، إذا أردت override، في **Variables**:
 
 ```text
-CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
-CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
 ```
 
 يمكن ترك Variables فارغة لأن `config/providers.json` يحتوي defaults. لا تضع Cookies أو Storage State الخاصة بالـSpace في Secrets الخاصة بالrouter. استخدم أسماء المتغيرات الأخرى من [دليل الأسرار والمتغيرات](../docs/credentials.md). لا تطبع Environment أو Authorization headers في logs.
@@ -85,22 +81,16 @@ CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
 | `live-smoke.yml` | smoke محدود لسيناريو text/search/image/audio/embedding وغيرها |
 | `capability-audit.yml` | تدقيق نماذج متعددة مع التمييز بين passed وfailed وroute-only |
 | `nvidia-functional.yml` | فحص نماذج NVIDIA النشطة أو قائمة محددة |
-| `chatgpt-spaces-functional.yml` | اختبار ChatGPT replica-01 وreplica-02 بالتسلسل |
 | `test.yml` | اختبارات offline على push وpull request |
 
 ابدأ بسيناريو واحد. لا تستخدم `all` قبل معرفة quota ومدة كل provider.
 
 ### 3.2 تشغيل محليًا
 
-المتطلبات هي Python 3.11 أو أحدث وSQLite قابل للكتابة. من terminal نظيف. بعد نسخ `.env.example`، أضف إعداد ChatGPT الأبسط:
 
 ```dotenv
-CHATGPT_API_SECRET_KEY=<نفس API_SECRET_KEY في Space-01 وSpace-02>
-CHATGPT_API_REPLICA_01_BASE_URL=https://yousefsg-chatgpt-api-replica-01.hf.space
-CHATGPT_API_REPLICA_02_BASE_URL=https://yousefsg-chatgpt-api-replica-02.hf.space
 ```
 
-الـBase URLs اختيارية؛ لا تضع `CHATGPT_COOKIES_NETSCAPE` أو `CHATGPT_STORAGE_STATE_JSON` في router.
 
 من terminal نظيف:
 
@@ -135,14 +125,12 @@ ai-router --config-dir config --state-db /tmp/router-text.db \
 
 ### 3.3 Docker
 
-يحتوي الجذر على `Dockerfile` مخصص لـCLI و`.dockerignore` يمنع `.env` وSQLite وartifacts من دخول الصورة. أنشئ `.env` كما في التشغيل المحلي، مع `CHATGPT_API_SECRET_KEY` وBase URLs عند استخدام ChatGPT. مرّر الملف وقت التشغيل فقط:
 
 ```bash
 docker build -t ai-provider-router:local .
 docker run --rm --env-file .env -v "$PWD/data:/app/data" \
   ai-provider-router:local --config-dir config \
   --state-db /app/data/ai_router.db route-plan \
-  --output-type text --providers chatgpt --user "اكتب إجابة قصيرة"
 ```
 
 لا تضع المفتاح في Dockerfile أو build args أو image layers. لا يوجد Docker daemon مثبت في بيئة التطوير الحالية، لذلك يجب تنفيذ build في جهاز أو CI يحتوي Docker.
@@ -192,14 +180,10 @@ host application -> process ai-router -> JSON stdout
 
 | الاسم | النوع | الوظيفة |
 |---|---|---|
-| `CHATGPT_API_SECRET_KEY` | Secret | مفتاح HTTP الداخلي لـChatGPT Space |
-| `AI_ROUTER_CHATGPT_KEYS_JSON` | Secret JSON array | pool مرتب لـChatGPT |
 | `AI_ROUTER_GEMINI_KEYS_JSON` | Secret JSON array | مفاتيح Gemini |
 | `AI_ROUTER_HF_KEYS_JSON` / `HF_TOKEN` | Secret | مفاتيح Hugging Face وfallback المفرد |
 | `AI_ROUTER_OPENROUTER_KEYS_JSON` / `OPENROUTER_API_KEY` | Secret | مفاتيح OpenRouter وfallback المفرد |
 | `NVIDIA_API_KEYS_JSON` / `NVIDIA_API_KEY` | Secret | مفاتيح NVIDIA وfallback المفرد |
-| `CHATGPT_API_REPLICA_01_BASE_URL` | Variable | override غير سري لعنوان Space-01 |
-| `CHATGPT_API_REPLICA_02_BASE_URL` | Variable | override غير سري لعنوان Space-02 |
 | `AI_ROUTER_CONFIG_DIR` | Variable | مجلد `config`، default=`config` |
 | `AI_ROUTER_STATE_DB` | Variable | مسار SQLite، default=`data/ai_router.db` |
 
@@ -215,7 +199,6 @@ host application -> process ai-router -> JSON stdout
 | `src/ai_router/providers/base.py` | عقود adapter وProviderResponse وProviderError |
 | `src/ai_router/providers/gemini.py` | Gemini REST/interactions وimage/TTS/embedding/video methods |
 | `src/ai_router/providers/openai_compatible.py` | Hugging Face وOpenRouter وNVIDIA عبر OpenAI-compatible contract |
-| `src/ai_router/providers/chatgpt_space.py` | ChatGPT Space HTTP contract والبحث والصور |
 | `src/ai_router/store.py` | SQLite state، cursor، cooldown، success/failure metadata |
 | `src/ai_router/tools.py` | بناء search/maps tools حسب intent وroute |
 | `src/ai_router/cli/main.py` | أوامر `summary` و`route-plan` و`call-json` و`call-auto` |
@@ -227,7 +210,6 @@ host application -> process ai-router -> JSON stdout
 | `scripts/` | live smoke وcapability audit وfunctional tests |
 | `tests/` | regression tests للعقود والـstate والـroutes والـproviders |
 | `.github/workflows/` | offline CI وmanual live workflows |
-| `vendors/chatgpt-api/` | نسخة source المضمنة من chatgpt-api، لا تضع فيها أسرار |
 | `docs/` | أدلة credentials وproviders والتشغيل والتكاملات |
 | `project-documentation/` | التقارير، الأدلة، checkpoint، artifacts المنقحة |
 | `Dockerfile` | صورة CLI اختيارية للـrouter |
@@ -254,7 +236,6 @@ CLI أو Python input
 
 | provider | المسارات الأساسية | ملاحظات |
 |---|---|---|
-| ChatGPT Space 01/02 | text/search/image | Spaces خارجية، quota وsession مستقلة |
 | Gemini | text/search/image/audio/embedding/video analysis | payload خاص بـGemini، capability حسب model |
 | Hugging Face | text وبعض multimodal حسب model | OpenAI-compatible، availability تتغير |
 | OpenRouter | text/free وبعض input modalities | model availability وquota حسب الحساب |
@@ -267,7 +248,6 @@ CLI أو Python input
 ```bash
 python3 -m json.tool config/providers.json >/dev/null
 python3 -m json.tool config/models.json >/dev/null
-python3 -m compileall -q src scripts tests vendors/chatgpt-api
 python3 -m unittest discover -s tests -v
 python3 -m ai_router.cli.main --config-dir config --state-db /tmp/router.db summary
 ```
@@ -286,11 +266,9 @@ python3 -m ai_router.cli.main --config-dir config --state-db /tmp/router.db summ
 |---|---|
 | البدء من الصفر | هذا الملف |
 | أسرار router والمتغيرات | [`docs/credentials.md`](../docs/credentials.md) |
-| أسرار chatgpt-api/Space | [`../docs/chatgpt-vendor-secrets.md`](../docs/chatgpt-vendor-secrets.md) |
 | config وroutes | [`configuration-guide.md`](configuration-guide.md) و[`../config/README.md`](../config/README.md) |
 | providers | [`providers.md`](providers.md) |
 | GitHub/live operations | [`../docs/operations.md`](../docs/operations.md) |
-| ChatGPT Spaces | [`../docs/chatgpt-integration-guide.md`](../docs/chatgpt-integration-guide.md) |
 | troubleshooting | [`troubleshooting.md`](troubleshooting.md) |
 | AI agent context | [`../AI_CONTEXT.md`](../AI_CONTEXT.md) |
 | artifact/file inventory | [`artifact-inventory.md`](artifact-inventory.md) |

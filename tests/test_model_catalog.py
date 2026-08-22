@@ -23,9 +23,9 @@ class ModelCatalogTests(unittest.TestCase):
         image_route = self.models["output_routes"]["image"]
         self.assertEqual(
             [item["provider"] for item in image_route[:2]],
-            ["chatgpt_space_replica_01", "chatgpt_space_replica_02"],
+            ["google_gemini", "google_gemini"],
         )
-        self.assertEqual(image_route[0]["model"], "gpt-4o-mini")
+        self.assertEqual(image_route[0]["model"], "gemini-3-pro-image")
         self.assertEqual(
             [item["model"] for item in image_route if item["provider"] == "google_gemini"],
             [
