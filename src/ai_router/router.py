@@ -484,6 +484,7 @@ class AIRouter:
                         if url not in normalized_urls:
                             normalized_urls.append(url)
                     response.payload["url_citations"] = normalized_urls
+                    response.payload.setdefault("output_type", intent.output_type)
                     if intent.grounding == "search" and intent.output_type == "text" and not normalized_urls:
                         raise ProviderError(
                             "Grounded search returned no URL citations",

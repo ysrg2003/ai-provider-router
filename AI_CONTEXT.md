@@ -76,7 +76,7 @@ docker run --rm --env-file .env -v "$PWD/data:/app/data" \
 
 ### Python API
 
-الواجهة العامة الأساسية هي `AIRouter` من `ai_router`. أهم methods هي `summary` و`route_plan` و`complete_auto` و`complete_json` و`complete_video_json` و`translate_text`. أغلق router في `finally` لحفظ SQLite checkpoint.
+الواجهة العامة الأساسية هي `AIRouter` من `ai_router`. أهم methods هي `summary` و`route_plan` و`complete_auto` و`complete_json` و`complete_video_json` و`translate_text`. الواجهة الموصى بها للمستهلك هي `complete_auto()`؛ بعد نجاح route يضيف router envelope مشتركًا يضم `output_type`, `intent`, `route`, `provider`, `model`, و`url_citations`. المرجع التفصيلي هو `project-documentation/response-contract.md`. أغلق router في `finally` لحفظ SQLite checkpoint.
 
 ```python
 from ai_router import AIRouter
@@ -143,7 +143,7 @@ CLI أو Python input
   -> key ordering + SQLite cooldown/cursor
   -> adapter bounded outbound call
   -> ProviderResponse أو ProviderError
-  -> success payload + route/intent metadata
+  -> success payload + output_type/route/intent/provider/model/url_citations envelope
   -> JSON أو media artifact
 ```
 

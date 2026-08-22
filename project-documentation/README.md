@@ -13,9 +13,9 @@
 ## 2. ما استخدامات المشروع؟
 
 
-يدعم المشروع أيضًا key rotation مرتبة، cooldown بعد أخطاء quota أو transient، search/maps grounding عند وجود capability مناسبة، وprovider selection لكل طلب عبر `--providers` و`--exclude-providers`. عند غياب الفلترين يستخدم **كل providers المتاحة افتراضيًا** وفق ترتيب route في `config/models.json`.
+يدعم المشروع أيضًا key rotation مرتبة، cooldown بعد أخطاء quota أو transient، search/maps grounding عند وجود capability مناسبة، وprovider selection لكل طلب عبر `--providers` و`--exclude-providers`. عند غياب الفلترين يستخدم **كل providers المتاحة افتراضيًا** وفق ترتيب route في `config/models.json`. لا يحتاج المستهلك إلى تحديد provider/model في كل طلب؛ يكفي ضبط Secret المزود مرة واحدة ثم قراءة envelope الناتج من `complete_auto()`.
 
-لحدود القدرات الحالية، راجع [كتالوج القدرات والتدقيق](capability-audit.md) و[دليل المزودين](providers.md). لا تصف model بأنه verified إلا إذا كان له اختبار payload وmethod مناسب.
+لحدود القدرات الحالية، راجع [كتالوج القدرات والتدقيق](capability-audit.md) و[دليل المزودين](providers.md). ولشكل JSON الموحد وطريقة استهلاك النص والصورة والصوت والبحث، راجع [عقد الاستجابة الموحد](response-contract.md). لا تصف model بأنه verified إلا إذا كان له اختبار payload وmethod مناسب.
 
 ## 3. كيفية استخدامه في مشروعك
 

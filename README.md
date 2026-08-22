@@ -190,6 +190,8 @@ aliases هي `gemini`/`google_gemini`، `hf`/`huggingface`، `openrouter`، `nvi
 
 يجب على adapter أو provider أن يعيد واحدًا أو أكثر من `url_citations` الصالحة. يقوم router بدمج citations من annotations وbody metadata وcontent blocks وJSON المضمن والحقول المنظمة، ويرفض grounded success بلا citations عبر `ProviderError`. لا تُعد روابط النص العادي مصدرًا موثوقًا إلا إذا وصلت إلى الحقل الموحد بعد تطبيعها. نماذج NVIDIA تبقى متاحة في routes العامة، لكنها ليست fallback صامتًا داخل `text_grounded_search`.
 
+لشرح شكل الاستجابة المشترك لكل نوع مخرج، وما يلزم ضبطه مرة واحدة فقط، راجع [response-contract.md](project-documentation/response-contract.md). الواجهة الموصى بها هي `complete_auto()`؛ أما `complete_json()` فهي واجهة منخفضة المستوى للـJSON الخام.
+
 مثال route plan دون network request:
 
 ```bash

@@ -190,6 +190,28 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(video_plan["output_type"], "video_generation")
             router.close()
 
+    def test_complete_auto_adds_common_response_envelope(self):
+        import os
+
+        with tempfile.TemporaryDirectory() as temp:
+            os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = '[{"id":"text-key","key":"secret","project":"p1"}]'
+            try:
+                router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+                with patch.object(
+                    router.adapters["google_gemini"],
+                    "complete_json",
+                    return_value=ProviderResponse({"ok": True}, {}),
+                ):
+                    result = router.complete_auto(user_prompt="اكتب إجابة قصيرة", output_type="text")
+                self.assertEqual(result["output_type"], "text")
+                self.assertEqual(result["intent"], "text")
+                self.assertEqual(result["provider"], "google_gemini")
+                self.assertEqual(result["model"], "gemini-3.7-flash")
+                self.assertEqual(result["url_citations"], [])
+                router.close()
+            finally:
+                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+
     def test_complete_auto_executes_image_route(self):
         import os
 

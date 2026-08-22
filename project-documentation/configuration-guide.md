@@ -48,6 +48,9 @@ Expected result: `summary` يعمل دون طباعة القيمة. إذا ظه�
 | المتغير | النوع | default/format | consumer | الأثر |
 |---|---|---|---|---|
 | `AI_ROUTER_GEMINI_KEYS_JSON` | secret array | `[]` | Gemini pool | ordered keys |
+| `GROQ_API_KEYS_JSON` | secret array | `[]` | Groq pool | ordered keys |
+| `GROQ_API_KEY` | secret fallback | empty | Groq pool | single key fallback |
+| `GROQ_BASE_URL` | variable | `https://api.groq.com/openai/v1` | Groq provider | optional base URL override |
 | `AI_ROUTER_HF_KEYS_JSON` | secret array | `[]` | HF pool | ordered keys |
 | `HF_TOKEN` | secret fallback | empty | HF pool | single token fallback |
 | `AI_ROUTER_OPENROUTER_KEYS_JSON` | secret array | `[]` | OpenRouter pool | ordered keys |
@@ -93,6 +96,7 @@ Expected result: JSON فيه `output_type`, `grounding`, `route`, وقائمة m
 | Alias | Provider المستهدف |
 |---|---|
 | `gemini` أو `google_gemini` | Gemini |
+| `groq` | Groq |
 | `hf` أو `huggingface` | Hugging Face |
 | `openrouter` | OpenRouter |
 | `nvidia` | NVIDIA |
@@ -141,6 +145,8 @@ python3 -m ai_router.cli.main --config-dir config route-plan \
 إذا استُخدم `--providers` و`--exclude-providers` معًا، يجب ألا يتقاطعَا. عند وجود تقاطع أو alias غير معروف أو عدم بقاء أي model مناسب للمسار، يوقف router الطلب بخطأ واضح بدل تنفيذ fallback غير مقصود. **عدم تمرير أي خيار هو الوضع الافتراضي الشامل**: لا تتم إزالة أي provider من route.
 
 ### الاستخدام من Python
+
+الواجهة الموحدة والحقول الناتجة موثقة تفصيليًا في [عقد الاستجابة الموحد](response-contract.md). استخدم `complete_auto()` لمعظم التطبيقات؛ استخدم `complete_json()` فقط عندما تريد التحكم في chain والحصول على JSON النموذج الخام.
 
 تقبل `AIRouter.complete_auto` و`route_plan` و`complete_json` و`complete_video_json` و`translate_text` المعاملين `providers` و`exclude_providers`:
 
@@ -192,6 +198,27 @@ python3 -m ai_router.cli.main --config-dir config --state-db /tmp/fresh-router.d
 ```
 
 لا تمسح `data/ai_router.db` أثناء requests. عند backup، احفظه خارج Git وطبّق retention مناسبًا؛ يحتوي metadata تشغيلية وقد يساعد التحقيق في fallback.
+
+## عقد الاستجابة الموحد
+
+للاستخدام البرمجي المعتاد استخدم `AIRouter.complete_auto()`؛ فهي تعيد نتيجة واحدة قابلة للتسلسل وتضيف دائمًا `output_type`, `intent`, `route`, `provider`, `model`, و`url_citations`. الحقول الدلالية مثل `answer` أو `translation` أو `embeddings` أو `data_base64` تختلف حسب نوع المخرج. المرجع الكامل مع أمثلة JSON موجود في [response-contract.md](response-contract.md).
+
+```python
+from ai_router import AIRouter
+
+router = AIRouter()
+try:
+    result = router.complete_auto(
+        user_prompt="أعد JSON بكائن واحد يحتوي الحقل answer عن عاصمة اليابان.",
+        output_type="text",
+    )
+    print(result["answer"])
+    print(result["provider"], result["model"])
+finally:
+    router.close()
+```
+
+لا يحتاج كل طلب إلى provider أو model أو endpoint؛ تُقرأ هذه من `config/`. يحتاج التشغيل فقط إلى Secret مزود صالح مرة واحدة، بينما `config_dir`, `state_db`, وprovider filters اختيارية. عند استخدام `grounding="search"` يختار router Gemini-only ويعيد `grounding_sources` و`url_citations`.
 
 ## route capability matrix
 
