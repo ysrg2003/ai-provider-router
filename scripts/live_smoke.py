@@ -27,7 +27,15 @@ SCENARIOS = {
 
 def summarize(name: str, result: dict[str, Any]) -> dict[str, Any]:
     output_type = result.get("output_type", result.get("intent", name))
-    summary: dict[str, Any] = {"scenario": name, "status": "passed", "output_type": output_type, "route": result.get("route")}
+    summary: dict[str, Any] = {
+        "scenario": name,
+        "status": "passed",
+        "output_type": output_type,
+        "route": result.get("route"),
+        "intent": result.get("intent"),
+        "provider": result.get("provider"),
+        "model": result.get("model"),
+    }
     if output_type == "image":
         data = result.get("data_base64", "")
         summary.update({"mime_type": result.get("mime_type"), "bytes_base64": len(data)})

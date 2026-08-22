@@ -1,0 +1,36 @@
+{
+  "timestamp_utc": "2026-08-22",
+  "status": "completed",
+  "secret_values_stored": false,
+  "scenarios": [
+    {
+      "scenario": "text",
+      "status": "passed",
+      "output_type": "text",
+      "intent": "text",
+      "route": "text",
+      "provider": "google_gemini",
+      "model": "gemini-3.7-flash",
+      "text_chars": 0,
+      "json_fields": ["model", "ok", "output_type", "provider", "url_citations"],
+      "annotations": 0,
+      "url_citations": 0,
+      "note": "The text route returned a structured JSON object; text_chars=0 is expected for this summary mode."
+    },
+    {
+      "scenario": "search",
+      "status": "passed",
+      "output_type": "text",
+      "intent": "text",
+      "route": "text_grounded_search",
+      "provider": "google_gemini",
+      "model": "gemini-2.5-flash",
+      "text_chars": 40,
+      "annotations": 0,
+      "url_citations": 4,
+      "note": "The search route returned text and four normalized URL citations from Gemini grounding metadata."
+    }
+  ],
+  "loaded_key_count": 9,
+  "response_body_stored": false
+}
