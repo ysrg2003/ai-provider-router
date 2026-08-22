@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from ai_router import AIRouter
 from ai_router.intent import detect_intent
-from ai_router.providers.base import ProviderResponse
+from ai_router.providers.base import ProviderError, ProviderResponse
 from ai_router.providers.gemini import GeminiAdapter
 from ai_router.providers.openai_compatible import OpenAICompatibleAdapter
 
@@ -183,8 +183,20 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(translation_plan["models"][0]["model"], "nvidia/riva-translate-4b-instruct-v2")
             self.assertEqual(translation_plan["models"][0]["method"], "translation")
             self.assertEqual(search_plan["models"][0]["provider"], "google_gemini")
-            self.assertEqual(search_plan["models"][0]["method"], "grounded_text")
-            self.assertEqual(search_plan["models"][0]["tools"], ["search"])
+            self.assertEqual(search_plan["models"][0]["model"], "gemini-2.5-flash")
+            self.assertEqual([item["model"] for item in search_plan["models"]], [
+                "gemini-2.5-flash",
+                "gemini-3.7-flash",
+                "gemini-3.6-flash",
+                "gemini-3.5-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.1-flash-lite",
+                "gemini-3-flash",
+                "gemini-2.5-flash-lite",
+            ])
+            self.assertTrue(all(item["provider"] == "google_gemini" for item in search_plan["models"]))
+            self.assertTrue(all(item["method"] == "grounded_text" for item in search_plan["models"]))
+            self.assertTrue(all(item["tools"] == ["search"] for item in search_plan["models"]))
             self.assertNotIn("groq", {item["provider"] for item in search_plan["models"]})
             self.assertEqual(live_plan["output_type"], "live")
             self.assertEqual(video_plan["output_type"], "video_generation")
@@ -273,6 +285,34 @@ class RouterRoutePlanTests(unittest.TestCase):
                 router.close()
             finally:
                 os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+
+    def test_grounded_search_falls_back_to_next_gemini_model(self):
+        import os
+
+        previous = os.environ.get("AI_ROUTER_GEMINI_KEYS_JSON")
+        os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = '[{"id":"search-key","key":"secret","project":"p1"}]'
+        try:
+            with tempfile.TemporaryDirectory() as temp:
+                router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+                attempts = []
+
+                def fake_grounded(**kwargs):
+                    attempts.append(kwargs["model"])
+                    if len(attempts) == 1:
+                        raise ProviderError("first search model unavailable", error_class="invalid_or_unknown", status_code=404, retryable=True)
+                    return ProviderResponse({"output_type": "text", "text": "grounded fallback", "url_citations": ["https://example.org/fallback"]}, {})
+
+                with patch.object(router.adapters["google_gemini"], "complete_grounded_text", side_effect=fake_grounded):
+                    result = router.complete_auto(user_prompt="ابحث عن خبر حديث مع مصادر", output_type="text", grounding="search")
+                self.assertEqual(attempts[:2], ["gemini-2.5-flash", "gemini-3.7-flash"])
+                self.assertEqual(result["model"], "gemini-3.7-flash")
+                self.assertEqual(result["url_citations"], ["https://example.org/fallback"])
+                router.close()
+        finally:
+            if previous is None:
+                os.environ.pop("AI_ROUTER_GEMINI_KEYS_JSON", None)
+            else:
+                os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = previous
 
     def test_summary_exposes_output_routes_without_secrets(self):
         with tempfile.TemporaryDirectory() as temp:

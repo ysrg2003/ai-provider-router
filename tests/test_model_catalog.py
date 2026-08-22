@@ -92,6 +92,23 @@ class ModelCatalogTests(unittest.TestCase):
             reference["active_text_models"],
         )
 
+    def test_grounded_search_route_starts_with_25_flash_and_contains_all_text_gemini_models(self):
+        self.assertEqual(
+            [item["model"] for item in self.models["output_routes"]["text_grounded_search"]],
+            [
+                "gemini-2.5-flash",
+                "gemini-3.7-flash",
+                "gemini-3.6-flash",
+                "gemini-3.5-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.1-flash-lite",
+                "gemini-3-flash",
+                "gemini-2.5-flash-lite",
+            ],
+        )
+        self.assertTrue(all(item["method"] == "grounded_text" for item in self.models["output_routes"]["text_grounded_search"]))
+        self.assertTrue(all(item["tools"] == ["search"] for item in self.models["output_routes"]["text_grounded_search"]))
+
     def test_text_out_route_matches_eight_attached_gemini_rows(self):
         self.assertEqual(
             [item["model"] for item in self.models["output_routes"]["text"] if item["provider"] == "google_gemini"],

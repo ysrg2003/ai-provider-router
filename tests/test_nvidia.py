@@ -91,8 +91,11 @@ class NvidiaRouterTests(unittest.TestCase):
         grounded_entries = models['output_routes']['text_grounded_search']
         self.assertEqual(
             [item['provider'] for item in grounded_entries],
-            ['google_gemini'],
+            ['google_gemini'] * 8,
         )
+        self.assertEqual(grounded_entries[0]['model'], 'gemini-2.5-flash')
+        self.assertTrue(all(item['method'] == 'grounded_text' for item in grounded_entries))
+        self.assertTrue(all(item['tools'] == ['search'] for item in grounded_entries))
         self.assertFalse(any(item['provider'] == 'nvidia' for item in grounded_entries))
         self.assertFalse(any(item['provider'] == 'nvidia' for item in models['output_routes']['image']))
         all_nvidia_models = [item['model'] for item in models['model_chains']['nvidia_free']]
