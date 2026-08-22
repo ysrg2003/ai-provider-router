@@ -46,6 +46,7 @@ def summarize(name: str, result: dict[str, Any]) -> dict[str, Any]:
                 "text_chars": len(str(text)) if text else 0,
                 "json_fields": sorted(key for key in result if key not in {"route", "intent", "text", "response", "annotations"}) if not text else [],
                 "annotations": len(result.get("annotations", [])),
+                "url_citations": len(result.get("url_citations", [])) if isinstance(result.get("url_citations"), list) else 0,
             }
         )
     return summary
