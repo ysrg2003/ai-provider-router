@@ -78,7 +78,7 @@ class RouterTests(unittest.TestCase):
             def fake(*, model, secret, system_prompt, user_prompt, timeout_seconds, tools=None):
                 calls.append((model, secret))
                 return empty
-            with patch.object(router.adapters["google_gemini"], "complete_interaction_text", side_effect=fake):
+            with patch.object(router.adapters["google_gemini"], "complete_grounded_text", side_effect=fake):
                 with self.assertRaisesRegex(AllProvidersFailed, "no URL citations"):
                     router.complete_auto(user_prompt="Search for cited sources.", output_type="text", grounding="search", operation="grounded-test")
             self.assertGreaterEqual(len(calls), 1)
@@ -263,10 +263,14 @@ class ProviderFilterTests(unittest.TestCase):
             providers = {item["provider"] for item in plan["models"]}
             self.assertTrue({
                 "google_gemini",
+                "groq",
                 "huggingface",
                 "openrouter",
                 "nvidia",
             }.issubset(providers))
+            sequence = [item["provider"] for item in plan["models"]]
+            self.assertLess(sequence.index("google_gemini"), sequence.index("groq"))
+            self.assertLess(sequence.index("groq"), sequence.index("huggingface"))
             router.close()
 
     def test_provider_alias_allowlist_selects_only_requested_provider(self) -> None:

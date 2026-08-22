@@ -561,6 +561,15 @@ class AIRouter:
                 user_prompt=user_prompt,
                 timeout_seconds=timeout_seconds,
             )
+        if spec.method == "grounded_text":
+            return adapter.complete_grounded_text(
+                model=spec.model,
+                secret=secret,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                timeout_seconds=timeout_seconds,
+                tools=tools,
+            )
         if spec.method == "interaction_text":
             return adapter.complete_interaction_text(
                 model=spec.model,

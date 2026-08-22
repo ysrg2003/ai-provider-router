@@ -37,6 +37,65 @@ class GeminiAdapter:
         except (KeyError, IndexError, TypeError, ValueError) as exc:
             raise ProviderError("Gemini returned invalid JSON", error_class="invalid_or_unknown", retryable=False) from exc
 
+    def complete_grounded_text(
+        self,
+        *,
+        model: str,
+        secret: str,
+        system_prompt: str,
+        user_prompt: str,
+        timeout_seconds: int,
+        tools: list[dict[str, Any]] | None = None,
+    ) -> ProviderResponse:
+        """Generate grounded text through GenerateContent's Google Search tool.
+
+        The public Python SDK expresses this as GenerateContentConfig(tools=[
+        Tool(google_search=GoogleSearch())]); the REST equivalent is
+        tools=[{"google_search": {}}]. The router keeps its provider-neutral
+        tool descriptor ({"type": "google_search"}) and translates it here.
+        """
+        contents: list[dict[str, Any]] = [{"role": "user", "parts": [{"text": user_prompt}]}]
+        payload: dict[str, Any] = {"contents": contents, "generationConfig": {"temperature": 0.3}}
+        if system_prompt.strip():
+            payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}
+        if any(item.get("type") == "google_search" for item in (tools or []) if isinstance(item, dict)):
+            payload["tools"] = [{"google_search": {}}]
+        endpoint = f"{self.base_url}/models/{model}:generateContent"
+        try:
+            response = requests.post(
+                endpoint,
+                headers={"x-goog-api-key": secret, "Content-Type": "application/json"},
+                json=payload,
+                timeout=timeout_seconds,
+            )
+        except requests.RequestException as exc:
+            raise ProviderError(str(exc), error_class="transient") from exc
+        body = self._body(response)
+        if response.status_code >= 400:
+            raise self._http_error(response.status_code, body)
+        try:
+            text = self._generate_content_text(body)
+        except (KeyError, IndexError, TypeError, ValueError) as exc:
+            raise ProviderError("Gemini grounded generateContent returned no text", error_class="invalid_or_unknown", retryable=False) from exc
+        grounding_metadata = self._grounding_metadata(body)
+        url_citations = url_citations_from_annotations(grounding_metadata)
+        annotations = self._generate_content_annotations(body)
+        for url in url_citations_from_annotations(annotations):
+            if url not in url_citations:
+                url_citations.append(url)
+        sources = self._grounding_sources(grounding_metadata)
+        return ProviderResponse(
+            {
+                "output_type": "text",
+                "text": text,
+                "annotations": annotations,
+                "grounding_metadata": grounding_metadata,
+                "grounding_sources": sources,
+                "url_citations": url_citations,
+            },
+            body.get("usageMetadata", body.get("usage", {})),
+        )
+
     def complete_interaction_text(
         self,
         *,
@@ -308,6 +367,61 @@ class GeminiAdapter:
             return value if isinstance(value, dict) else {"data": value}
         except ValueError:
             return {"raw": response.text[:2000]}
+
+    @staticmethod
+    def _generate_content_text(body: dict[str, Any]) -> str:
+        chunks: list[str] = []
+        for candidate in body.get("candidates", []) or []:
+            if not isinstance(candidate, dict):
+                continue
+            content = candidate.get("content") if isinstance(candidate.get("content"), dict) else {}
+            for part in content.get("parts", []) or []:
+                if isinstance(part, dict) and isinstance(part.get("text"), str) and part["text"].strip():
+                    chunks.append(part["text"])
+        text = "\n".join(chunks).strip()
+        if not text:
+            raise ValueError("no candidate text")
+        return text
+
+    @staticmethod
+    def _generate_content_annotations(body: dict[str, Any]) -> list[dict[str, Any]]:
+        annotations: list[dict[str, Any]] = []
+        for candidate in body.get("candidates", []) or []:
+            if not isinstance(candidate, dict):
+                continue
+            content = candidate.get("content") if isinstance(candidate.get("content"), dict) else {}
+            for part in content.get("parts", []) or []:
+                if isinstance(part, dict):
+                    annotations.extend(item for item in part.get("annotations", []) if isinstance(item, dict))
+        return annotations
+
+    @staticmethod
+    def _grounding_metadata(body: dict[str, Any]) -> dict[str, Any]:
+        metadata: dict[str, Any] = {}
+        for candidate in body.get("candidates", []) or []:
+            if not isinstance(candidate, dict):
+                continue
+            value = candidate.get("groundingMetadata") or candidate.get("grounding_metadata")
+            if isinstance(value, dict):
+                metadata = value
+                break
+        return metadata
+
+    @staticmethod
+    def _grounding_sources(metadata: dict[str, Any]) -> list[dict[str, str]]:
+        sources: list[dict[str, str]] = []
+        seen: set[str] = set()
+        chunks = metadata.get("groundingChunks") or metadata.get("grounding_chunks") or []
+        for chunk in chunks:
+            if not isinstance(chunk, dict):
+                continue
+            web = chunk.get("web") if isinstance(chunk.get("web"), dict) else {}
+            url = str(web.get("uri") or web.get("url") or "").strip()
+            title = str(web.get("title") or "").strip()
+            if url and url not in seen:
+                seen.add(url)
+                sources.append({"title": title, "url": url})
+        return sources
 
     @staticmethod
     def _interaction_audio(body: dict[str, Any]) -> dict[str, Any] | None:

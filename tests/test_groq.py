@@ -36,6 +36,20 @@ class GroqTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["json"]["max_completion_tokens"], 1024)
         self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer test-secret")
 
+    def test_groq_models_are_ranked_by_operational_capability(self):
+        with tempfile.TemporaryDirectory() as temp:
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            models = [item.model for item in router.config.model_chain("default") if item.provider_id == "groq"]
+            self.assertEqual(models, [
+                "openai/gpt-oss-120b",
+                "groq/compound",
+                "qwen/qwen3.6-27b",
+                "groq/compound-mini",
+                "openai/gpt-oss-20b",
+                "allam-2-7b",
+            ])
+            router.close()
+
     def test_groq_single_token_fallback_is_loaded(self):
         previous = os.environ.get("GROQ_API_KEY")
         previous_json = os.environ.get("GROQ_API_KEYS_JSON")

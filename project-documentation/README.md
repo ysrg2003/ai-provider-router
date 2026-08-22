@@ -236,7 +236,8 @@ CLI أو Python input
 
 | provider | المسارات الأساسية | ملاحظات |
 |---|---|---|
-| Gemini | text/search/image/audio/embedding/video analysis | payload خاص بـGemini، capability حسب model |
+| Gemini | text/search/image/audio/embedding/video analysis | payload خاص بـGemini؛ البحث الحي عبر `google_search` فقط |
+| Groq | text/translation | OpenAI-compatible؛ يأتي بعد Gemini وقبل Hugging Face، وترتيب نماذجه موثق في providers.md |
 | Hugging Face | text وبعض multimodal حسب model | OpenAI-compatible، availability تتغير |
 | OpenRouter | text/free وبعض input modalities | model availability وquota حسب الحساب |
 | NVIDIA | text وRiva translation | 12 نموذجًا عامًا مفعلة من catalog 57؛ ليس كل catalog route تنفيذياً |

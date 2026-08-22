@@ -75,6 +75,34 @@ class GeminiMultimodalAdapterTests(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["json"]["contents"], [{"parts": [{"text": "draw a cat"}]}])
         self.assertEqual(post.call_args.kwargs["json"]["generationConfig"]["responseModalities"], ["TEXT", "IMAGE"])
 
+    def test_grounded_text_generate_content_payload_and_sources(self):
+        adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
+        response = FakeResponse({
+            "candidates": [{
+                "content": {"parts": [{"text": "إجابة حديثة"}]},
+                "groundingMetadata": {
+                    "groundingChunks": [{"web": {"uri": "https://example.org/source", "title": "Example"}}]
+                },
+            }],
+            "usageMetadata": {"totalTokenCount": 5},
+        })
+        with patch("ai_router.providers.gemini.requests.post", return_value=response) as post:
+            result = adapter.complete_grounded_text(
+                model="gemini-2.5-flash",
+                secret="secret",
+                system_prompt="Use cited sources.",
+                user_prompt="What happened today?",
+                timeout_seconds=30,
+                tools=[{"type": "google_search"}],
+            )
+        self.assertEqual(result.payload["text"], "إجابة حديثة")
+        self.assertEqual(result.payload["url_citations"], ["https://example.org/source"])
+        self.assertEqual(result.payload["grounding_sources"], [{"title": "Example", "url": "https://example.org/source"}])
+        self.assertEqual(post.call_args.args[0], "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent")
+        payload = post.call_args.kwargs["json"]
+        self.assertEqual(payload["tools"], [{"google_search": {}}])
+        self.assertEqual(payload["generationConfig"], {"temperature": 0.3})
+
     def test_tts_payload_and_output(self):
         adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")
         response = FakeResponse({"output_audio": {"data": "c29uZw==", "mime_type": "audio/pcm"}, "usage": {"total_tokens": 4}})
@@ -155,7 +183,9 @@ class RouterRoutePlanTests(unittest.TestCase):
             self.assertEqual(translation_plan["models"][0]["model"], "nvidia/riva-translate-4b-instruct-v2")
             self.assertEqual(translation_plan["models"][0]["method"], "translation")
             self.assertEqual(search_plan["models"][0]["provider"], "google_gemini")
+            self.assertEqual(search_plan["models"][0]["method"], "grounded_text")
             self.assertEqual(search_plan["models"][0]["tools"], ["search"])
+            self.assertNotIn("groq", {item["provider"] for item in search_plan["models"]})
             self.assertEqual(live_plan["output_type"], "live")
             self.assertEqual(video_plan["output_type"], "video_generation")
             router.close()
@@ -212,7 +242,7 @@ class RouterRoutePlanTests(unittest.TestCase):
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
                 with patch.object(
                     router.adapters["google_gemini"],
-                    "complete_interaction_text",
+                    "complete_grounded_text",
                     return_value=ProviderResponse({"output_type": "text", "text": "grounded https://example.org/news", "url_citations": ["https://example.org/news"]}, {}),
                 ) as complete:
                     result = router.complete_auto(user_prompt="ما آخر الأخبار؟", output_type="text", grounding="search")

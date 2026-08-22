@@ -2,7 +2,7 @@
 
 ## الغرض
 
-يستخدم هذا التدقيق كل نموذج فريد مذكور في `config/models.json`، لا كل تكرار له داخل routes. في الحالة الحالية جرى جرد **82 سجلًا فريدًا من provider/model/method**. يختبر التدقيق حيًا methods الآمنة نسبيًا: `json` و`interaction_text` و`translation` و`embedding`. أما الصور والصوت والفيديو والـlive ومواضع النماذج التي تحتاج payload متخصصًا فتسجل `route_only`؛ وهذا يثبت وجود route وعقده في config، ولا يستهلك حصة توليد أو يرسل payload غير مناسب.
+يستخدم هذا التدقيق كل نموذج فريد مذكور في `config/models.json`، لا كل تكرار له داخل routes. يختبر التدقيق حيًا methods الآمنة نسبيًا: `json` و`grounded_text` و`interaction_text` و`translation` و`embedding`. method `grounded_text` محصور في Gemini ويشغّل طلب Google Search واحدًا مع فحص `url_citations`. أما الصور والصوت والفيديو والـlive ومواضع النماذج التي تحتاج payload متخصصًا فتسجل `route_only`؛ وهذا يثبت وجود route وعقده في config، ولا يستهلك حصة توليد أو يرسل payload غير مناسب.
 
 ## النتائج التشغيلية
 

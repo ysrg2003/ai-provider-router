@@ -4,7 +4,7 @@
 
 المصدر: https://ai.google.dev/gemini-api/docs/google-search
 
-توضح وثائق Google أن `google_search` يربط Gemini بمحتوى الويب الحي، ويعيد نصًا مع annotations وURL citations، وأن الأداة تعمل مع نماذج متعددة مثل Gemini 3.6 Flash و3.5 Flash-Lite و3.5 Flash و3.1 Pro Preview و3 Flash Preview و2.5 Pro و2.5 Flash و2.5 Flash-Lite. يمكن استخدام الأداة فقط عندما يدعم النموذج واجهة Interactions/Tools المناسبة.
+توضح وثائق Google أن `google_search` يربط Gemini بمحتوى الويب الحي، ويعيد نصًا مع annotations وURL citations. في مسار router الحالي تُستخدم أداة البحث مع Gemini text فقط عبر REST `generateContent`، وهي المكافئ لـ`GenerateContentConfig(tools=[Tool(google_search=GoogleSearch())])` في Python SDK. تُقرأ الروابط من `candidates[].groundingMetadata.groundingChunks[].web.uri` ومن annotations، ولا يُصنّف أي provider آخر كبحث حي دون أداة بحث فعلية.
 
 ## Google Maps grounding
 
@@ -28,7 +28,7 @@
 
 سيحتاج الراوتر إلى `output_type` أو اكتشاف تلقائي من prompt، مع سلاسل منفصلة مثل `text`, `image`, `audio`, `video`, `live`, `embedding`, و`agent`. يجب أن تُحدد كل سلسلة adapter/operation الخاصة بها بدل محاولة إرسال كل الأنواع عبر `generateContent` النصي.
 
-أما Grounding، فيجب أن يكون طبقة capability-aware: إذا طلب المستخدم search أو maps grounding وكان النموذج المختار يدعم الأداة، تُمرر الأداة إلى نفس الاستدعاء. إذا لم يدعمها النموذج، يستخدم الراوتر مسارًا بديلًا يدعمها، ولا ينبغي إرسال `google_search` إلى Hugging Face إلا عبر adapter/connector خاص؛ أدوات Google ليست عامة تلقائيًا لكل مزود OpenAI-compatible.
+أما Grounding، فهو طبقة capability-aware: عند طلب `search` يختار router route Gemini النصي فقط، ويمرر أداة `google_search` إلى `generateContent`، ثم يرفض النجاح إذا لم توجد `url_citations`. عند طلب `maps` يختار route Gemini الخاص بالخرائط. لا تُرسل أدوات Google إلى Groq أو Hugging Face أو OpenRouter لمجرد أنها OpenAI-compatible؛ تلك الأدوات تحتاج adapter أو plugin يدعمها صراحة.
 
 ## Gemini TTS
 

@@ -252,6 +252,84 @@
         "enabled": true
       },
       {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "groq/compound",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "qwen/qwen3.6-27b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "groq/compound-mini",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "allam-2-7b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
         "provider": "huggingface",
         "model": "openai/gpt-oss-120b:fastest",
         "enabled": true
@@ -689,6 +767,48 @@
         ],
         "supports_response_format": false,
         "enabled": true
+      }
+    ],
+    "creative": [
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.7-flash",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.6-flash",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.5-flash",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.5-flash-lite",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.1-flash-lite",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3-flash",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-2.5-flash",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-2.5-flash-lite",
+        "enabled": true
       },
       {
         "provider": "groq",
@@ -705,7 +825,7 @@
       },
       {
         "provider": "groq",
-        "model": "qwen/qwen3.6-27b",
+        "model": "groq/compound",
         "method": "json",
         "input_types": [
           "text"
@@ -718,7 +838,7 @@
       },
       {
         "provider": "groq",
-        "model": "groq/compound",
+        "model": "qwen/qwen3.6-27b",
         "method": "json",
         "input_types": [
           "text"
@@ -766,48 +886,6 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
-      }
-    ],
-    "creative": [
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.7-flash",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.6-flash",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.5-flash",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.5-flash-lite",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.1-flash-lite",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3-flash",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-2.5-flash",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-2.5-flash-lite",
         "enabled": true
       },
       {
@@ -1218,6 +1296,28 @@
         ],
         "supports_response_format": false,
         "enabled": true
+      }
+    ],
+    "cheap": [
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.5-flash-lite",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3.1-flash-lite",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-3-flash",
+        "enabled": true
+      },
+      {
+        "provider": "google_gemini",
+        "model": "gemini-2.5-flash-lite",
+        "enabled": true
       },
       {
         "provider": "groq",
@@ -1234,7 +1334,7 @@
       },
       {
         "provider": "groq",
-        "model": "qwen/qwen3.6-27b",
+        "model": "groq/compound",
         "method": "json",
         "input_types": [
           "text"
@@ -1247,7 +1347,7 @@
       },
       {
         "provider": "groq",
-        "model": "groq/compound",
+        "model": "qwen/qwen3.6-27b",
         "method": "json",
         "input_types": [
           "text"
@@ -1295,28 +1395,6 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
-      }
-    ],
-    "cheap": [
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.5-flash-lite",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.1-flash-lite",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3-flash",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-2.5-flash-lite",
         "enabled": true
       },
       {
@@ -1727,84 +1805,6 @@
         ],
         "supports_response_format": false,
         "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "openai/gpt-oss-120b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "qwen/qwen3.6-27b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "groq/compound",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "groq/compound-mini",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "allam-2-7b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
       }
     ],
     "openrouter_free": [
@@ -2157,6 +2157,84 @@
         "output_types": [
           "text"
         ],
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "groq/compound",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "qwen/qwen3.6-27b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "groq/compound-mini",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
+        "enabled": true
+      },
+      {
+        "provider": "groq",
+        "model": "allam-2-7b",
+        "method": "json",
+        "input_types": [
+          "text"
+        ],
+        "output_types": [
+          "text"
+        ],
+        "supports_response_format": false,
         "enabled": true
       },
       {
@@ -2581,97 +2659,15 @@
         ],
         "supports_response_format": false,
         "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "openai/gpt-oss-120b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "qwen/qwen3.6-27b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "groq/compound",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "groq/compound-mini",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
-      },
-      {
-        "provider": "groq",
-        "model": "allam-2-7b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true
       }
     ],
     "text_grounded_search": [
       {
         "provider": "google_gemini",
         "model": "gemini-2.5-flash",
-        "method": "interaction_text",
+        "method": "grounded_text",
         "input_types": [
-          "text",
-          "image",
-          "video",
-          "audio",
-          "pdf"
+          "text"
         ],
         "output_types": [
           "text"

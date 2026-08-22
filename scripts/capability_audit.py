@@ -90,6 +90,18 @@ def run_live_record(record: dict[str, Any], config: RouterConfig, adapters: dict
             )
             values = ((response.payload.get("embeddings") or [{}])[0]).get("values", [])
             base.update({"category": "embedding", "status": "passed" if values else "invalid", "dimensions": len(values)})
+        elif method == "grounded_text":
+            response = adapter.complete_grounded_text(
+                model=model,
+                secret=secret,
+                system_prompt="Use Google Search grounding and cite sources.",
+                user_prompt="What is the current UTC date? Cite the web sources used.",
+                timeout_seconds=timeout,
+                tools=[{"type": "google_search"}],
+            )
+            text = str(response.payload.get("text", "")).strip()
+            citations = response.payload.get("url_citations", [])
+            base.update({"category": "text_grounded_search", "status": "passed" if text and citations else "invalid", "response_chars": len(text), "url_citations": len(citations) if isinstance(citations, list) else 0})
         elif method == "interaction_text":
             response = adapter.complete_interaction_text(
                 model=model,
@@ -145,7 +157,7 @@ def main() -> int:
             records = [record for record in records if f"{record['provider']}/{record['model']}" in requested_models]
         raw_fallback = os.getenv("CAPABILITY_AUDIT_RAW_FALLBACK", "0").lower() in {"1", "true", "yes"}
         results: list[dict[str, Any]] = []
-        live_methods = {"json", "interaction_text", "translation", "embedding"}
+        live_methods = {"json", "grounded_text", "interaction_text", "translation", "embedding"}
         for record in records:
             if not record["enabled"]:
                 results.append(route_only(record, "disabled_in_config"))

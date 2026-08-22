@@ -8,7 +8,7 @@
 
 يستقبل router طلبًا من CLI أو Python، يحدد intent أو يستخدم output type صريحًا، يختار model specs المناسبة، يطبق allowlist/denylist اختيارية للproviders، ثم يرسل الطلب إلى adapter المناسب. عند خطأ قابل للانتقال، يسجل الحالة ويتقدم إلى المرشح التالي وفق policy.
 
-الـproviders المهيأة حاليًا هي Groq، Gemini، Hugging Face، OpenRouter، وNVIDIA. عند عدم تحديد provider filter يستخدم router كل providers الموجودة في route وفق ترتيب `config/models.json`.
+الـproviders المهيأة حاليًا هي Gemini، Groq، Hugging Face، OpenRouter، وNVIDIA. عند عدم تحديد provider filter يستخدم router كل providers الموجودة في route وفق ترتيب `config/models.json`. في routes العامة يأتي Groq مباشرة بعد Gemini وقبل Hugging Face، مع ترتيب نماذجه من `openai/gpt-oss-120b` إلى `allam-2-7b`.
 
 ## 2. ما استخداماته؟
 
@@ -186,7 +186,7 @@ aliases هي `gemini`/`google_gemini`، `hf`/`huggingface`، `openrouter`، `nvi
 
 ## 8. grounded search وعقد citations
 
-المسار `text_grounded_search` يحتاج provider يملك أداة بحث فعلية. الترتيب الحالي يضع Gemini في هذا المسار لأنه يدعم `google_search`. Groq لا يُدرج في grounded search تلقائيًا؛ endpoint Groq للنص لا ينفذ بحث الويب وحده، ولذلك يبقى Groq لمسارات النص والترجمة إلى أن يضاف adapter بحث مستقل.
+المسار `text_grounded_search` يحتاج provider يملك أداة بحث فعلية. الترتيب الحالي يضع Gemini وحده في هذا المسار؛ method `grounded_text` يرسل إلى `generateContent` أداة REST المكافئة لـ`GenerateContentConfig(tools=[Tool(google_search=GoogleSearch())])`، ثم يقرأ `candidates[].content.parts[].text` و`candidates[].groundingMetadata.groundingChunks[].web.uri` إلى `url_citations`. Groq لا يُدرج في grounded search تلقائيًا؛ endpoint Groq للنص لا ينفذ بحث الويب ضمن عقد router، ولذلك يبقى Groq لمسارات النص والترجمة.
 
 يجب على adapter أو provider أن يعيد واحدًا أو أكثر من `url_citations` الصالحة. يقوم router بدمج citations من annotations وbody metadata وcontent blocks وJSON المضمن والحقول المنظمة، ويرفض grounded success بلا citations عبر `ProviderError`. لا تُعد روابط النص العادي مصدرًا موثوقًا إلا إذا وصلت إلى الحقل الموحد بعد تطبيعها. نماذج NVIDIA تبقى متاحة في routes العامة، لكنها ليست fallback صامتًا داخل `text_grounded_search`.
 

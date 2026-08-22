@@ -68,9 +68,14 @@ class NvidiaRouterTests(unittest.TestCase):
             entries = models['model_chains'][route_name]
             openrouter_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'openrouter']
             nvidia_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'nvidia']
+            groq_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'groq']
+            huggingface_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'huggingface']
             self.assertTrue(openrouter_indexes)
             self.assertTrue(nvidia_indexes)
+            self.assertTrue(groq_indexes)
+            self.assertTrue(huggingface_indexes)
             self.assertGreater(min(nvidia_indexes), max(openrouter_indexes))
+            self.assertLess(max(groq_indexes), min(huggingface_indexes))
         entries = models['output_routes']['text']
         openrouter_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'openrouter']
         nvidia_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'nvidia']
@@ -78,9 +83,10 @@ class NvidiaRouterTests(unittest.TestCase):
         if openrouter_indexes:
             self.assertGreater(min(nvidia_indexes), max(openrouter_indexes))
         groq_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'groq']
+        huggingface_indexes = [i for i, item in enumerate(entries) if item['provider'] == 'huggingface']
         self.assertTrue(groq_indexes)
-        self.assertGreater(min(groq_indexes), max(nvidia_indexes))
-        self.assertEqual(max(groq_indexes), len(entries) - 1)
+        self.assertTrue(huggingface_indexes)
+        self.assertLess(max(groq_indexes), min(huggingface_indexes))
 
         grounded_entries = models['output_routes']['text_grounded_search']
         self.assertEqual(

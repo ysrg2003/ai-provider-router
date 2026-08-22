@@ -10,7 +10,8 @@
 
 | Provider ID | Kind | Base URL | Key pool | Default timeout | الاستخدام |
 |---|---|---|---|---:|---|
-| `google_gemini` | `gemini_rest` | Google `v1beta` | `gemini_default` | 180s | Gemini text/multimodal |
+| `google_gemini` | `gemini_rest` | Google `v1beta` | `gemini_default` | 180s | Gemini text/multimodal/search |
+| `groq` | `openai_compatible` | Groq `/openai/v1` | `groq_default` | 120s | Groq text/translation |
 | `huggingface` | `openai_compatible` | Hugging Face `/v1` | `huggingface_default` | 90s | HF inference |
 | `openrouter` | `openai_compatible` | OpenRouter `/api/v1` | `openrouter_default` | 120s | OpenRouter/free catalog |
 | `nvidia` | `openai_compatible` | NVIDIA `/v1` | `nvidia_default` | 120s | NVIDIA Free Endpoint models |
@@ -67,12 +68,23 @@ NVIDIA يستخدم OpenAI-compatible `/v1/chat/completions` وkey pool `NVIDIA_
 
 ## Groq
 
-Groq يستخدم `OpenAICompatibleAdapter` على `https://api.groq.com/openai/v1`، ويقرأ `GROQ_API_KEYS_JSON` أو fallback المفرد `GROQ_API_KEY`. أُضيفت النماذج التي أعادها endpoint الحي وكانت قابلة لاختبار chat completions إلى chains النص والترجمة. لا تُضاف نماذج Whisper أو Orpheus أو Guard/Safeguard إلى مسارات النص لأنها تحتاج عقدًا مختلفًا.
+Groq يستخدم `OpenAICompatibleAdapter` على `https://api.groq.com/openai/v1`، ويقرأ `GROQ_API_KEYS_JSON` أو fallback المفرد `GROQ_API_KEY`. في السلاسل العامة يأتي **مباشرة بعد كتلة Gemini وقبل Hugging Face**، ثم OpenRouter وNVIDIA. هذا ترتيب fallback تشغيلي، وليس benchmark عالميًا ثابتًا.
 
-النماذج النصية المفعّلة في آخر اكتشاف هي: `openai/gpt-oss-120b`، `qwen/qwen3.6-27b`، `groq/compound`، `groq/compound-mini`، `openai/gpt-oss-20b`، و`allam-2-7b`. هذه القائمة snapshot وقت الاكتشاف وليست ضمانًا دائمًا للتوفر أو الحصة.
+ترتيب نماذج Groq النصية المفعّلة من الأقوى/الأكثر قدرة تشغيليًا إلى الأقل هو:
+
+| الترتيب | النموذج | سبب الترتيب التشغيلي |
+|---:|---|---|
+| 1 | `openai/gpt-oss-120b` | نموذج reasoning كبير بسعة سياق واسعة |
+| 2 | `groq/compound` | نظام agentic يدمج نموذجًا وأدوات، لكنه ليس بديلًا عن Google Search في عقد router |
+| 3 | `qwen/qwen3.6-27b` | نموذج reasoning عام كبير نسبيًا |
+| 4 | `groq/compound-mini` | نظام Compound أخف للاستخدامات العامة السريعة |
+| 5 | `openai/gpt-oss-20b` | reasoning أصغر وأسرع كـfallback |
+| 6 | `allam-2-7b` | نموذج أصغر مناسب كاحتياط أخير |
+
+هذا ترتيب heuristic مبني على نوع النظام والحجم والقدرات المعلنة، وليس نتيجة اختبار معياري شامل. لا تُضاف نماذج Whisper أو Orpheus أو Guard/Safeguard إلى مسارات النص لأنها تحتاج عقدًا مختلفًا.
 
 يستخدم `scripts/groq_models.py` endpoint `/models` لحفظ catalog منزوع الأسرار، ويستخدم `scripts/groq_functional.py` طلبًا واحدًا bounded لكل نموذج نصي. نماذج GPT OSS تحتاج `max_completion_tokens` كافيًا لأن جزءًا من الميزانية قد يذهب إلى reasoning قبل `message.content`.
 
-Groq لا يُدرج تلقائيًا في `text_grounded_search`؛ وجود chat completions لا يعني وجود بحث ويب. البحث الحي الحالي يعتمد على provider يملك أداة search صريحة، بينما Groq مناسب للنص والترجمة ضمن هذا المشروع.
+Groq لا يُدرج في `text_grounded_search`. وجود chat completions، وحتى وجود Compound ذي أدوات خارجية، لا يغيّر عقد البحث الخاص بالمشروع: البحث الحي هنا **Gemini فقط** باستخدام أداة `google_search` في طلب `generateContent`، ثم استخراج `candidates[].groundingMetadata.groundingChunks` و`web.uri` وتحويلها إلى `url_citations`.
 
 عند `401/403` أعد إصدار مفتاح Groq، وعند `429` احترم rate limits وانتقل إلى key/model آخر عبر policy. لا تعتبر نجاح `/models` دليلًا على نجاح كل model؛ يجب تنفيذ smoke على `chat/completions` وتسجيل status وshape فقط دون حفظ الرد أو المفتاح.
