@@ -48,8 +48,9 @@ jobs:
           AI_ROUTER_HF_KEYS_JSON: ${{ secrets.AI_ROUTER_HF_KEYS_JSON }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           AI_ROUTER_OPENROUTER_KEYS_JSON: ${{ secrets.AI_ROUTER_OPENROUTER_KEYS_JSON }}
-          OPENROUTER_API_KEYS_JSON: ${{ secrets.OPENROUTER_API_KEYS_JSON }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEYS_JSON: ${{ secrets.GROQ_API_KEYS_JSON }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           NVIDIA_API_KEYS_JSON: ${{ secrets.NVIDIA_API_KEYS_JSON }}
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
           CAPABILITY_AUDIT_WORKERS: ${{ inputs.workers }}
@@ -61,11 +62,27 @@ jobs:
           mkdir -p artifacts
           PYTHONPATH=src python scripts/capability_audit.py > artifacts/capability-audit.json
           grep -q '"status": "completed"' artifacts/capability-audit.json
+      - name: Run unified response contract smoke
+        env:
+          AI_ROUTER_GEMINI_KEYS_JSON: ${{ secrets.AI_ROUTER_GEMINI_KEYS_JSON }}
+          AI_ROUTER_HF_KEYS_JSON: ${{ secrets.AI_ROUTER_HF_KEYS_JSON }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          AI_ROUTER_OPENROUTER_KEYS_JSON: ${{ secrets.AI_ROUTER_OPENROUTER_KEYS_JSON }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GROQ_API_KEYS_JSON: ${{ secrets.GROQ_API_KEYS_JSON }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          NVIDIA_API_KEYS_JSON: ${{ secrets.NVIDIA_API_KEYS_JSON }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+          UNIFIED_CONTRACT_WORKERS: "3"
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python scripts/unified_contract_smoke.py > artifacts/unified-response-contract.json
+          grep -q '"status": "completed"' artifacts/unified-response-contract.json
 
       - name: Upload redacted audit report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: capability-audit-${{ github.run_id }}
-          path: artifacts/capability-audit.json
+          path: artifacts/*.json
           retention-days: 14

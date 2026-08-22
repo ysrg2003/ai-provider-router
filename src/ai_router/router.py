@@ -7,6 +7,7 @@ from typing import Any
 from .config import ModelSpec, RouterConfig
 from .intent import RequestIntent, detect_intent
 from .providers.base import ProviderAdapter, ProviderError, url_citations_from_annotations, url_citations_from_text
+from .response_contract import validate_response_envelope
 from .providers.gemini import GeminiAdapter
 from .providers.openai_compatible import OpenAICompatibleAdapter
 from .store import RouterStore
@@ -469,6 +470,7 @@ class AIRouter:
                         voice=voice,
                         output_dimensionality=output_dimensionality,
                         input_parts=input_parts,
+                        supports_response_format=spec.supports_response_format,
                     )
                     self.store.record_success(
                         provider=spec.provider_id,
@@ -495,7 +497,7 @@ class AIRouter:
                     response.payload["intent"] = intent.output_type
                     response.payload["provider"] = spec.provider_id
                     response.payload["model"] = spec.model
-                    return response.payload
+                    return validate_response_envelope(response.payload)
                 except ProviderError as exc:
                     errors.append(f"{spec.provider_id}/{spec.model}/{key.key_id}: {exc.error_class}/{exc.status_code or '-'}: {exc}")
                     # Missing citations and invalid JSON are operation-specific contract failures,
@@ -545,6 +547,7 @@ class AIRouter:
         voice: str,
         output_dimensionality: int | None,
         input_parts: list[dict[str, Any]] | None,
+        supports_response_format: bool = True,
     ) -> Any:
         if spec.method == "json":
             return adapter.complete_json(
@@ -553,6 +556,7 @@ class AIRouter:
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
                 timeout_seconds=timeout_seconds,
+                supports_response_format=supports_response_format,
             )
         if spec.method == "translation":
             return adapter.complete_text(

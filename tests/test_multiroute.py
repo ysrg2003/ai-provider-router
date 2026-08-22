@@ -222,7 +222,7 @@ class RouterRoutePlanTests(unittest.TestCase):
                 with patch.object(
                     router.adapters["google_gemini"],
                     "generate_image",
-                    return_value=ProviderResponse({"output_type": "image", "data_base64": "aW1hZ2U="}, {}),
+                    return_value=ProviderResponse({"output_type": "image", "data_base64": "aW1hZ2U=", "mime_type": "image/png"}, {}),
                 ) as generate:
                     result = router.complete_auto(user_prompt="أنشئ صورة لقطة")
                 self.assertEqual(result["route"], "image")
