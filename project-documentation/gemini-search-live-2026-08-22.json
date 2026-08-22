@@ -1,0 +1,13 @@
+{
+  "scenario": "search",
+  "status": "passed",
+  "output_type": "text",
+  "route": "text_grounded_search",
+  "loaded_key_count": 9,
+  "text_chars": 40,
+  "annotations": 0,
+  "url_citations": 6,
+  "secrets_stored": false,
+  "response_body_stored": false,
+  "note": "Redacted live-smoke evidence. The smoke prompt asked for the current UTC date with Google Search grounding. Individual key validity is not inferred from pool-level success."
+}
