@@ -7,7 +7,7 @@ from unittest.mock import patch
 from ai_router import AIRouter
 from ai_router.intent import detect_intent
 from ai_router.providers.base import ProviderError, ProviderResponse
-from ai_router.providers.gemini import GeminiAdapter
+from ai_router.providers.gemini import GROUNDED_SEARCH_PROMPT_PREFIX, GeminiAdapter
 from ai_router.providers.openai_compatible import OpenAICompatibleAdapter
 
 
@@ -102,6 +102,9 @@ class GeminiMultimodalAdapterTests(unittest.TestCase):
         payload = post.call_args.kwargs["json"]
         self.assertEqual(payload["tools"], [{"google_search": {}}])
         self.assertEqual(payload["generationConfig"], {"temperature": 0.3})
+        merged_prompt = payload["contents"][0]["parts"][0]["text"]
+        self.assertTrue(merged_prompt.startswith(GROUNDED_SEARCH_PROMPT_PREFIX))
+        self.assertIn("سؤال المستخدم:\nWhat happened today?", merged_prompt)
 
     def test_tts_payload_and_output(self):
         adapter = GeminiAdapter("https://generativelanguage.googleapis.com/v1beta")

@@ -8,6 +8,27 @@ import requests
 from .base import ProviderError, ProviderResponse, url_citations_from_annotations, url_citations_from_text
 
 
+GROUNDED_SEARCH_PROMPT_PREFIX = """قبل الإجابة على هذا السؤال، ابحث في الويب عن أحدث المعلومات من مصادر موثوقة ورسمية، وقارن بين أكثر من مصدر عند الضرورة. تأكد من صحة التواريخ والأسعار والأسماء قبل الذكر.
+
+إذا كان السؤال يتعلق بمنتج أو خدمة أو حدث أو رقم:
+
+1. حدّث معلوماتك من المصادر الرسمية المباشرة.
+2. إذا تعارضت المصادر، اذكر الخلاف واذكر كلا الرأيين.
+3. أرفق روابط المصادر المستخدمة في النهاية.
+
+لا تعتمد على الذاكرة أو الافتراضات في البيانات التاريخية القابلة للتغيير (إصدارات، أسعار، تواريخ إطلاق، مواعيد). وإذا لم تكن متأكداً من معلومة، قل ذلك صراحةً بدلاً من التخمين.
+
+أجب بإيجاز ودقة: النتيجة أولاً، ثم التفاصيل، ثم المصادر."""
+
+
+def build_grounded_search_prompt(user_prompt: str) -> str:
+    """Merge the mandatory research policy and the user's question into one prompt."""
+    question = str(user_prompt or "").strip()
+    if not question:
+        raise ValueError("user_prompt is required for grounded search")
+    return f"{GROUNDED_SEARCH_PROMPT_PREFIX}\n\nسؤال المستخدم:\n{question}"
+
+
 class GeminiAdapter:
     provider_id = "google_gemini"
 
@@ -54,7 +75,7 @@ class GeminiAdapter:
         tools=[{"google_search": {}}]. The router keeps its provider-neutral
         tool descriptor ({"type": "google_search"}) and translates it here.
         """
-        contents: list[dict[str, Any]] = [{"role": "user", "parts": [{"text": user_prompt}]}]
+        contents: list[dict[str, Any]] = [{"role": "user", "parts": [{"text": build_grounded_search_prompt(user_prompt)}]}]
         payload: dict[str, Any] = {"contents": contents, "generationConfig": {"temperature": 0.3}}
         if system_prompt.strip():
             payload["systemInstruction"] = {"parts": [{"text": system_prompt}]}

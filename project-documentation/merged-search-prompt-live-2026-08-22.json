@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "scenario": "search",
+  "route": "text_grounded_search",
+  "intent": "text",
+  "provider": "google_gemini",
+  "model": "gemini-2.5-flash",
+  "api_method": "generateContent",
+  "tool": "google_search",
+  "merged_prompt": true,
+  "prompt_policy_embedded_in_contents": true,
+  "user_question_embedded_in_same_contents_part": true,
+  "text_chars": 59,
+  "url_citations": 6,
+  "response_text_stored": false,
+  "secret_values_stored": false,
+  "note": "The shell wrapper reported a post-run status-variable issue after the request completed; the live smoke result itself passed."
+}

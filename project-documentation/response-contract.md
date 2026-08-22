@@ -74,7 +74,9 @@
 
 ### البحث الحي — `grounding: search`
 
-بحث الويب في العقد الحالي Gemini-only. يعيد route `text_grounded_search` نصًا ومصادر منظمة. يبدأ الترتيب بـ`gemini-2.5-flash`، ثم يمر عبر بقية نماذج Gemini النصية، وكلها تستخدم `method: grounded_text` وطلب `generateContent` مع Google Search؛ لا يستخدم هذا route `interaction_text` أو مزودًا آخر:
+بحث الويب في العقد الحالي Gemini-only. يعيد route `text_grounded_search` نصًا ومصادر منظمة. يبدأ الترتيب بـ`gemini-2.5-flash`، ثم يمر عبر بقية نماذج Gemini النصية، وكلها تستخدم `method: grounded_text` وطلب `generateContent` مع Google Search؛ لا يستخدم هذا route `interaction_text` أو مزودًا آخر.
+
+قبل كل طلب بحث، يبني adapter prompt واحدًا مدموجًا من سياسة البحث الموثق الإلزامية وسؤال المستخدم. السياسة تطلب البحث في أحدث المصادر الرسمية، مقارنة المصادر عند الضرورة، التحقق من التواريخ والأسعار والأسماء، التصريح بالخلاف أو عدم اليقين، وترتيب الإجابة: النتيجة ثم التفاصيل ثم المصادر. لا تُرسل السياسة كسؤال منفصل؛ بل تُلحق داخل `contents[0].parts[0].text` قبل سؤال المستخدم مع فاصل `سؤال المستخدم:`. لذلك لا يحتاج التطبيق المستهلك إلى إعادة إضافة هذه التعليمات.
 
 ```text
 gemini-2.5-flash
@@ -106,7 +108,7 @@ gemini-2.5-flash
 
 يجب أن يتعامل المستهلك مع `url_citations` كمصفوفة قد تكون فارغة في الأنواع الأخرى. في بحث Gemini الناجح لا يعلن router النجاح إذا لم يستخرج رابطًا موثقًا من `groundingMetadata` أو annotations. إذا فشل model بسبب 404 أو 429 أو أعاد نصًا بلا citations، ينتقل router إلى model Gemini التالي وفق `max_attempts`؛ لذلك لا تُعتبر حالة 429 أو غياب citations نجاحًا.
 
-في اختبار GenerateContent الحي المخصص لكل النماذج، نجح `gemini-2.5-flash` مع 4 citations. أعاد `gemini-2.5-flash-lite` نصًا بلا citations، أعاد `gemini-3-flash` 404، وأعادت نماذج Gemini الأخرى في ذلك الوقت 429 بسبب quota. هذه حالات توفر وقتية أو اختلاف قدرة، وليست تغييرًا في شكل envelope. التقرير المنقح الكامل موجود في [`gemini-grounded-search-models-live-2026-08-22.json`](gemini-grounded-search-models-live-2026-08-22.json)، ويُظهر `1 passed`, و`1 invalid`, و`6 failed` من أصل 8 نماذج.
+في اختبار GenerateContent الحي المخصص لكل النماذج، نجح `gemini-2.5-flash` مع 4 citations. أعاد `gemini-2.5-flash-lite` نصًا بلا citations، أعاد `gemini-3-flash` 404، وأعادت نماذج Gemini الأخرى في ذلك الوقت 429 بسبب quota. هذه حالات توفر وقتية أو اختلاف قدرة، وليست تغييرًا في شكل envelope. التقرير المنقح الكامل موجود في [`gemini-grounded-search-models-live-2026-08-22.json`](gemini-grounded-search-models-live-2026-08-22.json)، ويُظهر `1 passed`, و`1 invalid`, و`6 failed` من أصل 8 نماذج. كما أثبت live smoke بعد إضافة سياسة البحث أن المسار الفعلي نجح عبر `gemini-2.5-flash` وأعاد 59 حرفًا و6 citations.
 
 ### الصور — `output_type: image`
 
