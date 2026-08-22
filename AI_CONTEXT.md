@@ -140,14 +140,19 @@ python3 -m unittest discover -s tests -q
 git diff --check
 ```
 
-آخر تشغيل موثق في هذه النقطة نجح في **53 اختبارًا**. يثبت الاختبار الحي المنقح [`unified-response-live-test-2026-08-22.json`](project-documentation/unified-response-live-test-2026-08-22.json) ما يلي:
+آخر تشغيل موثق في هذه النقطة نجح في **60 اختبارًا محليًا**. ويثبت التدقيق الحي المقارن المنقح [`unified-response-contract-cross-provider-live-2026-08-22.json`](project-documentation/unified-response-contract-cross-provider-live-2026-08-22.json) ما يلي:
 
-| السيناريو | الحالة | provider/model | الدليل |
-|---|---|---|---|
-| text | passed | Gemini / `gemini-3.7-flash` | envelope fields وstructured JSON |
-| search | passed | Gemini / `gemini-2.5-flash` | `text_chars: 40` و`url_citations: 4` |
+| الفئة | passed | failed | deferred | الدليل |
+|---|---:|---:|---:|---|
+| Gemini text | 7 | 1 | 0 | سبعة models أعادت envelope صالحًا؛ `gemini-3-flash` أعاد 404 |
+| Hugging Face text | 4 | 0 | 0 | أربعة models أعادت envelope صالحًا |
+| OpenRouter text | 13 | 3 | 0 | 13 models نجحت؛ ثلاث حالات 429/404 |
+| NVIDIA text + translation | 8 | 5 | 0 | ثمانية نجحت؛ خمس حالات model EOL أو payload غير متوافق |
+| Groq text + translation | 0 | 0 | 12 | مؤجل لغياب Groq Secret في GitHub Actions |
+| Gemini Search | 1 | 0 | 0 | نص grounded مع 4 `url_citations` |
+| **الإجمالي** | **33** | **9** | **12** | **54 نتيجة/سيناريو** |
 
-التقرير لا يحفظ الأسرار ولا body الكامل. لا تعتبر النتيجة الحية دليلًا على صلاحية كل مفتاح داخل pool؛ تثبت فقط نجاح أحد المفاتيح في تنفيذ السيناريو.
+التقرير لا يحفظ الأسرار ولا body الكامل. هذه النتيجة تثبت أن envelope المشترك قابل للاستهلاك في الحالات `passed` عبر أربعة providers، لكنها لا تثبت توفر كل model أو جودة موحدة أو صلاحية Groq قبل توفير Secret. لا تعتبر النتيجة الحية دليلًا على صلاحية كل مفتاح داخل pool؛ تثبت فقط نجاح أحد المفاتيح في تنفيذ السيناريو.
 
 للمقارنة عبر providers وmodels، يستخدم `scripts/unified_contract_smoke.py` validator نفسه. ينفذ طلبًا واحدًا لكل model نصي مفعّل، ويختبر الترجمة حيث يوجد route، ثم Gemini Search. الحالة `passed` تثبت contract لهذا provider/model/method، و`deferred_no_key` تعني أن الاختبار لم يُنفذ لغياب Secret، و`failed` تعني أن Secret موجود لكن الاستجابة أو الطلب خالف العقد. لا تُعامل الحالات المؤجلة كنجاح.
 

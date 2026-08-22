@@ -271,7 +271,25 @@ python3 scripts/unified_contract_smoke.py
 
 يقيس هذا الاختبار **قابلية الاستهلاك** لا جودة الإجابة أو تفوق model. تشغيله من GitHub Actions يستخدم Secrets المخزنة في المستودع ويرفع JSON منقحًا فقط. لا ينبغي تحويل `deferred_no_key` إلى `passed` يدويًا، ولا اعتبار نجاح model واحد دليلًا على نجاح كل models في provider نفسه.
 
-## 6. قواعد الاستهلاك الآمن
+## 6. نتيجة التحقق المقارن الحالية
+
+شُغّل [`scripts/unified_contract_smoke.py`](../scripts/unified_contract_smoke.py) عبر GitHub Actions على كل نماذج النص الموجودة في routes، وعلى نماذج الترجمة ذات الصلة، إضافة إلى Gemini Search. التقرير الكامل المنقح هو [`unified-response-contract-cross-provider-live-2026-08-22.json`](unified-response-contract-cross-provider-live-2026-08-22.json).
+
+| provider | passed | failed | deferred | ما يثبت فعليًا |
+|---|---:|---:|---:|---|
+| Gemini (text) | 7 | 1 | 0 | envelope صالح عبر 7 نماذج؛ نموذج `gemini-3-flash` أعاد 404 |
+| Hugging Face | 4 | 0 | 0 | envelope صالح عبر 4 نماذج نصية |
+| OpenRouter | 13 | 3 | 0 | envelope صالح عبر 13 نموذجًا؛ الإخفاقات 429 أو 404 لنماذج مجانية غير متاحة مؤقتًا |
+| NVIDIA | 8 | 5 | 0 | envelope صالح عبر 8 نماذج؛ الإخفاقات model EOL أو payload/response غير متوافق |
+| Groq | 0 | 0 | 12 | لم يُختبر في هذه الجولة لغياب `GROQ_API_KEY` و`GROQ_API_KEYS_JSON` في GitHub Secrets |
+| Gemini Search | 1 | 0 | 0 | `text_grounded_search` أعاد نصًا و4 `url_citations` |
+| **الإجمالي** | **33** | **9** | **12** | **54** نتيجة/سيناريو منقح |
+
+النتيجة العملية هي أن **شكل envelope قابل للاعتماد كواجهة استهلاك** عندما تكون حالة السجل `passed`: الحقول المشتركة بقيت ثابتة عبر Gemini وHugging Face وOpenRouter وNVIDIA، بينما بقيت الحقول الدلالية الخاصة بالنوع منفصلة. لا يعني ذلك أن كل model متاح دائمًا أو أن provider يضمن جودة موحدة؛ الاعتماد يجب أن يكون على `status=passed` لكل `provider/model/method` في تقرير حديث، مع fallback عند 429/503 وعدم تفعيل النماذج التي تعيد 404 أو payload غير صالح.
+
+الإخفاقات ليست فشلًا في envelope نفسه. مثال `gemini-3-flash` هو model غير متاح بعقده الحالي، وبعض نماذج OpenRouter مؤقتة rate-limited أو لم تعد مجانية، وبعض نماذج NVIDIA انتهت دورة حياتها أو أعادت response لا يطابق JSON المطلوب. لذلك لا يجوز معالجة هذه الحالات بتغيير consumer؛ يجب تحديث catalog أو تعطيل model أو إضافة adapter متخصص.
+
+## 7. قواعد الاستهلاك الآمن
 
 تعامل مع النتيجة كـJSON غير موثوق دلاليًا: تحقق من وجود الحقول قبل استخدامها، وتحقق من أن `data_base64` صالح قبل حفظه، ولا تجعل `provider` أو `model` مصدر صلاحيات. استخدم `url_citations` كمصادر بحث فقط عندما يكون `grounding` مطلوبًا، ولا تعتبر روابط ظهرت في نص عادي دليلًا على بحث حي.
 

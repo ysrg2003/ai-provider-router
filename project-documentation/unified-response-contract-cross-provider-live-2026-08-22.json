@@ -1,0 +1,972 @@
+{
+  "status": "completed",
+  "workflow_run": "https://github.com/ysrg2003/ai-provider-router/actions/runs/32561538130",
+  "workflow_head": "d0882bd",
+  "passed": 33,
+  "deferred": 12,
+  "failed": 9,
+  "total": 54,
+  "results": [
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "google_gemini",
+      "requested_model": "gemini-3.7-flash",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "google_gemini",
+        "model": "gemini-3.7-flash",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 3.17
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "google_gemini",
+      "requested_model": "gemini-3.6-flash",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "google_gemini",
+        "model": "gemini-3.6-flash",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 1.56
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "google_gemini",
+      "requested_model": "gemini-3.5-flash",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "google_gemini",
+        "model": "gemini-3.5-flash",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 1.56
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "google_gemini",
+      "requested_model": "gemini-3.5-flash-lite",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "google_gemini",
+        "model": "gemini-3.5-flash-lite",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.43
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "google_gemini",
+      "requested_model": "gemini-3.1-flash-lite",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "google_gemini",
+        "model": "gemini-3.1-flash-lite",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.53
+    },
+    {
+      "scenario": "text",
+      "status": "failed",
+      "requested_provider": "google_gemini",
+      "requested_model": "gemini-3-flash",
+      "error_type": "AllProvidersFailed",
+      "error": "All output-route attempts failed: google_gemini/gemini-3-flash/attached-1: invalid_or_unknown/404: NOT_FOUND | google_gemini/gemini-3-flash/attached-2: invalid_or_unknown/404: NOT_FOUND | google_gemini/gemini-3-flash/attached-3: invalid_or_",
+      "duration_seconds": 0.86
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "google_gemini",
+      "requested_model": "gemini-2.5-flash",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "google_gemini",
+        "model": "gemini-2.5-flash",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.72
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "google_gemini",
+      "requested_model": "gemini-2.5-flash-lite",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "google_gemini",
+        "model": "gemini-2.5-flash-lite",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.33
+    },
+    {
+      "scenario": "text",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "openai/gpt-oss-120b",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "text",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "groq/compound",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "text",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "qwen/qwen3.6-27b",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "text",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "groq/compound-mini",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "text",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "openai/gpt-oss-20b",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "text",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "allam-2-7b",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "huggingface",
+      "requested_model": "openai/gpt-oss-120b:fastest",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "huggingface",
+        "model": "openai/gpt-oss-120b:fastest",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.39
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "huggingface",
+      "requested_model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "huggingface",
+        "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 1.06
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "huggingface",
+      "requested_model": "zai-org/GLM-5.2:fastest",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "huggingface",
+        "model": "zai-org/GLM-5.2:fastest",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 3.06
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "huggingface",
+      "requested_model": "deepseek-ai/DeepSeek-R1:fastest",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "huggingface",
+        "model": "deepseek-ai/DeepSeek-R1:fastest",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 4.15
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 2.19
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "poolside/laguna-s-2.1:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "poolside/laguna-s-2.1:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 1.31
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "nvidia/nemotron-3.5-lightning:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "nvidia/nemotron-3.5-lightning:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 2.17
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "nvidia/nemotron-3-super-120b-a12b:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.73
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "cohere/north-mini-code:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "cohere/north-mini-code:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 5.34
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "poolside/laguna-xs-2.1:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "poolside/laguna-xs-2.1:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.62
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "nvidia/nemotron-3-nano-30b-a3b:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "nvidia/nemotron-3-nano-30b-a3b:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.72
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 1.6
+    },
+    {
+      "scenario": "text",
+      "status": "failed",
+      "requested_provider": "openrouter",
+      "requested_model": "google/gemma-4-26b-a4b-it:free",
+      "error_type": "AllProvidersFailed",
+      "error": "All output-route attempts failed: openrouter/google/gemma-4-26b-a4b-it:free/openrouter-fallback-1: quota/429: {\"error\": {\"message\": \"Provider returned error\", \"code\": 429, \"metadata\": {\"raw\": \"google/gemma-4-26b-a4b-it:free is temporarily r",
+      "duration_seconds": 1.16
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "nvidia/nemotron-nano-9b-v2:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "nvidia/nemotron-nano-9b-v2:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 4.09
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "dots-studio/dots-3-note-preview:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "dots-studio/dots-3-note-preview:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.99
+    },
+    {
+      "scenario": "text",
+      "status": "failed",
+      "requested_provider": "openrouter",
+      "requested_model": "openai/gpt-oss-20b:free",
+      "error_type": "AllProvidersFailed",
+      "error": "All output-route attempts failed: openrouter/openai/gpt-oss-20b:free/openrouter-fallback-1: invalid_or_unknown/404: {\"error\": {\"message\": \"This model is unavailable for free. The paid version is available now - use this slug instead: openai",
+      "duration_seconds": 0.05
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "nvidia/nemotron-nano-12b-v2-vl:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "nvidia/nemotron-nano-12b-v2-vl:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 37.54
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "liquid/lfm-2.5-2.6b:free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "liquid/lfm-2.5-2.6b:free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 1.28
+    },
+    {
+      "scenario": "text",
+      "status": "failed",
+      "requested_provider": "openrouter",
+      "requested_model": "google/gemma-4-31b-it:free",
+      "error_type": "AllProvidersFailed",
+      "error": "All output-route attempts failed: openrouter/google/gemma-4-31b-it:free/openrouter-fallback-1: quota/429: {\"error\": {\"message\": \"Provider returned error\", \"code\": 429, \"metadata\": {\"raw\": \"google/gemma-4-31b-it:free is temporarily rate-limi",
+      "duration_seconds": 1.13
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "openrouter",
+      "requested_model": "openrouter/free",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "openrouter",
+        "model": "openrouter/free",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.58
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/nemotron-3-ultra-550b-a55b",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-ultra-550b-a55b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 3.63
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/nemotron-3-super-120b-a12b",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-super-120b-a12b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.63
+    },
+    {
+      "scenario": "text",
+      "status": "failed",
+      "requested_provider": "nvidia",
+      "requested_model": "z-ai/glm-5.2",
+      "error_type": "AllProvidersFailed",
+      "error": "All output-route attempts failed: nvidia/z-ai/glm-5.2/nvidia-fallback-1: invalid_or_unknown/410: {\"type\": \"about:blank\", \"title\": \"Gone\", \"status\": 410, \"detail\": \"The model 'z-ai/glm-5.2' has reached its end of life on 2026-08-21T09:00:00Z",
+      "duration_seconds": 0.08
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "nvidia",
+        "model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 11.98
+    },
+    {
+      "scenario": "text",
+      "status": "failed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/llama-3.3-nemotron-super-49b-v1",
+      "error_type": "AllProvidersFailed",
+      "error": "All output-route attempts failed: nvidia/nvidia/llama-3.3-nemotron-super-49b-v1/nvidia-fallback-1: invalid_or_unknown/-: OpenAI-compatible provider returned invalid JSON: {'id': 'chatcmpl-956e0fb956f1efa3', 'object': 'chat.completion', 'cre",
+      "duration_seconds": 46.67
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.74
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/nemotron-3-nano-30b-a3b",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-nano-30b-a3b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 1.56
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 1.21
+    },
+    {
+      "scenario": "text",
+      "status": "failed",
+      "requested_provider": "nvidia",
+      "requested_model": "meta/llama-3.1-70b-instruct",
+      "error_type": "AllProvidersFailed",
+      "error": "All output-route attempts failed: nvidia/meta/llama-3.1-70b-instruct/nvidia-fallback-1: invalid_or_unknown/-: OpenAI-compatible provider returned invalid JSON: {'id': 'chatcmpl-82bd64a75f8b632e', 'object': 'chat.completion', 'created': 1787",
+      "duration_seconds": 9.73
+    },
+    {
+      "scenario": "text",
+      "status": "failed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/nemotron-nano-12b-v2-vl",
+      "error_type": "AllProvidersFailed",
+      "error": "All output-route attempts failed: nvidia/nvidia/nemotron-nano-12b-v2-vl/nvidia-fallback-1: invalid_or_unknown/-: OpenAI-compatible provider returned invalid JSON: {'id': 'chatcmpl-0794e3e4aebe4da0a4112d9df8939bdb', 'object': 'chat.completio",
+      "duration_seconds": 34.37
+    },
+    {
+      "scenario": "text",
+      "status": "failed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
+      "error_type": "AllProvidersFailed",
+      "error": "All output-route attempts failed: nvidia/nvidia/llama-3.1-nemotron-nano-vl-8b-v1/nvidia-fallback-1: transient/500: {\"error\": \"list object has no element 0\"}",
+      "duration_seconds": 1.28
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/ising-calibration-1.5-31b",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "nvidia",
+        "model": "nvidia/ising-calibration-1.5-31b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.41
+    },
+    {
+      "scenario": "translation",
+      "status": "passed",
+      "requested_provider": "nvidia",
+      "requested_model": "nvidia/riva-translate-4b-instruct-v2",
+      "response": {
+        "output_type": "translation",
+        "intent": "translation",
+        "route": "translation",
+        "provider": "nvidia",
+        "model": "nvidia/riva-translate-4b-instruct-v2",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "output_type",
+          "provider",
+          "route",
+          "text",
+          "translation",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 0.37
+    },
+    {
+      "scenario": "translation",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "openai/gpt-oss-120b",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "translation",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "qwen/qwen3.6-27b",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "translation",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "groq/compound",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "translation",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "groq/compound-mini",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "translation",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "openai/gpt-oss-20b",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "translation",
+      "status": "deferred_no_key",
+      "requested_provider": "groq",
+      "requested_model": "allam-2-7b",
+      "duration_seconds": 0.01
+    },
+    {
+      "scenario": "search",
+      "status": "passed",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text_grounded_search",
+        "provider": "google_gemini",
+        "model": "gemini-2.5-flash",
+        "url_citations": 4,
+        "payload_fields": [
+          "annotations",
+          "grounding_metadata",
+          "grounding_sources",
+          "intent",
+          "model",
+          "output_type",
+          "provider",
+          "route",
+          "text",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 3.7
+    }
+  ],
+  "response_text_stored": false,
+  "secret_values_stored": false
+}
