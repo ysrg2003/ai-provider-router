@@ -1,0 +1,263 @@
+{
+  "status": "completed",
+  "test_scope": "Groq text and translation routes; Gemini search intentionally deferred in this provider-filtered run",
+  "passed": 10,
+  "deferred": 1,
+  "failed": 0,
+  "total": 11,
+  "results": [
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "openai/gpt-oss-120b",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 4.11
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "groq/compound",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "groq",
+        "model": "groq/compound",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 3.98
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "groq/compound-mini",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "groq",
+        "model": "groq/compound-mini",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 4.94
+    },
+    {
+      "scenario": "text",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "openai/gpt-oss-20b",
+      "response": {
+        "output_type": "text",
+        "intent": "text",
+        "route": "text",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "ok",
+          "output_type",
+          "provider",
+          "route",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 4.35
+    },
+    {
+      "scenario": "translation",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "openai/gpt-oss-120b",
+      "response": {
+        "output_type": "translation",
+        "intent": "translation",
+        "route": "translation",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "output_type",
+          "provider",
+          "route",
+          "text",
+          "translation",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 4.22
+    },
+    {
+      "scenario": "translation",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "qwen/qwen3.6-27b",
+      "response": {
+        "output_type": "translation",
+        "intent": "translation",
+        "route": "translation",
+        "provider": "groq",
+        "model": "qwen/qwen3.6-27b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "output_type",
+          "provider",
+          "route",
+          "text",
+          "translation",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 4.4
+    },
+    {
+      "scenario": "translation",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "groq/compound",
+      "response": {
+        "output_type": "translation",
+        "intent": "translation",
+        "route": "translation",
+        "provider": "groq",
+        "model": "groq/compound",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "output_type",
+          "provider",
+          "route",
+          "text",
+          "translation",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 9.69
+    },
+    {
+      "scenario": "translation",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "groq/compound-mini",
+      "response": {
+        "output_type": "translation",
+        "intent": "translation",
+        "route": "translation",
+        "provider": "groq",
+        "model": "groq/compound-mini",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "output_type",
+          "provider",
+          "route",
+          "text",
+          "translation",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 3.9
+    },
+    {
+      "scenario": "translation",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "openai/gpt-oss-20b",
+      "response": {
+        "output_type": "translation",
+        "intent": "translation",
+        "route": "translation",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "output_type",
+          "provider",
+          "route",
+          "text",
+          "translation",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 3.74
+    },
+    {
+      "scenario": "translation",
+      "status": "passed",
+      "requested_provider": "groq",
+      "requested_model": "allam-2-7b",
+      "response": {
+        "output_type": "translation",
+        "intent": "translation",
+        "route": "translation",
+        "provider": "groq",
+        "model": "allam-2-7b",
+        "url_citations": 0,
+        "payload_fields": [
+          "intent",
+          "model",
+          "output_type",
+          "provider",
+          "route",
+          "text",
+          "translation",
+          "url_citations"
+        ]
+      },
+      "duration_seconds": 4.17
+    },
+    {
+      "scenario": "search",
+      "status": "deferred_no_key",
+      "duration_seconds": 0.0
+    }
+  ],
+  "response_text_stored": false,
+  "secret_values_stored": false
+}

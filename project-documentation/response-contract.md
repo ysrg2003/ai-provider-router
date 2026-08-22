@@ -289,7 +289,22 @@ python3 scripts/unified_contract_smoke.py
 
 الإخفاقات ليست فشلًا في envelope نفسه. مثال `gemini-3-flash` هو model غير متاح بعقده الحالي، وبعض نماذج OpenRouter مؤقتة rate-limited أو لم تعد مجانية، وبعض نماذج NVIDIA انتهت دورة حياتها أو أعادت response لا يطابق JSON المطلوب. لذلك لا يجوز معالجة هذه الحالات بتغيير consumer؛ يجب تحديث catalog أو تعطيل model أو إضافة adapter متخصص.
 
-## 7. قواعد الاستهلاك الآمن
+## 7. إعادة اختبار Groq بعد تطبيق العقد
+
+بعد توفير `GROQ_API_KEY` مؤقتًا، أُعيد تشغيل `unified_contract_smoke.py` على Groq وحده، مع كل النماذج الموجودة في routes النص والترجمة. نجحت **10 من 10** حالات Groq التنفيذية:
+
+| النطاق | النماذج التي نجحت | النتيجة |
+|---|---|---:|
+| `text` | `openai/gpt-oss-120b`, `groq/compound`, `groq/compound-mini`, `openai/gpt-oss-20b` | 4/4 |
+| `translation` | النماذج الستة الموجودة في route الترجمة، بما فيها `qwen/qwen3.6-27b` و`allam-2-7b` | 6/6 |
+
+نجحت كل نتيجة في validator وأعادت envelope يحوي `output_type`, `intent`, `route`, `provider`, `model`, و`url_citations`. لم يُختبر البحث في هذا التشغيل المقيّد بـGroq، وسُجل `deferred_no_key` له لأنه Gemini-only.
+
+قبل هذا التحقق، فشل `qwen/qwen3.6-27b` و`allam-2-7b` في route النص العام عند طلب JSON منظم، رغم نجاحهما في الترجمة. لذلك أُبقيا في `translation` وأُزيلا من `default`, `creative`, `cheap`, و`text`. النتيجة الحالية هي أن النماذج الموجودة في Groq text route كلها اجتازت contract، بينما لا يُعمّم ذلك على استخدام raw text أو على أي output type غير المختبر.
+
+التقرير المنقح هو [`groq-unified-response-contract-live-2026-08-22.json`](groq-unified-response-contract-live-2026-08-22.json). لم يحفظ التقرير المفتاح أو body الكامل.
+
+## 8. قواعد الاستهلاك الآمن
 
 تعامل مع النتيجة كـJSON غير موثوق دلاليًا: تحقق من وجود الحقول قبل استخدامها، وتحقق من أن `data_base64` صالح قبل حفظه، ولا تجعل `provider` أو `model` مصدر صلاحيات. استخدم `url_citations` كمصادر بحث فقط عندما يكون `grounding` مطلوبًا، ولا تعتبر روابط ظهرت في نص عادي دليلًا على بحث حي.
 

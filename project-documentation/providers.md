@@ -76,14 +76,12 @@ Groq يستخدم `OpenAICompatibleAdapter` على `https://api.groq.com/openai/
 |---:|---|---|
 | 1 | `openai/gpt-oss-120b` | نموذج reasoning كبير بسعة سياق واسعة |
 | 2 | `groq/compound` | نظام agentic يدمج نموذجًا وأدوات، لكنه ليس بديلًا عن Google Search في عقد router |
-| 3 | `qwen/qwen3.6-27b` | نموذج reasoning عام كبير نسبيًا |
-| 4 | `groq/compound-mini` | نظام Compound أخف للاستخدامات العامة السريعة |
-| 5 | `openai/gpt-oss-20b` | reasoning أصغر وأسرع كـfallback |
-| 6 | `allam-2-7b` | نموذج أصغر مناسب كاحتياط أخير |
+| 3 | `groq/compound-mini` | نظام Compound أخف للاستخدامات العامة السريعة |
+| 4 | `openai/gpt-oss-20b` | reasoning أصغر وأسرع كـfallback |
 
-هذا ترتيب heuristic مبني على نوع النظام والحجم والقدرات المعلنة، وليس نتيجة اختبار معياري شامل. لا تُضاف نماذج Whisper أو Orpheus أو Guard/Safeguard إلى مسارات النص لأنها تحتاج عقدًا مختلفًا.
+هذا ترتيب heuristic مبني على نوع النظام والحجم والقدرات المعلنة، وليس نتيجة اختبار معياري شامل. أثبت الاختبار الحي لعقد الاستجابة نجاح النماذج الأربعة الحالية في route النص، بينما فشل `qwen/qwen3.6-27b` و`allam-2-7b` عند طلب JSON منظم؛ لذلك بقي النموذجان في route الترجمة فقط حيث نجحا. لا تُضاف نماذج Whisper أو Orpheus أو Guard/Safeguard إلى مسارات النص لأنها تحتاج عقدًا مختلفًا.
 
-يستخدم `scripts/groq_models.py` endpoint `/models` لحفظ catalog منزوع الأسرار، ويستخدم `scripts/groq_functional.py` طلبًا واحدًا bounded لكل نموذج نصي. نماذج GPT OSS تحتاج `max_completion_tokens` كافيًا لأن جزءًا من الميزانية قد يذهب إلى reasoning قبل `message.content`.
+يستخدم `scripts/groq_models.py` endpoint `/models` لحفظ catalog منزوع الأسرار، ويستخدم `scripts/groq_functional.py` طلبًا واحدًا bounded لكل نموذج، بينما يستخدم `scripts/unified_contract_smoke.py` validator النهائي على routes الفعلية. نجحت 4/4 حالات `text` و6/6 حالات `translation` في إعادة اختبار Groq المخصص. نماذج GPT OSS تحتاج `max_completion_tokens` كافيًا لأن جزءًا من الميزانية قد يذهب إلى reasoning قبل `message.content`.
 
 Groq لا يُدرج في `text_grounded_search`. وجود chat completions، وحتى وجود Compound ذي أدوات خارجية، لا يغيّر عقد البحث الخاص بالمشروع: البحث الحي هنا **Gemini فقط** باستخدام أداة `google_search` في طلب `generateContent`، ثم استخراج `candidates[].groundingMetadata.groundingChunks` و`web.uri` وتحويلها إلى `url_citations`.
 

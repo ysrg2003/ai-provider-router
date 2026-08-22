@@ -43,10 +43,8 @@ class GroqTests(unittest.TestCase):
             self.assertEqual(models, [
                 "openai/gpt-oss-120b",
                 "groq/compound",
-                "qwen/qwen3.6-27b",
                 "groq/compound-mini",
                 "openai/gpt-oss-20b",
-                "allam-2-7b",
             ])
             router.close()
 

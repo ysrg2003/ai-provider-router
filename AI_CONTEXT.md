@@ -99,7 +99,7 @@ CLI أو Python input
 | 4 | OpenRouter | OpenAI-compatible؛ catalog مجاني وroutes متخصصة حسب spec |
 | 5 | NVIDIA | OpenAI-compatible؛ text وRiva translation |
 
-يأتي Groq بعد Gemini مباشرة وقبل Hugging Face في `default`, `creative`, `cheap`, و`text`. ترتيب نماذج Groq النصية الحالي من الأعلى تشغيليًا إلى الأقل هو `openai/gpt-oss-120b`, ثم `groq/compound`, ثم `qwen/qwen3.6-27b`, ثم `groq/compound-mini`, ثم `openai/gpt-oss-20b`, ثم `allam-2-7b`. هذا ترتيب heuristic وليس benchmark عالميًا.
+يأتي Groq بعد Gemini مباشرة وقبل Hugging Face في `default`, `creative`, `cheap`, و`text`. نماذج Groq الموجودة حاليًا في routes النصية هي `openai/gpt-oss-120b`, ثم `groq/compound`, ثم `groq/compound-mini`, ثم `openai/gpt-oss-20b`; وقد أُزيل `qwen/qwen3.6-27b` و`allam-2-7b` من routes JSON النصية بعد فشل contract، مع إبقائهما في `translation` حيث نجحا. هذا ترتيب heuristic وليس benchmark عالميًا.
 
 `text_grounded_search` هو Gemini-only. يستخدم `method: grounded_text` وREST `generateContent` مع `tools: [{"google_search": {}}]`، وهو المكافئ العملي لـ`GenerateContentConfig(tools=[Tool(google_search=GoogleSearch())])`. يستخرج النص من `candidates[].content.parts[].text` والمصادر من `candidates[].groundingMetadata.groundingChunks[].web.uri`، ويرفض النتيجة بلا `url_citations`. لا تُرسل Google Search إلى Groq أو HF أو OpenRouter لمجرد أن لديها chat completions.
 
@@ -148,13 +148,13 @@ git diff --check
 | Hugging Face text | 4 | 0 | 0 | أربعة models أعادت envelope صالحًا |
 | OpenRouter text | 13 | 3 | 0 | 13 models نجحت؛ ثلاث حالات 429/404 |
 | NVIDIA text + translation | 8 | 5 | 0 | ثمانية نجحت؛ خمس حالات model EOL أو payload غير متوافق |
-| Groq text + translation | 0 | 0 | 12 | مؤجل لغياب Groq Secret في GitHub Actions |
+| Groq text + translation (baseline run) | 0 | 0 | 12 | مؤجل في التشغيل الأساسي لغياب Groq Secret؛ أُعيد اختباره لاحقًا في تقرير مستقل |
 | Gemini Search | 1 | 0 | 0 | نص grounded مع 4 `url_citations` |
-| **الإجمالي** | **33** | **9** | **12** | **54 نتيجة/سيناريو** |
+| **الإجمالي** | **33** | **9** | **12** | **54 نتيجة/سيناريو في التشغيل الأساسي** |
 
-التقرير لا يحفظ الأسرار ولا body الكامل. هذه النتيجة تثبت أن envelope المشترك قابل للاستهلاك في الحالات `passed` عبر أربعة providers، لكنها لا تثبت توفر كل model أو جودة موحدة أو صلاحية Groq قبل توفير Secret. لا تعتبر النتيجة الحية دليلًا على صلاحية كل مفتاح داخل pool؛ تثبت فقط نجاح أحد المفاتيح في تنفيذ السيناريو.
+إعادة اختبار Groq المخصصة بعد توفير السر نجحت في **10/10** حالات تنفيذية: أربعة نماذج في `text` وستة في `translation`. التقرير لا يحفظ الأسرار ولا body الكامل. النتيجة تثبت أن envelope المشترك قابل للاستهلاك في الحالات `passed` عبر providers، لكنها لا تثبت توفر كل model أو جودة موحدة. لا تعتبر النتيجة الحية دليلًا على صلاحية كل مفتاح داخل pool؛ تثبت فقط نجاح أحد المفاتيح في تنفيذ السيناريو.
 
-للمقارنة عبر providers وmodels، يستخدم `scripts/unified_contract_smoke.py` validator نفسه. ينفذ طلبًا واحدًا لكل model نصي مفعّل، ويختبر الترجمة حيث يوجد route، ثم Gemini Search. الحالة `passed` تثبت contract لهذا provider/model/method، و`deferred_no_key` تعني أن الاختبار لم يُنفذ لغياب Secret، و`failed` تعني أن Secret موجود لكن الاستجابة أو الطلب خالف العقد. لا تُعامل الحالات المؤجلة كنجاح.
+للمقارنة عبر providers وmodels، يستخدم `scripts/unified_contract_smoke.py` validator نفسه. ينفذ طلبًا واحدًا لكل model نصي مفعّل، ويختبر الترجمة حيث يوجد route، ثم Gemini Search. الحالة `passed` تثبت contract لهذا provider/model/method، و`deferred_no_key` تعني أن الاختبار لم يُنفذ لغياب Secret، و`failed` تعني أن Secret موجود لكن الاستجابة أو الطلب خالف العقد. لا تُعامل الحالات المؤجلة كنجاح. تقرير Groq المخصص هو [`groq-unified-response-contract-live-2026-08-22.json`](project-documentation/groq-unified-response-contract-live-2026-08-22.json).
 
 ## 11. بروتوكول إضافة قدرة أو provider
 
