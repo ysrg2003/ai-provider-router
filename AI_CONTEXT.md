@@ -46,13 +46,13 @@ ai-router --config-dir config --state-db /tmp/router.db \
 | Tools | `src/ai_router/tools.py` | تحويل `search` و`maps` إلى descriptors داخلية |
 | Orchestration | `src/ai_router/router.py` | route resolution، provider filters، key/model fallback، retries، envelope |
 | Config | `src/ai_router/config.py`, `config/providers.json`, `config/models.json`, `config/key_pools.json`, `config/policies.json` | providers، routes، models، secrets mapping، policy |
-| Provider contracts | `src/ai_router/providers/base.py` | `ProviderResponse`, `ProviderError`, citation normalization، protocol |
+| Provider contracts | `src/ai_router/providers/base.py`, `src/ai_router/response_contract.py` | `ProviderResponse`, `ProviderError`, citation normalization، protocol، وvalidator للـresponse envelope |
 | Gemini adapter | `src/ai_router/providers/gemini.py` | GenerateContent وInteractions وimage/TTS/embedding/video payloads |
 | OpenAI-compatible adapter | `src/ai_router/providers/openai_compatible.py` | chat completions لـGroq وHF وOpenRouter وNVIDIA |
 | Persistence | `src/ai_router/store.py` | SQLite calls، failures، cooldown، cursor، stats |
-| Live scripts | `scripts/live_smoke.py`, `scripts/capability_audit.py`, `scripts/groq_models.py`, `scripts/groq_functional.py` | اختبارات live منقحة واكتشاف catalogs |
-| Tests | `tests/*.py` | route، adapter، key pool، citation، model catalog، regression |
-| Workflows | `.github/workflows/*.yml` | offline CI وlive jobs اليدوية بحدود واضحة |
+| Live scripts | `scripts/live_smoke.py`, `scripts/capability_audit.py`, `scripts/unified_contract_smoke.py`, `scripts/groq_models.py`, `scripts/groq_functional.py` | اختبارات live منقحة، contract smoke عبر models، واكتشاف catalogs |
+| Tests | `tests/*.py` | route، adapter، key pool، citation، response contract، model catalog، regression |
+| Workflows | `.github/workflows/*.yml` | offline CI وlive jobs اليدوية، ومنها capability audit وunified response smoke عبر GitHub Secrets |
 | Documentation | `README.md`, `docs/`, `project-documentation/` | beginner setup، credentials، contracts، operations، decisions |
 
 ## 5. دورة التنفيذ
@@ -148,6 +148,8 @@ git diff --check
 | search | passed | Gemini / `gemini-2.5-flash` | `text_chars: 40` و`url_citations: 4` |
 
 التقرير لا يحفظ الأسرار ولا body الكامل. لا تعتبر النتيجة الحية دليلًا على صلاحية كل مفتاح داخل pool؛ تثبت فقط نجاح أحد المفاتيح في تنفيذ السيناريو.
+
+للمقارنة عبر providers وmodels، يستخدم `scripts/unified_contract_smoke.py` validator نفسه. ينفذ طلبًا واحدًا لكل model نصي مفعّل، ويختبر الترجمة حيث يوجد route، ثم Gemini Search. الحالة `passed` تثبت contract لهذا provider/model/method، و`deferred_no_key` تعني أن الاختبار لم يُنفذ لغياب Secret، و`failed` تعني أن Secret موجود لكن الاستجابة أو الطلب خالف العقد. لا تُعامل الحالات المؤجلة كنجاح.
 
 ## 11. بروتوكول إضافة قدرة أو provider
 

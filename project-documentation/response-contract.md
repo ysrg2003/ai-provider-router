@@ -251,7 +251,27 @@ for source in result.get("grounding_sources", []):
 
 لا يحتاج المثال الثاني إلى اختيار model أو بناء `GenerateContentConfig` داخل التطبيق المستهلك؛ router يطبق إعداد Google Search الخاص بـGemini داخليًا. يحتاج فقط إلى credential Gemini صالح.
 
-## 5. قواعد الاستهلاك الآمن
+## 5. التحقق الحي عبر المزودين والنماذج
+
+لا يكفي أن تتشابه أسماء الحقول في adapter؛ يجب اختبار النتيجة النهائية التي يراها المستهلك. ينفذ `scripts/unified_contract_smoke.py` طلبًا محدودًا لكل model نصي مفعّل في `output_routes.text`، ويختبر الترجمة للنماذج المفعلة في route الترجمة، ثم يشغّل بحث Gemini مرة واحدة. كل نتيجة ناجحة تمر عبر `validate_response_envelope()` في `src/ai_router/response_contract.py`.
+
+```bash
+PYTHONPATH=src \
+UNIFIED_CONTRACT_ALL_MODELS=true \
+UNIFIED_CONTRACT_WORKERS=3 \
+python3 scripts/unified_contract_smoke.py
+```
+
+| الحالة | معناها | هل تُعد إثباتًا؟ |
+|---|---|---:|
+| `passed` | استجاب model فعليًا، ونجح envelope والحقول الخاصة بنوع المخرج | نعم لهذا provider/model/method وقت الاختبار |
+| `deferred_no_key` | provider أو model قابل للتخطيط لكن لا يوجد Secret في بيئة الاختبار | لا؛ يحتاج credential ثم إعادة الاختبار |
+| `deferred_not_in_route` | السجل موجود في config لكنه ليس ضمن route الذي يختبره السكربت | لا؛ لا يُعمّم نجاح route آخر |
+| `failed` | يوجد Secret، لكن الطلب أو payload أو الاستجابة خالفت العقد أو فشل المزود | لا؛ يجب تحليل الخطأ قبل التفعيل |
+
+يقيس هذا الاختبار **قابلية الاستهلاك** لا جودة الإجابة أو تفوق model. تشغيله من GitHub Actions يستخدم Secrets المخزنة في المستودع ويرفع JSON منقحًا فقط. لا ينبغي تحويل `deferred_no_key` إلى `passed` يدويًا، ولا اعتبار نجاح model واحد دليلًا على نجاح كل models في provider نفسه.
+
+## 6. قواعد الاستهلاك الآمن
 
 تعامل مع النتيجة كـJSON غير موثوق دلاليًا: تحقق من وجود الحقول قبل استخدامها، وتحقق من أن `data_base64` صالح قبل حفظه، ولا تجعل `provider` أو `model` مصدر صلاحيات. استخدم `url_citations` كمصادر بحث فقط عندما يكون `grounding` مطلوبًا، ولا تعتبر روابط ظهرت في نص عادي دليلًا على بحث حي.
 
