@@ -1,0 +1,151 @@
+{
+  "status": "completed",
+  "test_scope": "Each Gemini model in output_routes.text_grounded_search via GenerateContent + Google Search",
+  "model_order": [
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-3-flash",
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash"
+  ],
+  "counts": {
+    "passed": 1,
+    "invalid": 1,
+    "failed": 6
+  },
+  "results": [
+    {
+      "provider": "google_gemini",
+      "model": "gemini-2.5-flash",
+      "method": "grounded_text",
+      "output_types": [
+        "text"
+      ],
+      "routes": [
+        "output_routes.text_grounded_search"
+      ],
+      "category": "text_grounded_search",
+      "status": "passed",
+      "response_chars": 50,
+      "url_citations": 4,
+      "duration_seconds": 2.14
+    },
+    {
+      "provider": "google_gemini",
+      "model": "gemini-2.5-flash-lite",
+      "method": "grounded_text",
+      "output_types": [
+        "text"
+      ],
+      "routes": [
+        "output_routes.text_grounded_search"
+      ],
+      "category": "text_grounded_search",
+      "status": "invalid",
+      "response_chars": 40,
+      "url_citations": 0,
+      "duration_seconds": 0.37
+    },
+    {
+      "provider": "google_gemini",
+      "model": "gemini-3-flash",
+      "method": "grounded_text",
+      "output_types": [
+        "text"
+      ],
+      "routes": [
+        "output_routes.text_grounded_search"
+      ],
+      "category": "grounded_text",
+      "status": "failed",
+      "error_class": "invalid_or_unknown",
+      "status_code": 404,
+      "duration_seconds": 0.13
+    },
+    {
+      "provider": "google_gemini",
+      "model": "gemini-3.1-flash-lite",
+      "method": "grounded_text",
+      "output_types": [
+        "text"
+      ],
+      "routes": [
+        "output_routes.text_grounded_search"
+      ],
+      "category": "grounded_text",
+      "status": "failed",
+      "error_class": "quota",
+      "status_code": 429,
+      "duration_seconds": 0.1
+    },
+    {
+      "provider": "google_gemini",
+      "model": "gemini-3.5-flash",
+      "method": "grounded_text",
+      "output_types": [
+        "text"
+      ],
+      "routes": [
+        "output_routes.text_grounded_search"
+      ],
+      "category": "grounded_text",
+      "status": "failed",
+      "error_class": "quota",
+      "status_code": 429,
+      "duration_seconds": 0.12
+    },
+    {
+      "provider": "google_gemini",
+      "model": "gemini-3.5-flash-lite",
+      "method": "grounded_text",
+      "output_types": [
+        "text"
+      ],
+      "routes": [
+        "output_routes.text_grounded_search"
+      ],
+      "category": "grounded_text",
+      "status": "failed",
+      "error_class": "quota",
+      "status_code": 429,
+      "duration_seconds": 0.11
+    },
+    {
+      "provider": "google_gemini",
+      "model": "gemini-3.6-flash",
+      "method": "grounded_text",
+      "output_types": [
+        "text"
+      ],
+      "routes": [
+        "output_routes.text_grounded_search"
+      ],
+      "category": "grounded_text",
+      "status": "failed",
+      "error_class": "quota",
+      "status_code": 429,
+      "duration_seconds": 0.1
+    },
+    {
+      "provider": "google_gemini",
+      "model": "gemini-3.7-flash",
+      "method": "grounded_text",
+      "output_types": [
+        "text"
+      ],
+      "routes": [
+        "output_routes.text_grounded_search"
+      ],
+      "category": "grounded_text",
+      "status": "failed",
+      "error_class": "quota",
+      "status_code": 429,
+      "duration_seconds": 0.11
+    }
+  ],
+  "response_text_stored": false,
+  "secret_values_stored": false
+}

@@ -74,7 +74,18 @@
 
 ### البحث الحي — `grounding: search`
 
-بحث الويب في العقد الحالي Gemini-only. يعيد route `text_grounded_search` نصًا ومصادر منظمة:
+بحث الويب في العقد الحالي Gemini-only. يعيد route `text_grounded_search` نصًا ومصادر منظمة. يبدأ الترتيب بـ`gemini-2.5-flash`، ثم يمر عبر بقية نماذج Gemini النصية، وكلها تستخدم `method: grounded_text` وطلب `generateContent` مع Google Search؛ لا يستخدم هذا route `interaction_text` أو مزودًا آخر:
+
+```text
+gemini-2.5-flash
+→ gemini-3.7-flash
+→ gemini-3.6-flash
+→ gemini-3.5-flash
+→ gemini-3.5-flash-lite
+→ gemini-3.1-flash-lite
+→ gemini-3-flash
+→ gemini-2.5-flash-lite
+```
 
 ```json
 {
@@ -93,7 +104,9 @@
 }
 ```
 
-يجب أن يتعامل المستهلك مع `url_citations` كمصفوفة قد تكون فارغة في الأنواع الأخرى. في بحث Gemini الناجح لا يعلن router النجاح إذا لم يستخرج رابطًا موثقًا من `groundingMetadata` أو annotations.
+يجب أن يتعامل المستهلك مع `url_citations` كمصفوفة قد تكون فارغة في الأنواع الأخرى. في بحث Gemini الناجح لا يعلن router النجاح إذا لم يستخرج رابطًا موثقًا من `groundingMetadata` أو annotations. إذا فشل model بسبب 404 أو 429 أو أعاد نصًا بلا citations، ينتقل router إلى model Gemini التالي وفق `max_attempts`؛ لذلك لا تُعتبر حالة 429 أو غياب citations نجاحًا.
+
+في اختبار GenerateContent الحي المخصص لكل النماذج، نجح `gemini-2.5-flash` مع 4 citations. أعاد `gemini-2.5-flash-lite` نصًا بلا citations، أعاد `gemini-3-flash` 404، وأعادت نماذج Gemini الأخرى في ذلك الوقت 429 بسبب quota. هذه حالات توفر وقتية أو اختلاف قدرة، وليست تغييرًا في شكل envelope. التقرير المنقح الكامل موجود في [`gemini-grounded-search-models-live-2026-08-22.json`](gemini-grounded-search-models-live-2026-08-22.json)، ويُظهر `1 passed`, و`1 invalid`, و`6 failed` من أصل 8 نماذج.
 
 ### الصور — `output_type: image`
 

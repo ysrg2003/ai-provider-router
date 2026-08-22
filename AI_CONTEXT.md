@@ -50,7 +50,7 @@ ai-router --config-dir config --state-db /tmp/router.db \
 | Gemini adapter | `src/ai_router/providers/gemini.py` | GenerateContent وInteractions وimage/TTS/embedding/video payloads |
 | OpenAI-compatible adapter | `src/ai_router/providers/openai_compatible.py` | chat completions لـGroq وHF وOpenRouter وNVIDIA |
 | Persistence | `src/ai_router/store.py` | SQLite calls، failures، cooldown، cursor، stats |
-| Live scripts | `scripts/live_smoke.py`, `scripts/capability_audit.py`, `scripts/unified_contract_smoke.py`, `scripts/groq_models.py`, `scripts/groq_functional.py` | اختبارات live منقحة، contract smoke عبر models، واكتشاف catalogs |
+| Live scripts | `scripts/live_smoke.py`, `scripts/capability_audit.py`, `scripts/unified_contract_smoke.py`, `scripts/gemini_grounded_search_smoke.py`, `scripts/groq_models.py`, `scripts/groq_functional.py` | اختبارات live منقحة، contract smoke عبر models، Gemini grounded fallback، واكتشاف catalogs |
 | Tests | `tests/*.py` | route، adapter، key pool، citation، response contract، model catalog، regression |
 | Workflows | `.github/workflows/*.yml` | offline CI وlive jobs اليدوية، ومنها capability audit وunified response smoke عبر GitHub Secrets |
 | Documentation | `README.md`, `docs/`, `project-documentation/` | beginner setup، credentials، contracts، operations، decisions |
@@ -101,7 +101,7 @@ CLI أو Python input
 
 يأتي Groq بعد Gemini مباشرة وقبل Hugging Face في `default`, `creative`, `cheap`, و`text`. نماذج Groq الموجودة حاليًا في routes النصية هي `openai/gpt-oss-120b`, ثم `groq/compound`, ثم `groq/compound-mini`, ثم `openai/gpt-oss-20b`; وقد أُزيل `qwen/qwen3.6-27b` و`allam-2-7b` من routes JSON النصية بعد فشل contract، مع إبقائهما في `translation` حيث نجحا. هذا ترتيب heuristic وليس benchmark عالميًا.
 
-`text_grounded_search` هو Gemini-only. يستخدم `method: grounded_text` وREST `generateContent` مع `tools: [{"google_search": {}}]`، وهو المكافئ العملي لـ`GenerateContentConfig(tools=[Tool(google_search=GoogleSearch())])`. يستخرج النص من `candidates[].content.parts[].text` والمصادر من `candidates[].groundingMetadata.groundingChunks[].web.uri`، ويرفض النتيجة بلا `url_citations`. لا تُرسل Google Search إلى Groq أو HF أو OpenRouter لمجرد أن لديها chat completions.
+`text_grounded_search` هو Gemini-only. يبدأ بـ`gemini-2.5-flash` ثم يمر عبر `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-3-flash`, و`gemini-2.5-flash-lite`. كل entries تستخدم `method: grounded_text` وREST `generateContent` مع `tools: [{"google_search": {}}]`، وهو المكافئ العملي لـ`GenerateContentConfig(tools=[Tool(google_search=GoogleSearch())])`. يستخرج النص من `candidates[].content.parts[].text` والمصادر من `candidates[].groundingMetadata.groundingChunks[].web.uri`، ويرفض النتيجة بلا `url_citations`. لا تُرسل Google Search إلى Groq أو HF أو OpenRouter لمجرد أن لديها chat completions. اختبار كل model موثق في `project-documentation/gemini-grounded-search-models-live-2026-08-22.json`، بينما اختبار fallback الفعلي مغطى بوحدة router.
 
 الصور والصوت والتضمين مفعلة عبر Gemini methods المتخصصة. `live` خطة WebSocket فقط، و`video_generation` route مؤجل بلا async adapter. نجاح text لا يثبت image/audio/video capability.
 
@@ -149,10 +149,10 @@ git diff --check
 | OpenRouter text | 13 | 3 | 0 | 13 models نجحت؛ ثلاث حالات 429/404 |
 | NVIDIA text + translation | 8 | 5 | 0 | ثمانية نجحت؛ خمس حالات model EOL أو payload غير متوافق |
 | Groq text + translation (baseline run) | 0 | 0 | 12 | مؤجل في التشغيل الأساسي لغياب Groq Secret؛ أُعيد اختباره لاحقًا في تقرير مستقل |
-| Gemini Search | 1 | 0 | 0 | نص grounded مع 4 `url_citations` |
+| Gemini Search baseline | 1 | 0 | 0 | `gemini-2.5-flash` أعاد نصًا grounded مع 4 `url_citations` |
 | **الإجمالي** | **33** | **9** | **12** | **54 نتيجة/سيناريو في التشغيل الأساسي** |
 
-إعادة اختبار Groq المخصصة بعد توفير السر نجحت في **10/10** حالات تنفيذية: أربعة نماذج في `text` وستة في `translation`. التقرير لا يحفظ الأسرار ولا body الكامل. النتيجة تثبت أن envelope المشترك قابل للاستهلاك في الحالات `passed` عبر providers، لكنها لا تثبت توفر كل model أو جودة موحدة. لا تعتبر النتيجة الحية دليلًا على صلاحية كل مفتاح داخل pool؛ تثبت فقط نجاح أحد المفاتيح في تنفيذ السيناريو.
+اختبار Gemini Search المخصص لكل model في `text_grounded_search` أثبت نجاح `gemini-2.5-flash` مع 4 citations. أعاد `gemini-2.5-flash-lite` نصًا بلا citations، أعاد `gemini-3-flash` 404، وأعادت نماذج Gemini الأخرى في ذلك الوقت 429 بسبب quota. هذه حالات توفر وقتية أو اختلاف قدرة وليست تغييرًا في شكل envelope. وإعادة اختبار Groq المخصصة بعد توفير السر نجحت في **10/10** حالات تنفيذية: أربعة نماذج في `text` وستة في `translation`. لا يحفظ التقرير الأسرار ولا body الكامل، ولا تعتبر النتائج دليلًا على توفر كل model دائمًا.
 
 للمقارنة عبر providers وmodels، يستخدم `scripts/unified_contract_smoke.py` validator نفسه. ينفذ طلبًا واحدًا لكل model نصي مفعّل، ويختبر الترجمة حيث يوجد route، ثم Gemini Search. الحالة `passed` تثبت contract لهذا provider/model/method، و`deferred_no_key` تعني أن الاختبار لم يُنفذ لغياب Secret، و`failed` تعني أن Secret موجود لكن الاستجابة أو الطلب خالف العقد. لا تُعامل الحالات المؤجلة كنجاح. تقرير Groq المخصص هو [`groq-unified-response-contract-live-2026-08-22.json`](project-documentation/groq-unified-response-contract-live-2026-08-22.json).
 

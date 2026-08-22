@@ -85,4 +85,6 @@ Groq يستخدم `OpenAICompatibleAdapter` على `https://api.groq.com/openai/
 
 Groq لا يُدرج في `text_grounded_search`. وجود chat completions، وحتى وجود Compound ذي أدوات خارجية، لا يغيّر عقد البحث الخاص بالمشروع: البحث الحي هنا **Gemini فقط** باستخدام أداة `google_search` في طلب `generateContent`، ثم استخراج `candidates[].groundingMetadata.groundingChunks` و`web.uri` وتحويلها إلى `url_citations`.
 
+ترتيب `text_grounded_search` يبدأ بـ`gemini-2.5-flash` ثم `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-3-flash`, و`gemini-2.5-flash-lite`. كل نموذج يستخدم `grounded_text` وGenerateContent مع Google Search. في الاختبار الحي المنقح نجح `gemini-2.5-flash` مع 4 citations، بينما سجلت بقية النماذج 429 quota أو 404 أو نصًا بلا citations في وقت الاختبار؛ لذلك يظل fallback موجودًا، ولا يُعلن نجاح search بلا مصادر.
+
 عند `401/403` أعد إصدار مفتاح Groq، وعند `429` احترم rate limits وانتقل إلى key/model آخر عبر policy. لا تعتبر نجاح `/models` دليلًا على نجاح كل model؛ يجب تنفيذ smoke على `chat/completions` وتسجيل status وshape فقط دون حفظ الرد أو المفتاح.
