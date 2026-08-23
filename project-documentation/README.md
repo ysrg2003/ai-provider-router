@@ -1,96 +1,129 @@
-# دليل ai-provider-router
+# فهرس توثيق ai-provider-router
 
-هذا هو **الفهرس التنفيذي الرئيسي** لمشروع `ai-provider-router`. اقرأ الأقسام بالترتيب التالي؛ كل قسم يقود إلى الدليل التفصيلي المناسب، بينما يبقى [`AI_CONTEXT.md`](../AI_CONTEXT.md) مرجعًا هندسيًا للوكيل أو المطور الذي سيعدّل الكود.
+هذا هو **المسار التنفيذي للمبتدئ** في المستودع الأصلي `ai-provider-router`. ابدأ بتعريف المشروع، ثم اختر طريقة الاستخدام، ثم اقرأ بطاقات الأسرار والعقود قبل إجراء live call. أما [`AI_CONTEXT.md`](../AI_CONTEXT.md) فهو المرجع الهندسي لتعديل الكود.
 
-## 1. ما هو هذا المشروع؟
+## 1. ما هو المشروع؟
 
-`ai-provider-router` مكتبة وCLI بلغة Python لتوجيه طلبات الذكاء الاصطناعي JSON إلى عدة providers وفق route وmodel وkey pool مرتبة. يكتشف نوع المخرج مثل text أو image أو audio أو embedding أو translation، يختار النماذج القابلة للتنفيذ، يرسل الطلب إلى أول مرشح مناسب، ثم يستخدم fallback محدودًا عند الفشل القابل للانتقال. يحفظ SQLite حالة cooldown وcursor وتاريخ النجاح أو الفشل دون حفظ قيم الأسرار.
+`ai-provider-router` مكتبة وCLI وخادم محلي Python يوجه الطلبات إلى عدة providers وmodels وkeys خلف عقد موحد. يحدد route حسب output type، ويطبق `invocation_profile` عندما يختلف request/response contract بين النماذج، ويسجل cooldown وcursor في SQLite.
 
-المشروع **لا يستضيف النماذج** ولا ينشئ مفاتيح المزودين ولا يضمن إتاحة كل نموذج في الكتالوج الخارجي. نجاح `route-plan` يثبت صحة التخطيط فقط؛ أما نجاح التكامل فيثبت باستجابة حقيقية أو artifact قابل للفحص.
+يدعم المشروع text وGoogle Search grounding في Gemini وimage وaudio وtranslation وembeddings وvideo analysis وlive preparation، إضافةً إلى OpenAI-compatible `complete_chat()` وخادم `serve` المحلي. لا يستضيف المشروع النماذج، ولا يضمن quota أو availability خارجية، ولا يحتوي تكامل Cline.
 
-> أول مبدأ تشغيلي: ابدأ بـ`summary` ثم `route-plan`، وبعدها نفّذ live smoke صغيرًا بمفتاح مزود واحد فقط.
+## 2. ما استخداماته؟
 
-## 2. ما استخدامات المشروع؟
+يصلح كـPython library، أو CLI subprocess من مشروع آخر، أو خطوة GitHub Actions، أو Docker CLI، أو خادم محلي تتصل به أداة VS Code. default هو **كل providers المتاحة في route**. تستطيع استخدام allowlist أو denylist، أو اختيار provider/model صريحين عند الحاجة.
 
+## 3. VS Code على Windows — يراه المستخدم مبكرًا
 
-يدعم المشروع أيضًا key rotation مرتبة، cooldown بعد أخطاء quota أو transient، search/maps grounding عند وجود capability مناسبة، وprovider selection لكل طلب عبر `--providers` و`--exclude-providers`. عند غياب الفلترين يستخدم **كل providers المتاحة افتراضيًا** وفق ترتيب route في `config/models.json`. لا يحتاج المستهلك إلى تحديد provider/model في كل طلب؛ يكفي ضبط Secret المزود مرة واحدة ثم قراءة envelope الناتج من `complete_auto()`.
+### النتيجة المتوقعة
 
-لحدود القدرات الحالية، راجع [كتالوج القدرات والتدقيق](capability-audit.md) و[دليل المزودين](providers.md). ولشكل JSON الموحد وطريقة استهلاك النص والصورة والصوت والبحث، راجع [عقد الاستجابة الموحد](response-contract.md). لا تصف model بأنه verified إلا إذا كان له اختبار payload وmethod مناسب.
+بعد إعداد واحد، تبدأ إضافة VS Code العالمية خادم router عند `onStartupFinished` بغض النظر عن Workspace المفتوح. لا تحتاج إلى كتابة `ai-router serve` عند كل فتح.
 
-## 3. كيفية استخدامه في مشروعك
+### الإعداد خطوة بخطوة
 
-### 3.1 GitHub Actions — المسار الموصى به أولًا
+1. في PowerShell ثبّت المشروع داخل مجلد ثابت:
 
-#### الخطوة 1: إنشاء مستودع مستهلك
+```powershell
+cd $env:USERPROFILE
+git clone https://github.com/ysrg2003/ai-provider-router.git
+cd .\ai-provider-router
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e .
+Copy-Item .env.example .env
+```
 
-أنشئ مستودعًا خاصًا أو عامًا لتطبيقك، ثم أضف router كـcheckout مستقل أو كاعتماد مثبت على tag. المسار الأبسط والأكثر قابلية للتدقيق هو checkout المشروعين:
+2. ضع أسرار providers في `.env` فقط، كما في [`docs/credentials.md`](../docs/credentials.md).
+
+3. ابنِ VSIX من مجلد الإضافة:
+
+```powershell
+cd $env:USERPROFILE\ai-provider-router\vscode-global-autostart
+npx @vscode/vsce package --no-dependencies
+```
+
+4. في VS Code افتح **Extensions: Install from VSIX...** واختر الملف الناتج.
+
+5. افتح **Ctrl+Shift+P → AI Router: Configure Project Path** واختر مجلد `ai-provider-router`. يجب أن يحتوي على:
+
+```text
+scripts\start_router_windows.ps1
+.venv\Scripts\ai-router.exe
+```
+
+6. أعد تشغيل VS Code، ثم تحقق من PowerShell:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8787/health
+```
+
+المتوقع `status: ok` و`service: ai-provider-router`. الأوامر الأخرى هي **AI Router: Start Now** و**AI Router: Show Status** و**AI Router: Stop Managed Server**. الخادم loopback افتراضيًا، والـmutex يمنع النسخ المكررة.
+
+### إعداد Cline أو عميل OpenAI-compatible
+
+| الحقل | القيمة |
+|---|---|
+| API Provider | `OpenAI Compatible` |
+| Base URL | `http://127.0.0.1:8787/v1` |
+| Model ID | `ai-provider-router` |
+| API Key | فارغ مع loopback anonymous، أو قيمة `AI_ROUTER_LOCAL_API_KEY` |
+
+Cline هنا عميل يدوي فقط؛ لا يضيفه router إلى fallback ولا يقرأ نماذجه أو رصيده.
+
+## 4. GitHub Actions — أول boundary موصى به
+
+أنشئ `.github/workflows/ai-router.yml` في مشروعك المضيف:
 
 ```yaml
-name: provider-smoke
+name: AI Router smoke
+
 on:
   workflow_dispatch:
+    inputs:
+      prompt:
+        required: true
+        default: "Return a short greeting"
+
 permissions:
   contents: read
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
           repository: ysrg2003/ai-provider-router
-          ref: v1.2.27-default-all-providers
+          ref: main
           path: ai-provider-router
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install router
-        run: python -m pip install ./ai-provider-router
-      - name: Run bounded route plan
-        env:
-          AI_ROUTER_GEMINI_KEYS_JSON: ${{ secrets.AI_ROUTER_GEMINI_KEYS_JSON }}
-          AI_ROUTER_HF_KEYS_JSON: ${{ secrets.AI_ROUTER_HF_KEYS_JSON }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          AI_ROUTER_OPENROUTER_KEYS_JSON: ${{ secrets.AI_ROUTER_OPENROUTER_KEYS_JSON }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          NVIDIA_API_KEYS_JSON: ${{ secrets.NVIDIA_API_KEYS_JSON }}
-          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      - run: python -m pip install ./ai-provider-router
+      - name: Plan route
         run: |
-          set -euo pipefail
           ai-router --config-dir ai-provider-router/config \
-            --state-db /tmp/provider-smoke.db \
-            route-plan --output-type text --user "اكتب إجابة قصيرة"
+            --state-db /tmp/router.db route-plan \
+            --output-type text --user "${{ inputs.prompt }}"
+      - name: Bounded live call
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          ai-router --config-dir ai-provider-router/config \
+            --state-db /tmp/router.db call-auto --output-type text \
+            --operation github_smoke --user "${{ inputs.prompt }}" > response.json
+          python -c "import json; d=json.load(open('response.json')); assert d.get('provider') and d.get('model') and d.get('route')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ai-router-response
+          path: response.json
+          retention-days: 3
 ```
 
-نجاح هذه الخطوة يعني أن route plan والـconfig صالحان، ولا يعني أن كل provider يملك credential صالحًا. لإجراء live call، أضف خطوة `call-auto` بعد اختيار Secret واحد، واحتفظ بالـartifact منقحًا فقط.
+أضف `GROQ_API_KEY` من **Settings → Secrets and variables → Actions → Secrets → New repository secret**. route plan لا يستهلك quota، أما live call فيستهلك quota للمزود. استخدم [بطاقات الاعتمادات](../docs/credentials.md) لباقي providers ولا تطبع الأسرار.
 
-#### الخطوة 2: إضافة Secrets وVariables
-
-
-```text
-```
-
-يمكن ترك Variables فارغة لأن `config/providers.json` يحتوي defaults. لا تضع Cookies أو Storage State الخاصة بالـSpace في Secrets الخاصة بالrouter. استخدم أسماء المتغيرات الأخرى من [دليل الأسرار والمتغيرات](../docs/credentials.md). لا تطبع Environment أو Authorization headers في logs.
-
-#### الخطوة 3: تشغيل workflow الموجود
-
-في مستودع router، افتح **Actions** واختر أحد workflows اليدوية، ثم اضغط **Run workflow**:
-
-| Workflow | الاستخدام |
-|---|---|
-| `live-smoke.yml` | smoke محدود لسيناريو text/search/image/audio/embedding وغيرها |
-| `capability-audit.yml` | تدقيق نماذج متعددة مع التمييز بين passed وfailed وroute-only |
-| `nvidia-functional.yml` | فحص نماذج NVIDIA النشطة أو قائمة محددة |
-| `test.yml` | اختبارات offline على push وpull request |
-
-ابدأ بسيناريو واحد. لا تستخدم `all` قبل معرفة quota ومدة كل provider.
-
-### 3.2 تشغيل محليًا
-
-
-```dotenv
-```
-
+## 5. التشغيل المحلي
 
 من terminal نظيف:
 
@@ -99,51 +132,39 @@ git clone https://github.com/ysrg2003/ai-provider-router.git
 cd ai-provider-router
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install --upgrade pip
 python -m pip install -e .
 cp .env.example .env
 ```
 
-افتح `.env` وضع Secret مزود واحد على الأقل. لا تحفظ `.env` في Git؛ هو موجود ضمن `.gitignore`. اختبر config دون network:
+على Windows PowerShell استخدم `py -3` و`Copy-Item`. ابدأ بلا network:
 
 ```bash
-ai-router --config-dir config --state-db /tmp/router-summary.db summary
-ai-router --config-dir config --state-db /tmp/router-summary.db route-plan \
+ai-router --config-dir config --state-db data/ai_router.db summary
+ai-router --config-dir config --state-db data/ai_router.db route-plan \
   --output-type text --user "اكتب إجابة قصيرة"
 ```
 
-بعد ظهور summary منقح وroute صالح، نفّذ أول live call:
+ثم live call محدود:
 
 ```bash
-ai-router --config-dir config --state-db /tmp/router-text.db \
-  call-auto --output-type text \
-  --operation first_local_smoke \
+ai-router --config-dir config --state-db data/ai_router.db call-auto \
+  --output-type text --operation first_local_smoke \
   --user "Return exactly: local router works"
 ```
 
-النجاح هو JSON غير فارغ يحتوي `route` و`intent`. إذا فشل، راجع [troubleshooting](troubleshooting.md) ولا تغيّر ترتيب models عشوائيًا.
-
-### 3.3 Docker
-
+## 6. Docker
 
 ```bash
 docker build -t ai-provider-router:local .
 docker run --rm --env-file .env -v "$PWD/data:/app/data" \
   ai-provider-router:local --config-dir config \
-  --state-db /app/data/ai_router.db route-plan \
+  --state-db /app/data/ai_router.db \
+  call-auto --output-type text --user "اكتب إجابة قصيرة"
 ```
 
-لا تضع المفتاح في Dockerfile أو build args أو image layers. لا يوجد Docker daemon مثبت في بيئة التطوير الحالية، لذلك يجب تنفيذ build في جهاز أو CI يحتوي Docker.
+استخدم `--env-file` أو secret manager وقت التشغيل. لا تستخدم `ARG` للمفاتيح ولا تضع `.env` في image layer.
 
-لا تضع Secret في `Dockerfile` أو `docker build --build-arg`. استخدم `--env-file` محليًا أو secret store في orchestrator. افحص الصورة والـlogs قبل نشرها.
-
-### 3.4 الاستخدام البرمجي من Python
-
-ثبّت tag محددًا ثم استورد public API:
-
-```bash
-python -m pip install "git+https://github.com/ysrg2003/ai-provider-router.git@v1.2.27-default-all-providers"
-```
+## 7. الاستخدام البرمجي وHTTP
 
 ```python
 from ai_router import AIRouter
@@ -153,135 +174,98 @@ try:
     result = router.complete_auto(
         user_prompt="اكتب إجابة قصيرة",
         output_type="text",
-        operation="host_python_smoke",
-        providers=["huggingface", "openrouter", "nvidia"],
+        providers=["gemini", "groq", "huggingface"],
     )
-    assert result["route"] and result["intent"] == "text"
+    print(result["provider"], result["model"], result["route"])
 finally:
     router.close()
 ```
 
-المعاملان `providers` و`exclude_providers` اختياريان. عدم تمريرهما يعني كل providers؛ تمرير allowlist يعني providers المحددة فقط.
+لعميل غير Python استخدم CLI أو شغّل:
 
-### 3.5 الاستهلاك من لغة أخرى أو خدمة أخرى
-
-إذا كان مشروعك غير Python، استخدم CLI subprocess. ثبّت router في نفس worker، مرر JSON إلى stdout، واستخدم exit code للتحقق:
-
-```text
-host application -> process ai-router -> JSON stdout
-                                      -> SQLite state DB
+```bash
+ai-router --config-dir config --state-db data/ai_router.db serve \
+  --host 127.0.0.1 --port 8787
 ```
 
-اجعل كل worker يملك State DB مستقلة أو استخدم storage contract واضحًا؛ لا تشارك SQLite file بين عمليات متوازية بلا locking strategy. يمكن أيضًا وضع router خلف HTTP service، لكن هذا boundary **مقترح يحتاج adapter/service host منفصلًا** وليس serverًا مضمنًا في هذا المستودع.
+يقدم الخادم `GET /health` و`GET /v1/models` و`POST /v1/chat/completions`. يقبل `messages` و`tools` و`tool_choice` و`parallel_tool_calls`، ويمرر `router_provider` و`router_model` عند الاختيار الصريح. يعيد metadata آمنة في body وheaders. chat يقتصر على OpenAI-compatible providers؛ لا يحوّل Gemini raw tools قسرًا.
 
-## 4. الأسرار والمتغيرات
+## 8. الاختيار والعقد الموحد
 
-يوجد مرجع تفصيلي مستقل في [docs/credentials.md](../docs/credentials.md). هذا القسم يشرح الخريطة فقط:
+عدم تمرير `provider/model` يعني auto وكل providers في route. للاختيار الصريح مرر الاثنين:
 
-| الاسم | النوع | الوظيفة |
+```bash
+ai-router --config-dir config call-auto --output-type text \
+  --provider groq --model openai/gpt-oss-120b \
+  --user "اكتب إجابة قصيرة"
+```
+
+`providers`/`--providers` allowlist و`exclude_providers`/`--exclude-providers` denylist. يرفض router provider/model الناقص أو غير الموجود في route. عند النجاح تظهر `provider` و`model` و`route`، ويظهر آخر اختيار المنقح في `summary.last_selection`.
+
+لا يكتب المستهلك parser خاصًا لكل provider. في `config/models.json` يربط model بـ`invocation_profile`، وفي `config/invocation_profiles.json` توجد قواعد token field وresponse format وJSON/text envelope وreasoning. Gemini methods المتخصصة تبقى في `gemini.py`.
+
+## 9. providers وroutes
+
+| provider | الاستخدام الأساسي | القيد المهم |
 |---|---|---|
-| `AI_ROUTER_GEMINI_KEYS_JSON` | Secret JSON array | مفاتيح Gemini |
-| `AI_ROUTER_HF_KEYS_JSON` / `HF_TOKEN` | Secret | مفاتيح Hugging Face وfallback المفرد |
-| `AI_ROUTER_OPENROUTER_KEYS_JSON` / `OPENROUTER_API_KEY` | Secret | مفاتيح OpenRouter وfallback المفرد |
-| `NVIDIA_API_KEYS_JSON` / `NVIDIA_API_KEY` | Secret | مفاتيح NVIDIA وfallback المفرد |
-| `AI_ROUTER_CONFIG_DIR` | Variable | مجلد `config`، default=`config` |
-| `AI_ROUTER_STATE_DB` | Variable | مسار SQLite، default=`data/ai_router.db` |
+| Gemini | text/search/image/audio/embedding/video | البحث الفعلي عبر GenerateContent Google Search |
+| Groq | text/translation/chat | OpenAI-compatible profile و`max_completion_tokens` |
+| Hugging Face | text وبعض النماذج المرنة | availability وpermissions تتغير |
+| OpenRouter | text وfree routes | limits/model availability حسب الحساب |
+| NVIDIA | text وroutes المهيأة | وجود model في catalog لا يثبت access أو quota |
 
-لكل بطاقة في docs/credentials: الاسم الدقيق، سبب الحاجة، الحساب والصلاحيات، رابط الحصول، الخطوات، safe placeholder، مكان التخزين، طريقة قراءة الكود، health check، الفشل، expiry، rotation وrevocation. لا توجد قيم حقيقية في الوثائق.
+لا يعني HTTP 200 نجاح صورة أو بحث؛ يجب فحص artifact أو `url_citations`.
 
-## 5. بنية المشروع والمجلدات والملفات
+## 10. الأسرار والمتغيرات
+
+المرجع التفصيلي هو [`docs/credentials.md`](../docs/credentials.md). الأسماء الحالية هي `AI_ROUTER_GEMINI_KEYS_JSON`، و`GROQ_API_KEY`/`GROQ_API_KEYS_JSON`، و`AI_ROUTER_HF_KEYS_JSON`/`HF_TOKEN`، و`AI_ROUTER_OPENROUTER_KEYS_JSON`/`OPENROUTER_API_KEY`، و`NVIDIA_API_KEY`/`NVIDIA_API_KEYS_JSON`، و`AI_ROUTER_LOCAL_API_KEY` الاختياري. `GROQ_BASE_URL` و`AI_ROUTER_CONFIG_DIR` و`AI_ROUTER_STATE_DB` غير سرية.
+
+## 11. خريطة الملفات
 
 | المسار | المسؤولية |
 |---|---|
-| `src/ai_router/router.py` | intent، route/chain resolution، provider filters، fallback، retries، state recording |
-| `src/ai_router/config.py` | تحميل JSON و`.env`، override Base URL، key parsing، policies، public summary |
-| `src/ai_router/intent.py` | اكتشاف output type وgrounding من prompt أو الخيارات الصريحة |
-| `src/ai_router/providers/base.py` | عقود adapter وProviderResponse وProviderError |
-| `src/ai_router/providers/gemini.py` | Gemini REST/interactions وimage/TTS/embedding/video methods |
-| `src/ai_router/providers/openai_compatible.py` | Hugging Face وOpenRouter وNVIDIA عبر OpenAI-compatible contract |
-| `src/ai_router/store.py` | SQLite state، cursor، cooldown، success/failure metadata |
-| `src/ai_router/tools.py` | بناء search/maps tools حسب intent وroute |
-| `src/ai_router/cli/main.py` | أوامر `summary` و`route-plan` و`call-json` و`call-auto` |
-| `config/providers.json` | provider IDs وkind وbase URL وkey pool وtimeout |
-| `config/models.json` | model chains وoutput routes وmethods وcapabilities |
-| `config/key_pools.json` | أسماء Secrets وfallback وrotation |
-| `config/policies.json` | max attempts وtimeouts وbackoff وcooldowns |
-| `config/nvidia_free_catalog.json` | snapshot كتالوج NVIDIA العام |
-| `scripts/` | live smoke وcapability audit وfunctional tests |
-| `tests/` | regression tests للعقود والـstate والـroutes والـproviders |
-| `.github/workflows/` | offline CI وmanual live workflows |
-| `docs/` | أدلة credentials وproviders والتشغيل والتكاملات |
-| `project-documentation/` | التقارير، الأدلة، checkpoint، artifacts المنقحة |
-| `Dockerfile` | صورة CLI اختيارية للـrouter |
-| `pyproject.toml` | package metadata وentrypoint `ai-router` |
+| `src/ai_router/router.py` | routes وfallback وselection وmetadata |
+| `src/ai_router/config.py` | JSON/env/keys/profiles/policy |
+| `src/ai_router/providers/gemini.py` | Gemini specialized methods |
+| `src/ai_router/providers/openai_compatible.py` | JSON/text/chat/tool calls |
+| `src/ai_router/openai_server.py` | HTTP boundary المحلي |
+| `src/ai_router/cli/main.py` | CLI و`serve` |
+| `src/ai_router/store.py` | SQLite cursor/cooldown |
+| `config/models.json` | chains وoutput routes وprofiles |
+| `config/invocation_profiles.json` | request/response behavior |
+| `scripts/start_router_windows.ps1` | Windows loopback starter |
+| `vscode-global-autostart/` | مصدر الإضافة العالمية |
+| `tests/` | regression وserver/provider tests |
 
-## 6. دورة البيانات والعقود
-
-```text
-CLI أو Python input
-  -> detect_intent / explicit output_type
-  -> resolve route أو chain
-  -> provider allowlist/denylist
-  -> model capability filtering
-  -> key pool وSQLite cooldown/cursor
-  -> provider adapter وbounded timeout
-  -> ProviderResponse payload
-  -> route/intent metadata
-  -> JSON أو image/audio/embedding artifact
-```
-
-`ProviderError` يحمل error class وstatus code وretryability. الأخطاء transient أو quota قد تؤدي إلى fallback محدود؛ الأخطاء terminal أو عدم وجود model مناسب توقف الطلب. لا يعيد router الأسرار في exception أو summary.
-
-## 7. المزودون والقدرات
-
-| provider | المسارات الأساسية | ملاحظات |
-|---|---|---|
-| Gemini | text/search/image/audio/embedding/video analysis | payload خاص بـGemini؛ البحث الحي عبر `google_search` فقط |
-| Groq | text/translation | OpenAI-compatible؛ يأتي بعد Gemini وقبل Hugging Face، وترتيب نماذجه موثق في providers.md |
-| Hugging Face | text وبعض multimodal حسب model | OpenAI-compatible، availability تتغير |
-| OpenRouter | text/free وبعض input modalities | model availability وquota حسب الحساب |
-| NVIDIA | text وRiva translation | 12 نموذجًا عامًا مفعلة من catalog 57؛ ليس كل catalog route تنفيذياً |
-
-الاختيار الافتراضي هو كل providers الموجودة في route. استخدم [capability-audit](capability-audit.md) لتمييز passed وfailed وroute-only.
-
-## 8. الاختبارات والتشغيل والإصدارات
+## 12. الاختبارات واستكشاف الأعطال
 
 ```bash
 python3 -m json.tool config/providers.json >/dev/null
 python3 -m json.tool config/models.json >/dev/null
-python3 -m unittest discover -s tests -v
-python3 -m ai_router.cli.main --config-dir config --state-db /tmp/router.db summary
+python3 -m json.tool config/invocation_profiles.json >/dev/null
+python3 -m compileall -q src scripts tests
+PYTHONPATH="$PWD/src" python3 -m unittest discover -s tests -q
+node --check vscode-global-autostart/extension.js
+git diff --check
 ```
 
-الاختبارات offline لا تثبت quota أو صحة session الخارجية. للـlive استخدم workflow محدودًا، ولا تسجل headers أو base64 أو prompts الحساسة. آخر capability audit موثق في [capability-audit.md](capability-audit.md)، وآخر live evidence في [live-test-report-2026-08-19.md](live-test-report-2026-08-19.md).
+`401/403` تعني secret أو permission، و`402` قد تعني plan/credits، و`404` تعني model أو endpoint، و`429` quota/rate، و`503/timeout` availability. افحص `summary` وroute plan وhealth، ولا تطبع الأسرار أو Authorization headers أو base64.
 
-## 9. الاستكشاف والأمان
+## 13. بقية الوثائق
 
-ابدأ بـ`summary` ثم `route-plan`. عند 401/403 افحص Secret وpermissions. عند 400/404 افحص model/method. عند 429 انتظر quota أو استخدم provider آخر. عند 503/timeout افحص health وavailability وSQLite cooldown، ولا تكرر image generation بلا حاجة.
-
-لا تضع `.env` أو Cookies أو Storage State أو API tokens أو Authorization headers في Git أو Docker image أو artifacts. بعد التعرض، revoke/rotate من المصدر، حدّث Secret store، ثم نفّذ smoke محدودًا.
-
-## 10. مراجع القراءة
-
-| الهدف | الوثيقة |
+| الهدف | الملف |
 |---|---|
-| البدء من الصفر | هذا الملف |
-| أسرار router والمتغيرات | [`docs/credentials.md`](../docs/credentials.md) |
-| config وroutes | [`configuration-guide.md`](configuration-guide.md) و[`../config/README.md`](../config/README.md) |
-| providers | [`providers.md`](providers.md) |
-| GitHub/live operations | [`../docs/operations.md`](../docs/operations.md) |
+| أسرار ومتغيرات | [`docs/credentials.md`](../docs/credentials.md) |
+| إعداد config | [`configuration-guide.md`](configuration-guide.md) |
+| عقد الاستجابة | [`response-contract.md`](response-contract.md) |
 | troubleshooting | [`troubleshooting.md`](troubleshooting.md) |
-| AI agent context | [`../AI_CONTEXT.md`](../AI_CONTEXT.md) |
-| artifact/file inventory | [`artifact-inventory.md`](artifact-inventory.md) |
-| release history | [GitHub releases](https://github.com/ysrg2003/ai-provider-router/releases) |
+| تشغيل workflows | [`../docs/operations.md`](../docs/operations.md) |
+| السياق الهندسي | [`../AI_CONTEXT.md`](../AI_CONTEXT.md) |
+| المشروع الأم | [`../README.md`](../README.md) |
 
-## المراجع
+## مراجع
 
-[1]: https://github.com/ysrg2003/ai-provider-router "المستودع الرسمي"
+[1]: https://github.com/ysrg2003/ai-provider-router "المستودع الأصلي"
 [2]: https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions "GitHub Actions Secrets"
-[3]: https://docs.docker.com/engine/reference/builder/ "Dockerfile reference"
-[4]: https://huggingface.co/docs/hub/spaces-overview "Hugging Face Spaces"
-
-## 14. تقارير تحقق حديثة
-
-- [إصلاح النصوص الطويلة في replica-02](replica-02-long-prompt-fix-2026-08-21.md): السبب الجذري، stack trace المنقح، الإصلاح، ونتيجة اختبار 1,500 حرف.
+[3]: https://docs.docker.com/reference/dockerfile/ "Dockerfile reference"
+[4]: https://code.visualstudio.com/api/references/extension-manifest "VS Code extension manifest"

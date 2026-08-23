@@ -1,0 +1,106 @@
+{
+  "profiles": {
+    "gemini_generate_content": {
+      "transport": "gemini_generate_content",
+      "response_parser": "json_object",
+      "response_format": "application/json"
+    },
+    "openai_json": {
+      "transport": "openai_chat",
+      "response_parser": "json_object",
+      "response_format": "json_object",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024
+    },
+    "groq_json": {
+      "transport": "openai_chat",
+      "response_parser": "json_object",
+      "response_format": "json_object",
+      "max_tokens_field": "max_completion_tokens",
+      "max_tokens": 1024
+    },
+    "openai_text": {
+      "transport": "openai_chat",
+      "response_parser": "text_envelope",
+      "response_format": "none",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024
+    },
+    "hf_reasoning_json": {
+      "transport": "openai_chat",
+      "response_parser": "json_object",
+      "response_format": "json_object",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024,
+      "omit_system_prompt": true,
+      "reasoning_effort": "high"
+    },
+    "hf_flexible": {
+      "transport": "openai_chat",
+      "response_parser": "json_or_text_envelope",
+      "response_format": "none",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 2048
+    },
+    "hf_cheapest_json": {
+      "transport": "openai_chat",
+      "response_parser": "json_object",
+      "response_format": "json_object",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024,
+      "model_suffix": ":cheapest"
+    },
+    "hf_reasoning_flexible": {
+      "transport": "openai_chat",
+      "response_parser": "json_or_text_envelope",
+      "response_format": "none",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 2048,
+      "omit_system_prompt": true,
+      "reasoning_effort": "high"
+    },
+    "nvidia_flexible": {
+      "transport": "openai_chat",
+      "response_parser": "json_or_text_envelope",
+      "response_format": "none",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024
+    },
+    "nvidia_text_envelope": {
+      "transport": "openai_chat",
+      "response_parser": "text_envelope",
+      "response_format": "none",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024
+    },
+    "cloudflare_json": {
+      "transport": "cloudflare_openai_chat",
+      "response_parser": "json_object",
+      "response_format": "json_object",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024
+    },
+    "cloudflare_flexible": {
+      "transport": "cloudflare_openai_chat",
+      "response_parser": "json_or_text_envelope",
+      "response_format": "none",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024
+    },
+    "cloudflare_text_envelope": {
+      "transport": "cloudflare_openai_chat",
+      "response_parser": "text_envelope",
+      "response_format": "none",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024
+    },
+    "cohere_reasoning_json": {
+      "transport": "openai_chat",
+      "response_parser": "json_object",
+      "response_format": "json_object",
+      "max_tokens_field": "max_tokens",
+      "max_tokens": 1024,
+      "reasoning_effort": "high"
+    }
+  }
+}

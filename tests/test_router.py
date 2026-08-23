@@ -45,14 +45,14 @@ class RouterTests(unittest.TestCase):
             ])
             router.close()
 
-    def test_single_hf_token_is_loaded_as_fallback_key(self) -> None:
+    def test_single_provider_token_is_loaded_as_fallback_key(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             os.environ.pop("AI_ROUTER_HF_KEYS_JSON", None)
-            os.environ["HF_TOKEN"] = "hf_single_test_token"
+            os.environ["HF_TOKEN"] = "test-hf-token-placeholder"
             router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
             keys = router.config.keys_for("huggingface")
             self.assertEqual(len(keys), 1)
-            self.assertEqual(keys[0].secret, "hf_single_test_token")
+            self.assertEqual(keys[0].secret, "test-hf-token-placeholder")
             router.close()
             os.environ.pop("HF_TOKEN", None)
 
@@ -103,7 +103,9 @@ class RouterTests(unittest.TestCase):
 
             with patch.object(router.adapters["google_gemini"], "complete_json", side_effect=fake):
                 result = router.complete_json(system_prompt="system", user_prompt="user", operation="test")
-            self.assertEqual(result, {"ok": True})
+            self.assertEqual(result["ok"], True)
+            self.assertEqual(result["provider"], "google_gemini")
+            self.assertEqual(result["model"], "gemini-3.7-flash")
             self.assertEqual(calls[:2], ["gemini-3.7-flash:one", "gemini-3.7-flash:two"])
             self.assertEqual(router.store.stats()["calls"], 2)
             router.close()
@@ -133,9 +135,9 @@ class RouterTests(unittest.TestCase):
 
                 with patch.object(router.adapters["google_gemini"], "complete_json", side_effect=fake):
                     result = router.complete_json(chain="cursor_test", system_prompt="system", user_prompt="first", operation="cursor-1")
-                    self.assertEqual(result, {"ok": "two"})
+                    self.assertEqual(result["ok"], "two")
                     result = router.complete_json(chain="cursor_test", system_prompt="system", user_prompt="second", operation="cursor-2")
-                self.assertEqual(result, {"ok": "two"})
+                self.assertEqual(result["ok"], "two")
                 self.assertEqual(calls, [
                     "gemini-3.7-flash:one",
                     "gemini-3.7-flash:two",
@@ -173,7 +175,7 @@ class RouterTests(unittest.TestCase):
                     return ProviderResponse({"ok": secret}, {})
 
                 with patch.object(first_router.adapters["google_gemini"], "complete_json", side_effect=first_fake):
-                    self.assertEqual(first_router.complete_json(chain="restart_test", system_prompt="s", user_prompt="u"), {"ok": "one"})
+                    self.assertEqual(first_router.complete_json(chain="restart_test", system_prompt="s", user_prompt="u")["ok"], "one")
                 first_router.close()
 
                 second_router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=state_db)
@@ -188,7 +190,7 @@ class RouterTests(unittest.TestCase):
                     return ProviderResponse({"ok": secret}, {})
 
                 with patch.object(second_router.adapters["google_gemini"], "complete_json", side_effect=second_fake):
-                    self.assertEqual(second_router.complete_json(chain="restart_test", system_prompt="s", user_prompt="u"), {"ok": "one"})
+                    self.assertEqual(second_router.complete_json(chain="restart_test", system_prompt="s", user_prompt="u")["ok"], "one")
                 self.assertEqual(second_calls, ["gemini-3.6-flash:one"])
                 second_router.close()
             finally:
@@ -216,7 +218,9 @@ class RouterTests(unittest.TestCase):
                     user_prompt="user",
                     operation="video-test",
                 )
-            self.assertEqual(result, {"summary": "ok"})
+            self.assertEqual(result["summary"], "ok")
+            self.assertEqual(result["provider"], "google_gemini")
+            self.assertEqual(result["model"], "gemini-3.7-flash")
             self.assertEqual(calls[:2], [
                 "gemini-3.7-flash:one:https://www.youtube.com/watch?v=example",
                 "gemini-3.7-flash:two:https://www.youtube.com/watch?v=example",
@@ -306,6 +310,49 @@ class ProviderFilterTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "No configured models remain"):
                 router.route_plan(user_prompt="generate audio", output_type="audio", providers="nvidia")
             router.close()
+
+
+class ExplicitSelectionAndChatTests(unittest.TestCase):
+    def test_explicit_provider_and_model_select_exact_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+            model = next(item.model for item in router.config.model_chain("default") if item.provider_id == "groq")
+            plan = router.route_plan(user_prompt="write a short answer", provider="groq", model=model)
+            self.assertEqual([(item["provider"], item["model"]) for item in plan["models"]], [("groq", model)])
+            with self.assertRaisesRegex(ValueError, "supplied together"):
+                router.route_plan(user_prompt="write a short answer", provider="groq")
+            router.close()
+
+    def test_complete_chat_supports_tools_and_reports_actual_model(self) -> None:
+        previous = os.environ.get("AI_ROUTER_OPENROUTER_KEYS_JSON")
+        os.environ["AI_ROUTER_OPENROUTER_KEYS_JSON"] = json.dumps([{"id": "chat-key", "key": "chat-secret", "project": "p1"}])
+        try:
+            with tempfile.TemporaryDirectory() as temp:
+                router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
+                router.config.chains["chat_test"] = [ModelSpec("openrouter", "test-chat-model", True)]
+                response = ProviderResponse(
+                    {"role": "assistant", "content": None, "tool_calls": [{"id": "call_1", "type": "function"}], "finish_reason": "tool_calls"},
+                    {"total_tokens": 4},
+                )
+                with patch.object(router.adapters["openrouter"], "complete_chat", return_value=response) as chat:
+                    result = router.complete_chat(
+                        chain="chat_test",
+                        messages=[{"role": "user", "content": "Use the tool"}],
+                        tools=[{"type": "function", "function": {"name": "lookup"}}],
+                        provider="openrouter",
+                        model="test-chat-model",
+                    )
+                self.assertEqual(result["provider"], "openrouter")
+                self.assertEqual(result["model"], "test-chat-model")
+                self.assertEqual(result["route"], "chat_test")
+                self.assertEqual(router.last_selection()["model"], "test-chat-model")
+                self.assertEqual(chat.call_args.kwargs["tools"][0]["type"], "function")
+                router.close()
+        finally:
+            if previous is None:
+                os.environ.pop("AI_ROUTER_OPENROUTER_KEYS_JSON", None)
+            else:
+                os.environ["AI_ROUTER_OPENROUTER_KEYS_JSON"] = previous
 
 
 if __name__ == "__main__":

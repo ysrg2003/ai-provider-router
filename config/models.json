@@ -44,12 +44,14 @@
       {
         "provider": "huggingface",
         "model": "openai/gpt-oss-120b:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       }
     ],
     "nvidia_free": [
@@ -64,7 +66,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -77,7 +80,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -90,7 +94,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -103,7 +108,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -116,7 +122,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -129,7 +136,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -142,7 +150,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -155,7 +164,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -168,7 +178,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -181,7 +192,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -194,7 +206,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -207,7 +220,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       }
     ],
     "default": [
@@ -262,7 +276,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -275,7 +290,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -288,7 +304,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -301,57 +318,68 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "huggingface",
         "model": "openai/gpt-oss-120b:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "zai-org/GLM-5.2:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "deepseek-ai/DeepSeek-R1:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_reasoning_json"
       },
       {
         "provider": "huggingface",
         "model": "Qwen/Qwen3-4B-Thinking-2507:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_reasoning_json"
       },
       {
         "provider": "huggingface",
         "model": "Qwen/Qwen2.5-7B-Instruct-1M:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "Qwen/Qwen2.5-Coder-32B-Instruct:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "meta-llama/Llama-3.1-8B-Instruct:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "openai/gpt-oss-20b:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "openrouter",
@@ -364,7 +392,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -377,7 +406,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -390,7 +420,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -403,7 +434,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -416,7 +448,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -429,7 +462,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -442,7 +476,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -458,7 +493,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -473,7 +509,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -486,7 +523,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -500,7 +538,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -513,7 +552,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -528,7 +568,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -541,7 +582,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -556,7 +598,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -570,7 +613,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -584,7 +628,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "nvidia",
@@ -597,7 +642,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -610,7 +656,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -623,7 +670,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -636,7 +684,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -649,7 +698,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -662,7 +712,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -675,7 +726,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -688,7 +740,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -701,7 +754,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -714,7 +768,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -727,7 +782,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -740,7 +796,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       }
     ],
     "creative": [
@@ -795,7 +852,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -808,7 +866,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -821,7 +880,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -834,27 +894,32 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "huggingface",
         "model": "openai/gpt-oss-120b:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "deepseek-ai/DeepSeek-V4-Flash-0731:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "zai-org/GLM-5.2:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "deepseek-ai/DeepSeek-R1:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_reasoning_json"
       },
       {
         "provider": "openrouter",
@@ -867,7 +932,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -880,7 +946,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -893,7 +960,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -906,7 +974,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -919,7 +988,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -932,7 +1002,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -945,7 +1016,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -961,7 +1033,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -976,7 +1049,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -989,7 +1063,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1003,7 +1078,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1016,7 +1092,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1031,7 +1108,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1044,7 +1122,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1059,7 +1138,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1073,7 +1153,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1087,7 +1168,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "nvidia",
@@ -1100,7 +1182,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1113,7 +1196,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1126,7 +1210,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1139,7 +1224,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1152,7 +1238,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1165,7 +1252,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1178,7 +1266,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1191,7 +1280,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1204,7 +1294,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1217,7 +1308,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1230,7 +1322,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1243,7 +1336,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       }
     ],
     "cheap": [
@@ -1278,7 +1372,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -1291,7 +1386,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -1304,7 +1400,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -1317,27 +1414,32 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "huggingface",
         "model": "openai/gpt-oss-20b:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "Qwen/Qwen3-4B-Thinking-2507:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_reasoning_json"
       },
       {
         "provider": "huggingface",
         "model": "Qwen/Qwen2.5-7B-Instruct-1M:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
         "model": "meta-llama/Llama-3.1-8B-Instruct:fastest",
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "openrouter",
@@ -1350,7 +1452,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1363,7 +1466,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1376,7 +1480,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1389,7 +1494,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1402,7 +1508,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1415,7 +1522,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1428,7 +1536,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1444,7 +1553,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1459,7 +1569,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1472,7 +1583,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1486,7 +1598,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1499,7 +1612,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1514,7 +1628,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1527,7 +1642,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1542,7 +1658,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1556,7 +1673,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1570,7 +1688,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "nvidia",
@@ -1583,7 +1702,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1596,7 +1716,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1609,7 +1730,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1622,7 +1744,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1635,7 +1758,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1648,7 +1772,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1661,7 +1786,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1674,7 +1800,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1687,7 +1814,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1700,7 +1828,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1713,7 +1842,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -1726,7 +1856,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       }
     ],
     "openrouter_free": [
@@ -1741,7 +1872,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1754,7 +1886,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1767,7 +1900,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1780,7 +1914,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1793,7 +1928,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1806,7 +1942,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1819,7 +1956,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1835,7 +1973,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1850,7 +1989,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1863,7 +2003,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1877,7 +2018,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1890,7 +2032,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1905,7 +2048,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1918,7 +2062,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1933,7 +2078,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -1947,7 +2093,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       }
     ]
   },
@@ -2092,7 +2239,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -2105,7 +2253,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -2118,7 +2267,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "groq",
@@ -2131,7 +2281,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "groq_json"
       },
       {
         "provider": "huggingface",
@@ -2143,7 +2294,8 @@
         "output_types": [
           "text"
         ],
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
@@ -2155,7 +2307,8 @@
         "output_types": [
           "text"
         ],
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
@@ -2167,7 +2320,8 @@
         "output_types": [
           "text"
         ],
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_flexible"
       },
       {
         "provider": "huggingface",
@@ -2179,7 +2333,8 @@
         "output_types": [
           "text"
         ],
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "hf_reasoning_json"
       },
       {
         "provider": "openrouter",
@@ -2192,7 +2347,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2205,7 +2361,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2218,7 +2375,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2231,7 +2389,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2244,7 +2403,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2257,7 +2417,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2270,7 +2431,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2286,7 +2448,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2301,7 +2464,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2314,7 +2478,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2328,7 +2493,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2341,7 +2507,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2356,7 +2523,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2369,7 +2537,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2384,7 +2553,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -2398,7 +2568,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "nvidia",
@@ -2411,7 +2582,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2424,7 +2596,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2437,7 +2610,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2450,7 +2624,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2463,7 +2638,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2476,7 +2652,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2489,7 +2666,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2502,7 +2680,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2515,7 +2694,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2528,7 +2708,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2541,7 +2722,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       },
       {
         "provider": "nvidia",
@@ -2554,7 +2736,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "nvidia_flexible"
       }
     ],
     "text_grounded_search": [
@@ -3118,7 +3301,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3131,7 +3315,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3144,7 +3329,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3157,7 +3343,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3170,7 +3357,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3183,7 +3371,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3196,7 +3385,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3212,7 +3402,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3227,7 +3418,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3240,7 +3432,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3254,7 +3447,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3267,7 +3461,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3282,7 +3477,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3295,7 +3491,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3310,7 +3507,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       },
       {
         "provider": "openrouter",
@@ -3324,7 +3522,8 @@
           "text"
         ],
         "supports_response_format": true,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_json"
       }
     ],
     "openrouter_audio_catalog": [
@@ -3375,7 +3574,8 @@
         ],
         "supports_response_format": false,
         "enabled": false,
-        "reason": "Guardrail model; not a general-purpose generation fallback."
+        "reason": "Guardrail model; not a general-purpose generation fallback.",
+        "invocation_profile": "openai_json"
       }
     ],
     "translation": [
@@ -3390,7 +3590,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_text"
       },
       {
         "provider": "groq",
@@ -3403,7 +3604,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_text"
       },
       {
         "provider": "groq",
@@ -3416,7 +3618,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_text"
       },
       {
         "provider": "groq",
@@ -3429,7 +3632,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_text"
       },
       {
         "provider": "groq",
@@ -3442,7 +3646,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_text"
       },
       {
         "provider": "groq",
@@ -3455,7 +3660,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_text"
       },
       {
         "provider": "groq",
@@ -3468,7 +3674,8 @@
           "text"
         ],
         "supports_response_format": false,
-        "enabled": true
+        "enabled": true,
+        "invocation_profile": "openai_text"
       }
     ]
   },

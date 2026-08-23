@@ -59,6 +59,7 @@ Expected result: `summary` يعمل دون طباعة القيمة. إذا ظه�
 | `NVIDIA_API_KEY` | secret fallback | empty | NVIDIA pool | single key fallback |
 | `AI_ROUTER_CONFIG_DIR` | path | `config` | `RouterConfig` | config directory |
 | `AI_ROUTER_STATE_DB` | path | `data/ai_router.db` | `RouterStore` | SQLite state location |
+| `AI_ROUTER_LOCAL_API_KEY` | secret | empty | `openai_server.py` | optional local Bearer auth |
 
 GitHub Actions **Secrets** تحفظ القيم الحساسة، أما **Variables** فتحفظ base URLs والمسارات غير الحساسة إن احتجت override. لا تجعل key متغيرًا عاديًا.
 
@@ -144,11 +145,27 @@ python3 -m ai_router.cli.main --config-dir config route-plan \
 
 إذا استُخدم `--providers` و`--exclude-providers` معًا، يجب ألا يتقاطعَا. عند وجود تقاطع أو alias غير معروف أو عدم بقاء أي model مناسب للمسار، يوقف router الطلب بخطأ واضح بدل تنفيذ fallback غير مقصود. **عدم تمرير أي خيار هو الوضع الافتراضي الشامل**: لا تتم إزالة أي provider من route.
 
+### اختيار provider/model صريحين
+
+يمكن تحديد provider وmodel معًا لكل طلب دون تغيير `config/models.json`. يجب تمرير الاثنين؛ اختيار واحد فقط أو model غير موجود في route يرفع `ValueError` بدل fallback غير مقصود:
+
+```bash
+ai-router --config-dir config call-auto --output-type text \
+  --provider groq --model openai/gpt-oss-120b \
+  --user "اكتب إجابة قصيرة"
+```
+
+إذا لم تحدد أيًا منهما، يبقى الوضع `auto` ويستخدم كل candidates المسموح بها. يحتفظ النجاح بآخر اختيار في `summary.last_selection`، ويضيف `provider` و`model` و`route` إلى نتائج public routes.
+
+### invocation profiles
+
+يُعرّف `config/invocation_profiles.json` قواعد request/response الخاصة بالنموذج. يربط `config/models.json` كل entry باسم profile اختياري؛ وتشمل القواعد transport وresponse format وmax-token field وparsing JSON أو text envelope. لا تطبق profile OpenAI-compatible على methods Gemini المتخصصة؛ Gemini يحتفظ بـGenerateContent وGoogle Search وimage/TTS/embedding/video contracts الخاصة به.
+
 ### الاستخدام من Python
 
 الواجهة الموحدة والحقول الناتجة موثقة تفصيليًا في [عقد الاستجابة الموحد](response-contract.md). استخدم `complete_auto()` لمعظم التطبيقات؛ استخدم `complete_json()` فقط عندما تريد التحكم في chain والحصول على JSON النموذج الخام.
 
-تقبل `AIRouter.complete_auto` و`route_plan` و`complete_json` و`complete_video_json` و`translate_text` المعاملين `providers` و`exclude_providers`:
+تقبل `AIRouter.complete_auto` و`route_plan` و`complete_json` و`complete_video_json` و`translate_text` المعاملين `provider` و`model` للاختيار الصريح، والمعاملين `providers` و`exclude_providers` للفلاتر:
 
 ```python
 from ai_router import AIRouter
@@ -188,6 +205,17 @@ AI_ROUTER_OPENROUTER_KEYS_JSON=["<key-1>","<key-2>"]
 ```
 
 بعد ذلك شغّل `summary` ثم test صغير. `RouterStore` يدير cursor وcooldown لكل key؛ لا تتوقع أن key الثانية تعوض quota مرتبطة بالحساب نفسه أو model نفسه.
+
+## الخادم المحلي وVS Code
+
+شغّل boundary OpenAI-compatible من جذر المشروع، مع global flags قبل subcommand:
+
+```bash
+ai-router --config-dir config --state-db data/ai_router.db serve \
+  --host 127.0.0.1 --port 8787
+```
+
+`/health` و`/v1/models` لا يحتاجان provider key. `POST /v1/chat/completions` يرسل إلى OpenAI-compatible candidates فقط، ويقبل `router_provider` و`router_model`. إضافة VS Code العالمية في `vscode-global-autostart/` تبدأ نفس السكربت لأي Workspace بعد ضبط project path مرة واحدة على Windows. راجع [README](../README.md) لقائمة النقرات.
 
 ## state DB
 
@@ -239,6 +267,7 @@ python3 -m compileall -q src tests
 python3 -m unittest discover -s tests -v
 python3 -m json.tool config/providers.json >/dev/null
 python3 -m json.tool config/models.json >/dev/null
+python3 -m json.tool config/invocation_profiles.json >/dev/null
 python3 -m json.tool config/key_pools.json >/dev/null
 python3 -m json.tool config/policies.json >/dev/null
 git diff --check

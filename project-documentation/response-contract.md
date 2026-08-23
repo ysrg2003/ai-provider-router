@@ -6,7 +6,7 @@
 
 لذلك لا يحتاج المستهلك إلى تحديد provider أو model أو method أو endpoint في كل طلب. يكفي ضبط أسرار مزود واحد أو أكثر مرة واحدة في بيئة التشغيل. إذا لم يمرر المستخدم `providers` أو `exclude_providers`، يستخدم router جميع المزودين الذين لديهم credentials صالحة، حسب ترتيب route في `config/models.json`.
 
-> **تمييز مهم:** `complete_auto()` هي الواجهة ذات الـenvelope الموحد. أما `complete_json()` فهي واجهة منخفضة المستوى تعيد JSON الذي أنتجه النموذج في الأساس، و`route_plan()` يعيد خطة دون تنفيذ network request، و`summary()` يعيد ملخص الإعداد والحالة.
+> **تمييز مهم:** `complete_auto()` هي الواجهة ذات الـenvelope الموحد. أما `complete_json()` فهي واجهة JSON منخفضة المستوى لكنها تضيف `provider` و`model` و`route` عند النجاح، و`complete_chat()` هي واجهة chat للنماذج OpenAI-compatible مع `tool_calls`. `route_plan()` يعيد خطة دون تنفيذ network request، و`summary()` يعيد ملخص الإعداد والحالة و`last_selection`.
 
 ## 1. الحقول المشتركة في نتيجة `complete_auto()`
 
@@ -201,7 +201,25 @@ gemini-2.5-flash
 
 ### `summary()` — حالة آمنة منقحة
 
-يعيد summary كائنًا يحتوي `config` و`state`. يعرض provider names وcounts وإحصاءات الحالة، ولا يعرض قيم API keys.
+يعيد summary كائنًا يحتوي `config` و`state` و`last_selection`. يعرض provider names وcounts وإحصاءات الحالة وآخر provider/model/route ناجح، ولا يعرض قيم API keys.
+
+### `complete_chat()` وخادم OpenAI-compatible
+
+تقبل `complete_chat()` قائمة `messages` الاختيارية مع `tools` و`tool_choice` و`parallel_tool_calls`. تقتصر على entries ذات adapter من نوع OpenAI-compatible، وتعيد payload داخليًا بالشكل التالي:
+
+```json
+{
+  "role": "assistant",
+  "content": "النص أو null عند tool call",
+  "tool_calls": [],
+  "finish_reason": "stop",
+  "provider": "groq",
+  "model": "openai/gpt-oss-120b",
+  "route": "default"
+}
+```
+
+الخادم المحلي يحوّل ذلك إلى OpenAI Chat Completions. `GET /v1/models` يعرض `ai-provider-router` كـmodel ID محلي، بينما `router_provider` و`router_model` و`router_route` يصفون التنفيذ الفعلي. كما يضع الخادم `X-AI-Router-Provider` و`X-AI-Router-Model` في headers. لا تُعتبر Gemini specialized routes جزءًا من هذا raw chat contract.
 
 ### الأخطاء
 
@@ -216,6 +234,7 @@ gemini-2.5-flash
 | `config_dir` | لا | الافتراضي `config` إذا كان التشغيل من جذر المشروع |
 | `state_db` | لا | الافتراضي `data/ai_router.db`؛ يمكن تغييره عند الحاجة |
 | `providers` | لا | عدم تمريره يعني كل المزودين المتاحين في route |
+| `provider` + `model` | لا | مررهما معًا عندما تريد اختيارًا صريحًا؛ يرفض router الاختيار الناقص |
 | `output_type` | لا | `auto` يحاول اكتشافه من prompt، لكن التصريح به أكثر وضوحًا |
 | `grounding` | لا، إلا إذا أردت البحث/الخرائط | استخدم `search` أو `maps` صراحة أو كلمات واضحة يلتقطها intent detector |
 | image input | فقط عند تحليل صورة أو image-to-image | مرر `image_data` و`image_mime_type` |

@@ -6,6 +6,27 @@
 
 بعد إعداد الـSecret وتشغيل workflow يدويًا، يجب أن يظهر تقرير artifact باسم `live-smoke-<run-id>` يحتوي على `live-smoke.json`. التقرير يعرض حالة كل سيناريو، المسار المختار، اسم النموذج، وحجم المخرج فقط. لا يعرض مفاتيح API أو محتوى Base64 للصورة والصوت.
 
+## تشغيل الخادم المحلي وVS Code على Windows
+
+للتشغيل اليدوي من جذر المشروع، يجب وضع global flags قبل subcommand:
+
+```powershell
+ai-router --config-dir config --state-db data\ai_router.db serve --host 127.0.0.1 --port 8787
+```
+
+تحقق من نافذة PowerShell أخرى:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8787/health
+Invoke-RestMethod http://127.0.0.1:8787/v1/models
+```
+
+المتوقع `status: ok` وmodel ID `ai-provider-router`. إذا كان `AI_ROUTER_LOCAL_API_KEY` مضبوطًا، أرسل `Authorization: Bearer ...` ولا تضع القيمة في command history أو logs. عند binding غير loopback يجب تمرير `--local-api-key` أو ضبط المتغير.
+
+للتشغيل التلقائي، ثبّت VSIX من `vscode-global-autostart/`، ثم نفّذ **AI Router: Configure Project Path** واختر مجلد المشروع الذي يحتوي `scripts\start_router_windows.ps1` و`.venv\Scripts\ai-router.exe`. بعد ذلك تبدأ الإضافة الخادم لأي Workspace عند فتح VS Code. استخدم **AI Router: Show Status** للتحقق و**AI Router: Stop Managed Server** للإيقاف.
+
+الخادم المحلي يقبل `/v1/chat/completions` للنماذج OpenAI-compatible فقط. يمرر `router_provider` و`router_model` إلى `complete_chat()` عند وجودهما، ويعيد `router_provider` و`router_model` و`router_route` مع headers `X-AI-Router-Provider` و`X-AI-Router-Model`. routes Gemini الخاصة بالبحث والصور والصوت والفيديو تبقى عبر `complete_auto()` ولا تُحوّل إلى chat raw.
+
 ## خريطة الاعتمادات
 
 | الاسم | المكان | الغرض | التصنيف |
@@ -17,6 +38,7 @@
 | `OPENROUTER_API_KEY` | GitHub Actions Secret أو `.env` محلي | مفتاح OpenRouter المفرد كـfallback | اختياري، Secret |
 | `AI_ROUTER_CONFIG_DIR` | متغير بيئة محلي | مسار مجلد config | اختياري، غير سري |
 | `AI_ROUTER_STATE_DB` | متغير بيئة أو CLI | مسار SQLite للحالة | اختياري، غير سري |
+| `AI_ROUTER_LOCAL_API_KEY` | متغير بيئة أو CLI | Bearer اختياري للخادم المحلي | Secret اختياري |
 
 يقرأ `config/key_pools.json` الاسم `AI_ROUTER_GEMINI_KEYS_JSON` من pool اسمه `gemini_default`. لا تستخدم اسمًا آخر إلا إذا عدّلت ملف config نفسه.
 
@@ -125,6 +147,14 @@ ai-router --config-dir config --state-db /tmp/openrouter-summary.db summary
 أما رمز GitHub نفسه، فلا تضعه في Secret الخاص بالمشروع. استخدم token قصير العمر وبأقل صلاحيات، وألغِه فور انتهاء المهمة من [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens).
 
 ## التحقق المحلي دون شبكة
+
+أضف إلى التحقق الساكن:
+
+```bash
+python3 -m json.tool config/invocation_profiles.json >/dev/null
+node --check vscode-global-autostart/extension.js
+```
+
 
 ```bash
 cd /path/to/ai-provider-router

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import re
-from typing import Any, Protocol
+from typing import Any, Mapping, Protocol
 
 
 _URL_RE = re.compile(r"https?://[^\s<>\"']+")
@@ -92,7 +92,10 @@ class ProviderResponse:
 class ProviderAdapter(Protocol):
     provider_id: str
 
-    def complete_json(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int, supports_response_format: bool = True) -> ProviderResponse:
+    def complete_json(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int, supports_response_format: bool = True, invocation_profile: Mapping[str, Any] | None = None) -> ProviderResponse:
+        ...
+
+    def complete_chat(self, *, model: str, secret: str, messages: list[dict[str, Any]], timeout_seconds: int, tools: list[dict[str, Any]] | None = None, tool_choice: Any = None, parallel_tool_calls: bool | None = None, invocation_profile: Mapping[str, Any] | None = None) -> ProviderResponse:
         ...
 
     def complete_text(self, *, model: str, secret: str, system_prompt: str, user_prompt: str, timeout_seconds: int) -> ProviderResponse:

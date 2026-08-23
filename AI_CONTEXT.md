@@ -2,7 +2,7 @@
 
 ## 1. الهوية والحدود
 
-`ai-provider-router` مكتبة وCLI بلغة Python 3.11+ لتوحيد استدعاء عدة مزودي نماذج خلف إعدادات JSON واحدة. يختار router نوع المخرج، route أو chain، model، provider، وkey من الإعدادات، وينفذ fallback محدودًا عند أخطاء قابلة للإعادة. يحتفظ SQLite بحالة cooldown وcursor وإحصاءات التشغيل، ولا يحتفظ بقيم الأسرار.
+`ai-provider-router` مكتبة وCLI وخادم HTTP محلي بلغة Python 3.11+ لتوحيد استدعاء عدة مزودي نماذج خلف إعدادات JSON واحدة. يختار router نوع المخرج، route أو chain، model، provider، وkey من الإعدادات، وينفذ fallback محدودًا عند أخطاء قابلة للإعادة. يحتفظ SQLite بحالة cooldown وcursor وإحصاءات التشغيل، ولا يحتفظ بقيم الأسرار.
 
 المشروع لا يستضيف النماذج، ولا ينشئ API keys، ولا يضمن توفر نموذج خارجي أو بقاء quota. كما أن مستودعات أو Spaces خارج هذا المستودع ليست جزءًا من نطاقه، ولا يجوز إدخال ملفاتها أو جلساتها إلى هذه الشجرة.
 
@@ -41,14 +41,15 @@ ai-router --config-dir config --state-db /tmp/router.db \
 | الطبقة | الملفات | المسؤولية والعلاقة |
 |---|---|---|
 | Entrypoint | `pyproject.toml`, `src/ai_router/__init__.py` | تعريف الحزمة وconsole script باسم `ai-router` |
-| CLI | `src/ai_router/cli/main.py` | أوامر `summary`, `route-plan`, `call-auto`, و`call-json`; يطبع JSON إلى stdout |
+| CLI | `src/ai_router/cli/main.py` | أوامر `summary`, `route-plan`, `call-auto`, `call-json` و`serve`; يطبع JSON إلى stdout أو يشغل HTTP server |
 | Intent | `src/ai_router/intent.py` | اكتشاف `output_type` و`grounding` عند عدم التصريح بهما |
 | Tools | `src/ai_router/tools.py` | تحويل `search` و`maps` إلى descriptors داخلية |
 | Orchestration | `src/ai_router/router.py` | route resolution، provider filters، key/model fallback، retries، envelope |
-| Config | `src/ai_router/config.py`, `config/providers.json`, `config/models.json`, `config/key_pools.json`, `config/policies.json` | providers، routes، models، secrets mapping، policy |
+| Config | `src/ai_router/config.py`, `config/providers.json`, `config/models.json`, `config/invocation_profiles.json`, `config/key_pools.json`, `config/policies.json` | providers، routes، models، request/response profiles، secrets mapping، policy |
 | Provider contracts | `src/ai_router/providers/base.py`, `src/ai_router/response_contract.py` | `ProviderResponse`, `ProviderError`, citation normalization، protocol، وvalidator للـresponse envelope |
 | Gemini adapter | `src/ai_router/providers/gemini.py` | GenerateContent وInteractions وimage/TTS/embedding/video payloads |
-| OpenAI-compatible adapter | `src/ai_router/providers/openai_compatible.py` | chat completions لـGroq وHF وOpenRouter وNVIDIA |
+| OpenAI-compatible adapter | `src/ai_router/providers/openai_compatible.py` | JSON/text/chat completions وtools لـGroq وHF وOpenRouter وNVIDIA؛ يطبق invocation profile |
+| Local HTTP boundary | `src/ai_router/openai_server.py` | `/health` و`/v1/models` و`/v1/chat/completions` مع bearer اختياري وmetadata آمنة |
 | Persistence | `src/ai_router/store.py` | SQLite calls، failures، cooldown، cursor، stats |
 | Live scripts | `scripts/live_smoke.py`, `scripts/capability_audit.py`, `scripts/unified_contract_smoke.py`, `scripts/gemini_grounded_search_smoke.py`, `scripts/groq_models.py`, `scripts/groq_functional.py` | اختبارات live منقحة، contract smoke عبر models، Gemini grounded fallback، واكتشاف catalogs |
 | Tests | `tests/*.py` | route، adapter، key pool، citation، response contract، model catalog، regression |
@@ -62,7 +63,8 @@ CLI أو Python input
   -> detect_intent أو output_type صريح
   -> resolve output route أو explicit chain
   -> provider allowlist/denylist
-  -> enabled model/capability filtering
+  -> enabled model/capability filtering + explicit provider/model selection
+  -> invocation_profile dispatch
   -> key pool ordering + SQLite cooldown/cursor
   -> adapter bounded outbound call
   -> ProviderResponse أو ProviderError
@@ -87,7 +89,7 @@ CLI أو Python input
 
 الحقول الدلالية ليست موحدة بالاسم بين الأنواع. النص العام يعيد JSON الذي طلبه prompt، الترجمة تعيد عادةً `translation` و`text`، الصورة والصوت يعيدان `data_base64` و`mime_type`، التضمين يعيد `embeddings`، والبحث يعيد `text` و`grounding_sources` و`url_citations`. التفاصيل والأمثلة في [`response-contract.md`](project-documentation/response-contract.md).
 
-`complete_json()` واجهة منخفضة المستوى تعيد JSON النموذج ولا تضيف envelope router الكامل. `route_plan()` يعيد خطة models/tools دون network request. `summary()` يعيد config/state منقحين. عند الفشل ترفع الواجهة `AllProvidersFailed` أو `UnsupportedOutputType` بدل نتيجة نجاح زائفة.
+`complete_json()` واجهة منخفضة المستوى تضيف metadata `provider` و`model` و`route` عند النجاح. `complete_auto()` يضيف envelope حسب output type، و`complete_chat()` يعيد عقد chat مع `tool_calls` ويقتصر على OpenAI-compatible adapters. `route_plan()` يعيد خطة models/tools دون network request. `summary()` يعيد config/state و`last_selection` منقحين. عند الفشل ترفع الواجهة `AllProvidersFailed` أو `UnsupportedOutputType` بدل نتيجة نجاح زائفة.
 
 ## 7. providers وroutes الحالية
 
@@ -127,7 +129,11 @@ CLI أو Python input
 
 الـexception message يجب أن يبقى منقحًا. لا تسجل Authorization header أو Base64 أو prompts الحساسة. استخدم DB مؤقتة أثناء التشخيص، ولا تحذف DB أثناء request نشط.
 
-## 10. الاختبارات والأدلة الحالية
+## 10. الخادم المحلي وVS Code
+
+`src/ai_router/openai_server.py` يقدم boundary OpenAI-compatible محليًا. يستخدم CLI ترتيب global flags قبل subcommand: `ai-router --config-dir config --state-db data/ai_router.db serve --host 127.0.0.1 --port 8787`. الخادم يمرر `router_provider` و`router_model` إلى `complete_chat()`، ويعيد provider/model/route في body وheaders. `vscode-global-autostart/` إضافة Windows تبدأ `scripts/start_router_windows.ps1` لأي Workspace بعد إعداد المسار مرة واحدة.
+
+## 11. الاختبارات والأدلة الحالية
 
 بوابة التحقق المحلية:
 
@@ -140,7 +146,7 @@ python3 -m unittest discover -s tests -q
 git diff --check
 ```
 
-آخر تشغيل موثق في هذه النقطة نجح في **60 اختبارًا محليًا**. ويثبت التدقيق الحي المقارن المنقح [`unified-response-contract-cross-provider-live-2026-08-22.json`](project-documentation/unified-response-contract-cross-provider-live-2026-08-22.json) ما يلي:
+آخر تشغيل موثق في هذه النقطة نجح في **67 اختبارًا محليًا**، بما فيها profiles وselection وOpenAI server. ويثبت التدقيق الحي المقارن المنقح [`unified-response-contract-cross-provider-live-2026-08-22.json`](project-documentation/unified-response-contract-cross-provider-live-2026-08-22.json) ما يلي:
 
 | الفئة | passed | failed | deferred | الدليل |
 |---|---:|---:|---:|---|
@@ -156,13 +162,13 @@ git diff --check
 
 للمقارنة عبر providers وmodels، يستخدم `scripts/unified_contract_smoke.py` validator نفسه. ينفذ طلبًا واحدًا لكل model نصي مفعّل، ويختبر الترجمة حيث يوجد route، ثم Gemini Search. الحالة `passed` تثبت contract لهذا provider/model/method، و`deferred_no_key` تعني أن الاختبار لم يُنفذ لغياب Secret، و`failed` تعني أن Secret موجود لكن الاستجابة أو الطلب خالف العقد. لا تُعامل الحالات المؤجلة كنجاح. تقرير Groq المخصص هو [`groq-unified-response-contract-live-2026-08-22.json`](project-documentation/groq-unified-response-contract-live-2026-08-22.json).
 
-## 11. بروتوكول إضافة قدرة أو provider
+## 12. بروتوكول إضافة قدرة أو provider
 
 عند إضافة model موجود في adapter، حدّث `config/models.json`، افحص capability، أضف test للترتيب والعقد، ثم شغّل live smoke محدودًا. عند إضافة provider جديد، حدّث provider registry وkey pool وadapter وerror mapping و`.env.example` وcredential docs وworkflow إن لزم.
 
 عند تعديل output contract، حدّث `project-documentation/response-contract.md`، اختبارات adapter وrouter، و`live_smoke.py` إذا تغيرت حقول التقرير. لا تعدل ترتيب models في `.env`. لا تضف provider إلى grounded search أو image route دون adapter وpayload واختبار يثبت capability.
 
-## 12. التشغيل من GitHub أو Docker
+## 13. التشغيل من GitHub أو Docker
 
 في GitHub Actions، ضع الأسرار في **Settings → Secrets and variables → Actions → Secrets**، وثبت router على tag أو commit. ضع Base URLs والمسارات غير الحساسة في Variables فقط عند الحاجة. ابدأ بـroute plan ثم live smoke واحد، وارفع artifact منقحًا.
 
@@ -176,9 +182,9 @@ docker run --rm --env-file .env -v "$PWD/data:/app/data" \
   --output-type text --user "اكتب إجابة قصيرة"
 ```
 
-HTTP service boundary غير مضمن في المستودع؛ إضافة API server مقترح منفصل، وليست capability حالية.
+HTTP service boundary مضمن الآن في `src/ai_router/openai_server.py` ويُشغل عبر CLI `serve`. يقتصر chat على OpenAI-compatible providers؛ routes Gemini المتخصصة تبقى عبر `complete_auto()` وmethods الخاصة بها.
 
-## 13. المراجع
+## 14. المراجع
 
 [1]: [`project-documentation/README.md`](project-documentation/README.md) — فهرس المشروع ودليل البدء.
 
@@ -188,7 +194,7 @@ HTTP service boundary غير مضمن في المستودع؛ إضافة API ser
 
 [4]: [`src/ai_router/router.py`](src/ai_router/router.py) و[`src/ai_router/providers/base.py`](src/ai_router/providers/base.py) — orchestration والعقود.
 
-[5]: [`tests/test_multiroute.py`](tests/test_multiroute.py) و[`tests/test_router.py`](tests/test_router.py) و[`tests/test_groq.py`](tests/test_groq.py) — اختبارات response envelope وproviders.
+[5]: [`tests/test_multiroute.py`](tests/test_multiroute.py) و[`tests/test_router.py`](tests/test_router.py) و[`tests/test_groq.py`](tests/test_groq.py) و[`tests/test_openai_server.py`](tests/test_openai_server.py) — اختبارات response envelope وselection وserver وproviders.
 
 [6]: https://ai.google.dev/gemini-api/docs/google-search — Google Search grounding وcitations في Gemini.
 

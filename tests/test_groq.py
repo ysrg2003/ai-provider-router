@@ -71,5 +71,51 @@ class GroqTests(unittest.TestCase):
                 os.environ["GROQ_API_KEYS_JSON"] = previous_json
 
 
+    def test_groq_json_profile_uses_completion_tokens_and_json_parser(self):
+        class JsonResponse(FakeResponse):
+            def json(self):
+                return {
+                    "choices": [{"message": {"content": '{"answer": "ok"}'}}],
+                    "usage": {"total_tokens": 3},
+                }
+
+        adapter = OpenAICompatibleAdapter("groq", "https://api.groq.com/openai/v1")
+        with patch("ai_router.providers.openai_compatible.requests.post", return_value=JsonResponse()) as post:
+            result = adapter.complete_json(
+                model="openai/gpt-oss-120b",
+                secret="test-secret",
+                system_prompt="Return JSON",
+                user_prompt="Answer",
+                timeout_seconds=30,
+                invocation_profile={
+                    "response_parser": "json_object",
+                    "response_format": "json_object",
+                    "max_tokens_field": "max_completion_tokens",
+                    "max_tokens": 512,
+                },
+            )
+        self.assertEqual(result.payload, {"answer": "ok"})
+        payload = post.call_args.kwargs["json"]
+        self.assertEqual(payload["max_completion_tokens"], 512)
+        self.assertEqual(payload["response_format"], {"type": "json_object"})
+
+    def test_flexible_profile_wraps_plain_text_without_crashing(self):
+        class TextResponse(FakeResponse):
+            def json(self):
+                return {"choices": [{"message": {"content": "plain answer"}}], "usage": {}}
+
+        adapter = OpenAICompatibleAdapter("huggingface", "https://router.huggingface.co/v1")
+        with patch("ai_router.providers.openai_compatible.requests.post", return_value=TextResponse()):
+            result = adapter.complete_json(
+                model="test-model",
+                secret="test-secret",
+                system_prompt="",
+                user_prompt="Answer",
+                timeout_seconds=30,
+                invocation_profile={"response_parser": "json_or_text_envelope", "response_format": "none"},
+            )
+        self.assertEqual(result.payload["provider_text"], "plain answer")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,64 @@
+{
+  "name": "ai-router-global-autostart",
+  "displayName": "AI Router Global Autostart",
+  "description": "Starts the local ai-provider-router server when VS Code starts.",
+  "version": "0.1.0",
+  "publisher": "ysrg2003",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ysrg2003/ai-provider-router.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiRouterGlobalAutostart.configureProjectPath",
+        "title": "AI Router: Configure Project Path"
+      },
+      {
+        "command": "aiRouterGlobalAutostart.startNow",
+        "title": "AI Router: Start Now"
+      },
+      {
+        "command": "aiRouterGlobalAutostart.showStatus",
+        "title": "AI Router: Show Status"
+      },
+      {
+        "command": "aiRouterGlobalAutostart.stopServer",
+        "title": "AI Router: Stop Managed Server"
+      }
+    ],
+    "configuration": {
+      "title": "AI Router Global Autostart",
+      "properties": {
+        "aiRouterGlobalAutostart.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start ai-router automatically after VS Code starts."
+        },
+        "aiRouterGlobalAutostart.projectPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the ai-provider-router project. Empty uses %USERPROFILE%\\ai-provider-router when it exists."
+        },
+        "aiRouterGlobalAutostart.port": {
+          "type": "number",
+          "default": 8787,
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Loopback port used by the local ai-router server."
+        }
+      }
+    }
+  }
+}

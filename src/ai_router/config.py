@@ -29,6 +29,10 @@ class ModelSpec:
     output_types: tuple[str, ...] = ("text",)
     tools: tuple[str, ...] = ()
     supports_response_format: bool = True
+    invocation_profile: str = ""
+    capability_rank: int | None = None
+    capability_id: str = ""
+    coding_fit: str = ""
 
 
 @dataclass(frozen=True)
@@ -47,7 +51,7 @@ class RouterPolicy:
 
 
 class RouterConfig:
-    def __init__(self, root: Path, providers: dict[str, ProviderSpec], chains: dict[str, list[ModelSpec]], output_routes: dict[str, list[ModelSpec]], key_pools: dict[str, str], fallback_envs: dict[str, str], key_pool_rotations: dict[str, str], policy: RouterPolicy) -> None:
+    def __init__(self, root: Path, providers: dict[str, ProviderSpec], chains: dict[str, list[ModelSpec]], output_routes: dict[str, list[ModelSpec]], key_pools: dict[str, str], fallback_envs: dict[str, str], key_pool_rotations: dict[str, str], policy: RouterPolicy, invocation_profiles: dict[str, dict[str, Any]] | None = None) -> None:
         self.root = root
         self.providers = providers
         self.chains = chains
@@ -56,6 +60,7 @@ class RouterConfig:
         self.fallback_envs = fallback_envs
         self.key_pool_rotations = key_pool_rotations
         self.policy = policy
+        self.invocation_profiles = invocation_profiles or {}
 
     @classmethod
     def load(cls, root: str | Path | None = None) -> RouterConfig:
@@ -66,6 +71,8 @@ class RouterConfig:
         models_raw = cls._read_json(config_root / "models.json")
         keys_raw = cls._read_json(config_root / "key_pools.json")
         policy_raw = cls._read_json(config_root / "policies.json")
+        profiles_path = config_root / "invocation_profiles.json"
+        profiles_raw = cls._read_json(profiles_path) if profiles_path.exists() else {"profiles": {}}
 
         providers = {
             item["id"]: ProviderSpec(
@@ -89,6 +96,10 @@ class RouterConfig:
                     output_types=tuple(str(value) for value in item.get("output_types", ["text"])),
                     tools=tuple(str(value) for value in item.get("tools", [])),
                     supports_response_format=bool(item.get("supports_response_format", True)),
+                    invocation_profile=str(item.get("invocation_profile", "")),
+                    capability_rank=int(item["capability_rank"]) if item.get("capability_rank") is not None else None,
+                    capability_id=str(item.get("capability_id", "")),
+                    coding_fit=str(item.get("coding_fit", "")),
                 )
                 for item in items
             ]
@@ -121,7 +132,7 @@ class RouterConfig:
             cooldowns_seconds={key: int(value) for key, value in defaults.get("cooldowns_seconds", {}).items()},
             backoff_seconds=[int(value) for value in defaults.get("backoff_seconds", [1, 2, 4, 8])],
         )
-        config = cls(config_root, providers, chains, output_routes, key_pools, fallback_envs, key_pool_rotations, policy)
+        config = cls(config_root, providers, chains, output_routes, key_pools, fallback_envs, key_pool_rotations, policy, {str(name): dict(value) for name, value in profiles_raw.get("profiles", {}).items() if isinstance(value, dict)})
         config.validate()
         return config
 
@@ -139,6 +150,8 @@ class RouterConfig:
             for item in collection:
                 if item.provider_id not in self.providers:
                     raise ValueError(f"Model route {collection_name} references unknown provider {item.provider_id}")
+                if item.invocation_profile and item.invocation_profile not in self.invocation_profiles:
+                    raise ValueError(f"Model route {collection_name} references unknown invocation profile {item.invocation_profile}")
 
     def model_chain(self, name: str = "default") -> list[ModelSpec]:
         if name not in self.chains:
@@ -150,6 +163,11 @@ class RouterConfig:
         if route_name not in self.output_routes:
             raise KeyError(f"Unknown output route: {route_name}")
         return [item for item in self.output_routes[route_name] if item.enabled and self.providers[item.provider_id].enabled]
+
+    def invocation_profile(self, spec: ModelSpec) -> dict[str, Any]:
+        if not spec.invocation_profile:
+            return {}
+        return dict(self.invocation_profiles.get(spec.invocation_profile, {}))
 
     def keys_for(self, provider_id: str) -> list[KeySpec]:
         provider = self.providers[provider_id]
@@ -184,11 +202,34 @@ class RouterConfig:
         return result
 
     def public_summary(self) -> dict[str, Any]:
+        def summarize_spec(item: ModelSpec) -> dict[str, Any]:
+            result = {
+                "provider": item.provider_id,
+                "model": item.model,
+                "method": item.method,
+            }
+            if item.invocation_profile:
+                result["invocation_profile"] = item.invocation_profile
+            if item.capability_rank is not None:
+                result["capability_rank"] = item.capability_rank
+            if item.capability_id:
+                result["capability_id"] = item.capability_id
+            if item.coding_fit:
+                result["coding_fit"] = item.coding_fit
+            return result
+
         return {
             "config_dir": str(self.root),
             "providers": [provider.provider_id for provider in self.providers.values() if provider.enabled],
-            "chains": {name: [{"provider": item.provider_id, "model": item.model} for item in chain if item.enabled] for name, chain in self.chains.items()},
-            "output_routes": {name: [{"provider": item.provider_id, "model": item.model, "method": item.method} for item in route if item.enabled] for name, route in self.output_routes.items()},
+            "chains": {
+                name: [summarize_spec(item) for item in chain if item.enabled]
+                for name, chain in self.chains.items()
+            },
+            "output_routes": {
+                name: [summarize_spec(item) for item in route if item.enabled]
+                for name, route in self.output_routes.items()
+            },
+            "invocation_profiles": sorted(self.invocation_profiles),
             "key_pools": list(self.key_pools),
             "key_pool_rotations": dict(self.key_pool_rotations),
             "secrets_loaded": {provider_id: len(self.keys_for(provider_id)) for provider_id in self.providers},

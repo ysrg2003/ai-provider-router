@@ -45,6 +45,7 @@ class AIRouter:
         self.config = RouterConfig.load(config_dir)
         self.store = RouterStore(state_db)
         self.adapters: dict[str, ProviderAdapter] = {}
+        self._last_selection: dict[str, Any] = {}
         for provider_id, spec in self.config.providers.items():
             if spec.kind == "gemini_rest":
                 self.adapters[provider_id] = GeminiAdapter(spec.base_url)
@@ -60,15 +61,23 @@ class AIRouter:
         user_prompt: str,
         operation: str = "completion",
         chain: str = "default",
+        provider: str | None = None,
+        model: str | None = None,
         providers: str | list[str] | tuple[str, ...] | None = None,
         exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
         errors: list[str] = []
         attempts = 0
-        chain_specs = self._filter_specs(
-            self.config.model_chain(chain),
-            providers=providers,
-            exclude_providers=exclude_providers,
+        chain_specs = self._select_specs(
+            self._order_specs_by_capability(
+                self._filter_specs(
+                    self.config.model_chain(chain),
+                    providers=providers,
+                    exclude_providers=exclude_providers,
+                )
+            ),
+            provider=provider,
+            model=model,
         )
         for model_spec in chain_specs:
             provider_spec = self.config.providers[model_spec.provider_id]
@@ -96,7 +105,10 @@ class AIRouter:
                         "user_prompt": user_prompt,
                         "timeout_seconds": provider_spec.timeout_seconds or self.config.policy.request_timeout_seconds,
                     }
-                    if not model_spec.supports_response_format:
+                    if isinstance(adapter, OpenAICompatibleAdapter):
+                        request_kwargs["supports_response_format"] = model_spec.supports_response_format
+                        request_kwargs["invocation_profile"] = self.config.invocation_profile(model_spec)
+                    elif not model_spec.supports_response_format:
                         request_kwargs["supports_response_format"] = False
                     response = adapter.complete_json(**request_kwargs)
                     self.store.record_success(
@@ -107,6 +119,10 @@ class AIRouter:
                         operation=operation,
                         usage=response.usage,
                     )
+                    response.payload["provider"] = model_spec.provider_id
+                    response.payload["model"] = model_spec.model
+                    response.payload["route"] = chain
+                    self._record_selection(model_spec.provider_id, model_spec.model, chain, operation)
                     return response.payload
                 except ProviderError as exc:
                     errors.append(f"{model_spec.provider_id}/{model_spec.model}/{key.key_id}: {exc}")
@@ -138,6 +154,106 @@ class AIRouter:
         self.store.checkpoint()
         raise AllProvidersFailed("All configured provider/model/key attempts failed: " + " | ".join(errors[-12:]))
 
+    def complete_chat(
+        self,
+        *,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: Any = None,
+        parallel_tool_calls: bool | None = None,
+        operation: str = "chat_completion",
+        chain: str = "default",
+        provider: str | None = None,
+        model: str | None = None,
+        providers: str | list[str] | tuple[str, ...] | None = None,
+        exclude_providers: str | list[str] | tuple[str, ...] | None = None,
+    ) -> dict[str, Any]:
+        if not isinstance(messages, list) or not messages:
+            raise ValueError("messages must be a non-empty array")
+        errors: list[str] = []
+        attempts = 0
+        specs = [
+            spec
+            for spec in self.config.model_chain(chain)
+            if isinstance(self.adapters[spec.provider_id], OpenAICompatibleAdapter)
+        ]
+        specs = self._select_specs(
+            self._order_specs_by_capability(self._filter_specs(specs, providers=providers, exclude_providers=exclude_providers)),
+            provider=provider,
+            model=model,
+        )
+        for spec in specs:
+            provider_spec = self.config.providers[spec.provider_id]
+            adapter = self.adapters[spec.provider_id]
+            provider_models = [item.model for item in specs if item.provider_id == spec.provider_id]
+            model_index = provider_models.index(spec.model)
+            keys = self._ordered_keys(
+                provider=spec.provider_id,
+                chain=chain,
+                model=spec.model,
+                model_names=provider_models,
+                model_index=model_index,
+            )
+            for key in keys:
+                if attempts >= self.config.policy.max_attempts:
+                    break
+                attempts += 1
+                if self.store.is_cooling(spec.provider_id, spec.model, key.key_id, key.project):
+                    continue
+                try:
+                    response = adapter.complete_chat(
+                        model=spec.model,
+                        secret=key.secret,
+                        messages=messages,
+                        timeout_seconds=provider_spec.timeout_seconds or self.config.policy.request_timeout_seconds,
+                        tools=tools,
+                        tool_choice=tool_choice,
+                        parallel_tool_calls=parallel_tool_calls,
+                        invocation_profile=self.config.invocation_profile(spec),
+                    )
+                    self.store.record_success(
+                        provider=spec.provider_id,
+                        model=spec.model,
+                        key_id=key.key_id,
+                        project=key.project,
+                        operation=operation,
+                        usage=response.usage,
+                    )
+                    response.payload["provider"] = spec.provider_id
+                    response.payload["model"] = spec.model
+                    response.payload["route"] = chain
+                    self._record_selection(spec.provider_id, spec.model, chain, operation)
+                    return response.payload
+                except ProviderError as exc:
+                    errors.append(f"{spec.provider_id}/{spec.model}/{key.key_id}: {exc}")
+                    cooldown = self.config.policy.cooldowns_seconds.get(exc.error_class, 300)
+                    self.store.record_failure(
+                        provider=spec.provider_id,
+                        model=spec.model,
+                        key_id=key.key_id,
+                        project=key.project,
+                        operation=operation,
+                        error_class=exc.error_class,
+                        message=str(exc),
+                        status_code=exc.status_code,
+                        cooldown_seconds=cooldown,
+                    )
+                    self.store.advance_model_cursor(
+                        provider=spec.provider_id,
+                        chain=chain,
+                        key_id=key.key_id,
+                        project=key.project,
+                        model_names=provider_models,
+                        current_index=model_index,
+                        error_class=exc.error_class,
+                    )
+                    if exc.retryable:
+                        time.sleep(min(2.0, self._backoff(attempts)))
+            if attempts >= self.config.policy.max_attempts:
+                break
+        self.store.checkpoint()
+        raise AllProvidersFailed("All OpenAI-compatible chat attempts failed: " + " | ".join(errors[-12:]))
+
     def translate_text(
         self,
         *,
@@ -145,6 +261,8 @@ class AIRouter:
         target_language: str,
         source_language: str | None = None,
         operation: str = "translation",
+        provider: str | None = None,
+        model: str | None = None,
         providers: str | list[str] | tuple[str, ...] | None = None,
         exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
@@ -158,6 +276,8 @@ class AIRouter:
             user_prompt=prompt,
             output_type="translation",
             operation=operation,
+            provider=provider,
+            model=model,
             providers=providers,
             exclude_providers=exclude_providers,
         )
@@ -170,6 +290,8 @@ class AIRouter:
         user_prompt: str,
         operation: str = "video_completion",
         chain: str = "default",
+        provider: str | None = None,
+        model: str | None = None,
         providers: str | list[str] | tuple[str, ...] | None = None,
         exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
@@ -177,14 +299,20 @@ class AIRouter:
         errors: list[str] = []
         attempts = 0
         chain_specs = self.config.model_chain(chain)
-        video_specs = self._filter_specs(
-            [
-                spec
-                for spec in chain_specs
-                if getattr(self.adapters[spec.provider_id], "complete_video_json", None) is not None
-            ],
-            providers=providers,
-            exclude_providers=exclude_providers,
+        video_specs = self._select_specs(
+            self._order_specs_by_capability(
+                self._filter_specs(
+                    [
+                        spec
+                        for spec in chain_specs
+                        if getattr(self.adapters[spec.provider_id], "complete_video_json", None) is not None
+                    ],
+                    providers=providers,
+                    exclude_providers=exclude_providers,
+                )
+            ),
+            provider=provider,
+            model=model,
         )
         for model_spec in video_specs:
             provider_spec = self.config.providers[model_spec.provider_id]
@@ -222,6 +350,10 @@ class AIRouter:
                         operation=operation,
                         usage=response.usage,
                     )
+                    response.payload["provider"] = model_spec.provider_id
+                    response.payload["model"] = model_spec.model
+                    response.payload["route"] = chain
+                    self._record_selection(model_spec.provider_id, model_spec.model, chain, operation)
                     return response.payload
                 except ProviderError as exc:
                     errors.append(f"{model_spec.provider_id}/{model_spec.model}/{key.key_id}: {exc}")
@@ -259,12 +391,18 @@ class AIRouter:
         user_prompt: str,
         output_type: str = "auto",
         grounding: str | None = None,
+        provider: str | None = None,
+        model: str | None = None,
         providers: str | list[str] | tuple[str, ...] | None = None,
         exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
         intent = detect_intent(user_prompt, output_type=output_type, grounding=grounding)
         route_name, specs = self._resolve_route(intent)
-        specs = self._filter_specs(specs, providers=providers, exclude_providers=exclude_providers)
+        specs = self._select_specs(
+            self._order_specs_by_capability(self._filter_specs(specs, providers=providers, exclude_providers=exclude_providers)),
+            provider=provider,
+            model=model,
+        )
         return {
             "output_type": intent.output_type,
             "grounding": intent.grounding,
@@ -279,6 +417,9 @@ class AIRouter:
                     "input_types": list(spec.input_types),
                     "output_types": list(spec.output_types),
                     "tools": list(spec.tools),
+                    "invocation_profile": spec.invocation_profile or None,
+                    "capability_rank": spec.capability_rank,
+                    "capability_id": spec.capability_id or None,
                 }
                 for spec in specs
             ],
@@ -289,6 +430,8 @@ class AIRouter:
         *,
         user_prompt: str,
         grounding: str | None = None,
+        provider: str | None = None,
+        model: str | None = None,
         providers: str | list[str] | tuple[str, ...] | None = None,
         exclude_providers: str | list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
@@ -296,6 +439,8 @@ class AIRouter:
             user_prompt=user_prompt,
             output_type="live",
             grounding=grounding,
+            provider=provider,
+            model=model,
             providers=providers,
             exclude_providers=exclude_providers,
         )
@@ -324,6 +469,8 @@ class AIRouter:
         output_dimensionality: int | None = None,
         input_parts: list[dict[str, Any]] | None = None,
         chain: str | None = None,
+        provider: str | None = None,
+        model: str | None = None,
         latitude: float | None = None,
         longitude: float | None = None,
         providers: str | list[str] | tuple[str, ...] | None = None,
@@ -340,7 +487,11 @@ class AIRouter:
             route_name = chain
         else:
             route_name, specs = self._resolve_route(intent)
-        specs = self._filter_specs(specs, providers=providers, exclude_providers=exclude_providers)
+        specs = self._select_specs(
+            self._order_specs_by_capability(self._filter_specs(specs, providers=providers, exclude_providers=exclude_providers)),
+            provider=provider,
+            model=model,
+        )
         if intent.output_type == "live":
             raise UnsupportedOutputType("Live is a WebSocket session; call prepare_live_session()")
         if intent.output_type == "video_generation":
@@ -365,6 +516,51 @@ class AIRouter:
             output_dimensionality=output_dimensionality,
             input_parts=input_parts,
         )
+
+    def _order_specs_by_capability(self, specs: list[ModelSpec]) -> list[ModelSpec]:
+        if not specs or all(spec.capability_rank is None for spec in specs):
+            return list(specs)
+        indexed = list(enumerate(specs))
+        return [
+            spec
+            for _, spec in sorted(
+                indexed,
+                key=lambda pair: (
+                    pair[1].capability_rank if pair[1].capability_rank is not None else 10_000,
+                    pair[1].capability_id,
+                    list(self.config.providers).index(pair[1].provider_id),
+                    pair[0],
+                ),
+            )
+        ]
+
+    def _select_specs(
+        self,
+        specs: list[ModelSpec],
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+    ) -> list[ModelSpec]:
+        if provider is None and model is None:
+            return specs
+        if not provider or not model:
+            raise ValueError("provider and model must be supplied together")
+        provider_ids = self._resolve_provider_ids(provider) or set()
+        selected = [spec for spec in specs if spec.provider_id in provider_ids and spec.model == model]
+        if not selected:
+            raise ValueError(f"Selected provider/model is not available: {provider}/{model}")
+        return selected
+
+    def _record_selection(self, provider: str, model: str, route: str, operation: str) -> None:
+        self._last_selection = {
+            "provider": provider,
+            "model": model,
+            "route": route,
+            "operation": operation,
+        }
+
+    def last_selection(self) -> dict[str, Any]:
+        return dict(self._last_selection)
 
     def _resolve_provider_ids(self, selector: str | list[str] | tuple[str, ...] | None) -> set[str] | None:
         if selector is None:
@@ -471,6 +667,7 @@ class AIRouter:
                         output_dimensionality=output_dimensionality,
                         input_parts=input_parts,
                         supports_response_format=spec.supports_response_format,
+                        invocation_profile=self.config.invocation_profile(spec) if isinstance(adapter, OpenAICompatibleAdapter) else {},
                     )
                     self.store.record_success(
                         provider=spec.provider_id,
@@ -497,6 +694,7 @@ class AIRouter:
                     response.payload["intent"] = intent.output_type
                     response.payload["provider"] = spec.provider_id
                     response.payload["model"] = spec.model
+                    self._record_selection(spec.provider_id, spec.model, route_name, operation)
                     return validate_response_envelope(response.payload)
                 except ProviderError as exc:
                     errors.append(f"{spec.provider_id}/{spec.model}/{key.key_id}: {exc.error_class}/{exc.status_code or '-'}: {exc}")
@@ -548,6 +746,7 @@ class AIRouter:
         output_dimensionality: int | None,
         input_parts: list[dict[str, Any]] | None,
         supports_response_format: bool = True,
+        invocation_profile: dict[str, Any] | None = None,
     ) -> Any:
         if spec.method == "json":
             return adapter.complete_json(
@@ -557,6 +756,7 @@ class AIRouter:
                 user_prompt=user_prompt,
                 timeout_seconds=timeout_seconds,
                 supports_response_format=supports_response_format,
+                invocation_profile=invocation_profile or {},
             )
         if spec.method == "translation":
             return adapter.complete_text(
@@ -660,7 +860,11 @@ class AIRouter:
         ]
 
     def summary(self) -> dict[str, Any]:
-        return {"config": self.config.public_summary(), "state": self.store.stats()}
+        return {
+            "config": self.config.public_summary(),
+            "state": self.store.stats(),
+            "last_selection": self.last_selection(),
+        }
 
     def close(self) -> None:
         self.store.checkpoint()
