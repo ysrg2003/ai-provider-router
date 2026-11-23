@@ -1,0 +1,59 @@
+name: Independent free Gemini curiosity script evaluation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: curiosity-prepared-router
+  cancel-in-progress: false
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 35887a2f864016fa577991f9ef8e559a6a91d996
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ysrg2003/curiosity-shorts-studio
+          ref: f244deedd5dd8b0f91c5aa9bcf81710db1288d2f
+          path: studio
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install prepared router and pinned studio
+        run: |
+          python -m pip install -e .
+          python -m pip install -e './studio[test,research]'
+      - name: Validate implementation before account access
+        working-directory: studio
+        run: python -m pytest -q
+      - name: Automatic question research and script, exact free router only
+        env:
+          CURIOSITY_LLM_BACKEND: prepared-router-gemini
+          CURIOSITY_OPENROUTER_STOPPED: '1'
+          CURIOSITY_DISCOVERY: prepared-router-grounded
+          CURIOSITY_GEMINI_FREE_TIER_VERIFIED: '1'
+          AI_ROUTER_GEMINI_KEYS_JSON: ${{ secrets.AI_ROUTER_GEMINI_KEYS_JSON }}
+          OMP_NUM_THREADS: '2'
+        run: |
+          export CURIOSITY_ROUTER_CONFIG="$GITHUB_WORKSPACE/config"
+          cd studio
+          python - <<'PYCODE'
+          import datetime,json,pathlib
+          if datetime.datetime.now(datetime.timezone.utc).date()>=datetime.date(2026,12,1):raise SystemExit('Pinned Gemini free price must be reverified after migration')
+          pathlib.Path('drafts').mkdir(exist_ok=True)
+          pathlib.Path('drafts/openrouter-stop.json').write_text(json.dumps({'provider':'openrouter','stopped':True,'status':429,'category':'quota','source_run_id':45110330380,'resolved':False,'automatic_retry_or_key_rotation':False}))
+          PYCODE
+          python -m curiosity.script_preflight
+      - name: Preserve script evidence diagnostics only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonomous-curiosity-gemini-preflight
+          path: studio/drafts/*.json
+          retention-days: 1
+          if-no-files-found: warn
