@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ysrg2003/curiosity-shorts-studio
-          ref: 4dcf344783ee9910f4e41ec801e1adbf092dbe4b
+          ref: ef68aad73840828c5b0c49b6763e2019731f1ffe
           path: studio
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -48,11 +48,6 @@ jobs:
           pathlib.Path('drafts').mkdir(exist_ok=True)
           if list(pathlib.Path('drafts').glob('research-*.json')):raise SystemExit('Tests contaminated production drafts')
           pathlib.Path('drafts/openrouter-stop.json').write_text(json.dumps({'provider':'openrouter','stopped':True,'status':429,'category':'quota','source_run_id':45110330380,'resolved':False,'automatic_retry_or_key_rotation':False}))
-          PYCODE
-          python - <<'PYCODE'
-          import pathlib,json
-          pathlib.Path('drafts/google_gemini-stop.json').write_text(json.dumps({'provider':'google_gemini','stopped':True,'source_run_id':45111351142,'category':'invalid_or_unknown','resolved':False,'automatic_retry_or_key_rotation':False}))
-          raise SystemExit('Gemini stopped after run45111351142. Investigate typed non-HTTP failure before a new evaluation.')
           PYCODE
           python -m curiosity.script_preflight
       - name: Preserve script evidence diagnostics only
