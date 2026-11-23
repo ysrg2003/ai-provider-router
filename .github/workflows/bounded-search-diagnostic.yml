@@ -1,0 +1,58 @@
+name: One bounded prepared Gemini search diagnostic
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  search:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 35887a2f864016fa577991f9ef8e559a6a91d996
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e .
+      - name: One exact prepared search call, no fallback or key rotation
+        env:
+          AI_ROUTER_GEMINI_KEYS_JSON: ${{ secrets.AI_ROUTER_GEMINI_KEYS_JSON }}
+        run: |
+          python - <<'PY'
+          import dataclasses,json,tempfile,time
+          from pathlib import Path
+          from ai_router import AIRouter
+          failures=[]
+          with tempfile.TemporaryDirectory() as temp:
+              router=AIRouter(config_dir=Path('config'),state_db=Path(temp)/'state.db')
+              router.config.policy=dataclasses.replace(router.config.policy,max_attempts=1)
+              old_keys=router._ordered_keys
+              router._ordered_keys=lambda **kwargs:old_keys(**kwargs)[:1]
+              old_failure=router.store.record_failure
+              def record_failure(**kwargs):
+                  category=kwargs.get('error_class')
+                  allowed={'rate_limit','quota','auth','invalid_or_unknown','transient','unsupported','permission','model_unavailable','daily_quota','auth_or_permission','rate_limit_or_quota'}
+                  status=kwargs.get('status_code')
+                  failures.append({'category':category if category in allowed else 'other','http_status':status if type(status) is int else None})
+                  return old_failure(**kwargs)
+              router.store.record_failure=record_failure
+              report={'provider':'google_gemini','model':'gemini-2.5-flash','max_attempts':1,'key_rotation':False,'fallback':False,'production_episode':False,'free_tier_confirmed':True}
+              started=time.monotonic()
+              try:
+                  result=router.complete_auto(output_type='text',grounding='search',provider='google_gemini',model='gemini-2.5-flash',operation='bounded_search_diagnostic',system_prompt='Use Google Search grounding. Return official documentation URLs only. Do not rely on memory.',user_prompt='Find the official Gemini API documentation page explaining Google Search grounding. This is a connectivity diagnostic, not an educational video script.')
+                  metadata=result.get('grounding_metadata') or {}
+                  report.update(success=True,search_queries_present=bool(metadata.get('webSearchQueries')),grounding_chunk_count=len(metadata.get('groundingChunks') or []))
+              except Exception as error:
+                  report.update(success=False,failure_type=type(error).__name__,provider_failures=failures)
+              report['seconds']=round(time.monotonic()-started,2)
+              Path('search-diagnostic.json').write_text(json.dumps(report,indent=2))
+              print(json.dumps(report))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bounded-search-diagnostic
+          path: search-diagnostic.json
+          retention-days: 1
