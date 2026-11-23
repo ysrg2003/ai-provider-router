@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ysrg2003/curiosity-shorts-studio
-          ref: 720e919b41ab3dc70a335d7f5de73297ae9d2d45
+          ref: 4dcf344783ee9910f4e41ec801e1adbf092dbe4b
           path: studio
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -33,17 +33,15 @@ jobs:
         run: python -m pytest -q
       - name: Automatic question research and script, exact free router only
         env:
-          AI_ROUTER_OPENROUTER_KEYS_JSON: ${{ secrets.AI_ROUTER_OPENROUTER_KEYS_JSON }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           CURIOSITY_LLM_BACKEND: prepared-router
           CURIOSITY_DISCOVERY: prepared-router-grounded
           CURIOSITY_GEMINI_FREE_TIER_VERIFIED: '1'
-          AI_ROUTER_GEMINI_KEYS_JSON: ${{ secrets.AI_ROUTER_GEMINI_KEYS_JSON }}
           OMP_NUM_THREADS: '2'
         run: |
           export CURIOSITY_ROUTER_CONFIG="$GITHUB_WORKSPACE/config"
           cd studio
-          python -m curiosity.script_preflight
+          echo 'OpenRouter is stopped after confirmed HTTP429 quota in run45110330380. No inference, retry, or alternate credentials.'
+          exit 1
       - name: Preserve script evidence diagnostics only
         if: always()
         uses: actions/upload-artifact@v4
