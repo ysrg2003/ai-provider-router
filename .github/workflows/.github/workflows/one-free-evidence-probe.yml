@@ -1,0 +1,76 @@
+name: One verified free source-evidence probe
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: one-free-evidence-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements.txt
+      - name: One exact zero-priced model, one key, no fallback
+        env:
+          AI_ROUTER_OPENROUTER_KEYS_JSON: ${{ secrets.AI_ROUTER_OPENROUTER_KEYS_JSON }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          mkdir -p artifacts
+          PYTHONPATH=src python - <<'PY'
+          import dataclasses,json,shutil,tempfile,time,urllib.request
+          from pathlib import Path
+          from ai_router import AIRouter
+          model='particle-ai/particle-1:free'
+          report={'model':model,'provider':'openrouter','live_request_attempted':False,'paid_fallback':False,'max_attempts':1,'accepted':False}
+          target=Path('artifacts/one-free-evidence-probe.json')
+          def save():target.write_text(json.dumps(report,indent=2))
+          save()
+          try:
+              with urllib.request.urlopen('https://openrouter.ai/api/v1/models',timeout=30) as response:catalog=json.load(response)
+              entry=next(row for row in catalog['data'] if row['id']==model)
+              prices=entry.get('pricing',{})
+              if any(float(prices.get(field,0))!=0 for field in ('prompt','completion','request','image','web_search','internal_reasoning')):raise ValueError('Nonzero pricing')
+              report['live_zero_pricing_verified']=True
+              with tempfile.TemporaryDirectory() as tmp:
+                  config=Path(tmp)/'config';shutil.copytree('config',config)
+                  data=json.loads((config/'models.json').read_text())
+                  data['model_chains']['one_free_probe']=[{'provider':'openrouter','model':model,'method':'json','enabled':True,'supports_response_format':True,'invocation_profile':'one_free_probe','input_types':['text'],'output_types':['text']}]
+                  (config/'models.json').write_text(json.dumps(data))
+                  profiles=json.loads((config/'invocation_profiles.json').read_text())
+                  profiles['profiles']['one_free_probe']={'transport':'openai_chat','response_parser':'json_object','response_format':'json_object','max_tokens_field':'max_tokens','max_tokens':600,'reasoning_effort':'none'}
+                  (config/'invocation_profiles.json').write_text(json.dumps(profiles))
+                  router=AIRouter(config_dir=config,state_db=Path(tmp)/'probe.db')
+                  try:
+                      router.config.policy=dataclasses.replace(router.config.policy,max_attempts=1,request_timeout_seconds=90)
+                      old=router._ordered_keys
+                      router._ordered_keys=lambda **kwargs:old(**kwargs)[:1]
+                      ready=bool(router.config.keys_for('openrouter'))
+                      report['configured_key_available']=ready
+                      # This is fictional evidence, not a production question or factual claim.
+                      prompt={'question':'How does the fictional glim become bright in dry and wet modes?', 'quotes':{'A0':'A glim becomes bright when flen enters its chamber.','A1':'In dry mode a tor splits and releases flen into the chamber.','B0':'In wet mode a sov dissolves and releases flen into the chamber.','C0':'Glim-colored scarves are sold in blue.'},'output_contract':{'supported':'boolean','selected_quote_ids':'all original IDs needed to connect both mechanisms to the observation','unrelated_quote_ids':'original irrelevant IDs only'}}
+                      started=time.monotonic();report['live_request_attempted']=True;save()
+                      result=router.complete_json(chain='one_free_probe',provider='openrouter',model=model,system_prompt='Use only supplied fictional evidence. Return JSON with supported, selected_quote_ids, unrelated_quote_ids. Preserve the connecting observation and both causal paths. Do not add facts.',user_prompt=json.dumps(prompt),operation='bounded_free_evidence_probe')
+                      report['seconds']=round(time.monotonic()-started,2)
+                      report['actual_model']=result.get('model');report['actual_provider']=result.get('provider')
+                      report['answer']={field:result.get(field) for field in ('supported','selected_quote_ids','unrelated_quote_ids')}
+                      report['accepted']=result.get('supported') is True and set(result.get('selected_quote_ids',[]))=={'A0','A1','B0'} and set(result.get('unrelated_quote_ids',[]))=={'C0'}
+                  finally:router.close()
+          except Exception as exc:
+              report['failure_type']=type(exc).__name__
+          save()
+          print(json.dumps(report,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: one-free-evidence-probe
+          path: artifacts/one-free-evidence-probe.json
+          retention-days: 1
