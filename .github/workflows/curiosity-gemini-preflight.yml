@@ -49,6 +49,11 @@ jobs:
           if list(pathlib.Path('drafts').glob('research-*.json')):raise SystemExit('Tests contaminated production drafts')
           pathlib.Path('drafts/openrouter-stop.json').write_text(json.dumps({'provider':'openrouter','stopped':True,'status':429,'category':'quota','source_run_id':45110330380,'resolved':False,'automatic_retry_or_key_rotation':False}))
           PYCODE
+          python - <<'PYCODE'
+          import pathlib,json
+          pathlib.Path('drafts/google_gemini-stop.json').write_text(json.dumps({'provider':'google_gemini','stopped':True,'source_run_id':45112858716,'finish_reason':'RECITATION','text_present':False,'automatic_retry_or_key_rotation':False}))
+          raise SystemExit('Provider content stop RECITATION in run45112858716. No retries, credential rotation or production restart.')
+          PYCODE
           python -m curiosity.script_preflight
       - name: Preserve script evidence diagnostics only
         if: always()
