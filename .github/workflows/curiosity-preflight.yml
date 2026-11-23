@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ysrg2003/curiosity-shorts-studio
-          ref: c9f63d85a52739d831961e33f3c73823fee88dcb
+          ref: 5b5bb62a6ddc20b7b54204c1f372043dfefa234a
           path: studio
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -36,6 +36,7 @@ jobs:
           AI_ROUTER_OPENROUTER_KEYS_JSON: ${{ secrets.AI_ROUTER_OPENROUTER_KEYS_JSON }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           CURIOSITY_LLM_BACKEND: prepared-router
+          CURIOSITY_DISCOVERY: prepared-router-leads
           OMP_NUM_THREADS: '2'
         run: |
           export CURIOSITY_ROUTER_CONFIG="$GITHUB_WORKSPACE/config"
