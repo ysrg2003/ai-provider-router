@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ysrg2003/curiosity-shorts-studio
-          ref: 2c2801350918210939cb6517612549050adf993c
+          ref: 8f11283668565c3ea641ef0634bdb12929e1008e
           path: studio
           persist-credentials: false
       - uses: actions/setup-python@v5
