@@ -1,0 +1,51 @@
+name: Autonomous curiosity script through prepared free router
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: curiosity-prepared-router
+  cancel-in-progress: false
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 35887a2f864016fa577991f9ef8e559a6a91d996
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ysrg2003/curiosity-shorts-studio
+          ref: c9f63d85a52739d831961e33f3c73823fee88dcb
+          path: studio
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install prepared router and pinned studio
+        run: |
+          python -m pip install -e .
+          python -m pip install -e './studio[test,research]'
+      - name: Validate implementation before account access
+        working-directory: studio
+        run: python -m pytest -q
+      - name: Automatic question research and script, exact free router only
+        env:
+          AI_ROUTER_OPENROUTER_KEYS_JSON: ${{ secrets.AI_ROUTER_OPENROUTER_KEYS_JSON }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CURIOSITY_LLM_BACKEND: prepared-router
+          OMP_NUM_THREADS: '2'
+        run: |
+          export CURIOSITY_ROUTER_CONFIG="$GITHUB_WORKSPACE/config"
+          cd studio
+          python -m curiosity.script_preflight
+      - name: Preserve script evidence diagnostics only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonomous-curiosity-router-preflight
+          path: studio/drafts/*.json
+          retention-days: 1
+          if-no-files-found: warn
