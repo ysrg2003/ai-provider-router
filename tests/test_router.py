@@ -103,8 +103,8 @@ class RouterTests(unittest.TestCase):
                 result = router.complete_json(system_prompt="system", user_prompt="user", operation="test")
             self.assertEqual(result["ok"], True)
             self.assertEqual(result["provider"], "google_gemini")
-            self.assertEqual(result["model"], "gemini-3.7-flash")
-            self.assertEqual(calls[:2], ["gemini-3.7-flash:one", "gemini-3.7-flash:two"])
+            self.assertEqual(result["model"], "gemini-3.5-flash")
+            self.assertEqual(calls[:2], ["gemini-3.5-flash:one", "gemini-3.5-flash:two"])
             self.assertEqual(router.store.stats()["calls"], 2)
             router.close()
 
@@ -118,14 +118,14 @@ class RouterTests(unittest.TestCase):
             try:
                 router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
                 router.config.chains["cursor_test"] = [
-                    ModelSpec("google_gemini", "gemini-3.7-flash", True),
+                    ModelSpec("google_gemini", "gemini-3.5-flash", True),
                     ModelSpec("google_gemini", "gemini-3.6-flash", True),
                 ]
                 calls: list[str] = []
 
                 def fake(*, model, secret, system_prompt, user_prompt, timeout_seconds):
                     calls.append(f"{model}:{secret}")
-                    if model == "gemini-3.7-flash":
+                    if model == "gemini-3.5-flash":
                         raise ProviderError("quota", error_class="quota", status_code=429, retryable=False)
                     if secret == "one":
                         raise ProviderError("quota", error_class="quota", status_code=429, retryable=False)
@@ -137,15 +137,15 @@ class RouterTests(unittest.TestCase):
                     result = router.complete_json(chain="cursor_test", system_prompt="system", user_prompt="second", operation="cursor-2")
                 self.assertEqual(result["ok"], "two")
                 self.assertEqual(calls, [
-                    "gemini-3.7-flash:one",
-                    "gemini-3.7-flash:two",
+                    "gemini-3.5-flash:one",
+                    "gemini-3.5-flash:two",
                     "gemini-3.6-flash:one",
                     "gemini-3.6-flash:two",
                     "gemini-3.6-flash:two",
                 ])
                 self.assertEqual(router.store.get_model_cursor(
                     provider="google_gemini", chain="cursor_test", key_id="first", project="p1",
-                    model_names=["gemini-3.7-flash", "gemini-3.6-flash"],
+                    model_names=["gemini-3.5-flash", "gemini-3.6-flash"],
                 ), 0)
                 router.close()
             finally:
@@ -161,14 +161,14 @@ class RouterTests(unittest.TestCase):
                 state_db = Path(temp) / "router.db"
                 first_router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=state_db)
                 first_router.config.chains["restart_test"] = [
-                    ModelSpec("google_gemini", "gemini-3.7-flash", True),
+                    ModelSpec("google_gemini", "gemini-3.5-flash", True),
                     ModelSpec("google_gemini", "gemini-3.6-flash", True),
                 ]
                 first_calls: list[str] = []
 
                 def first_fake(*, model, secret, system_prompt, user_prompt, timeout_seconds):
                     first_calls.append(f"{model}:{secret}")
-                    if model == "gemini-3.7-flash":
+                    if model == "gemini-3.5-flash":
                         raise ProviderError("quota", error_class="quota", retryable=False)
                     return ProviderResponse({"ok": secret}, {})
 
@@ -178,7 +178,7 @@ class RouterTests(unittest.TestCase):
 
                 second_router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=state_db)
                 second_router.config.chains["restart_test"] = [
-                    ModelSpec("google_gemini", "gemini-3.7-flash", True),
+                    ModelSpec("google_gemini", "gemini-3.5-flash", True),
                     ModelSpec("google_gemini", "gemini-3.6-flash", True),
                 ]
                 second_calls: list[str] = []
@@ -218,10 +218,10 @@ class RouterTests(unittest.TestCase):
                 )
             self.assertEqual(result["summary"], "ok")
             self.assertEqual(result["provider"], "google_gemini")
-            self.assertEqual(result["model"], "gemini-3.7-flash")
+            self.assertEqual(result["model"], "gemini-3.5-flash")
             self.assertEqual(calls[:2], [
-                "gemini-3.7-flash:one:https://www.youtube.com/watch?v=example",
-                "gemini-3.7-flash:two:https://www.youtube.com/watch?v=example",
+                "gemini-3.5-flash:one:https://www.youtube.com/watch?v=example",
+                "gemini-3.5-flash:two:https://www.youtube.com/watch?v=example",
             ])
             self.assertEqual(router.store.stats()["calls"], 2)
             router.close()
@@ -247,9 +247,9 @@ class RouterTests(unittest.TestCase):
                     router.complete_json(system_prompt="system", user_prompt="first", operation="test")
                     router.complete_json(system_prompt="system", user_prompt="second", operation="test")
                 self.assertEqual(calls, ["project-one-secret", "project-two-secret"])
-                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-3.7-flash", "same-key-id", "project-one")
+                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-3.5-flash", "same-key-id", "project-one")
 )
-                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-3.7-flash", "same-key-id", "project-two")
+                self.assertIsNotNone(router.store.get_state("google_gemini", "gemini-3.5-flash", "same-key-id", "project-two")
 )
                 self.assertEqual(router.store.stats()["projects"], 2)
                 router.close()

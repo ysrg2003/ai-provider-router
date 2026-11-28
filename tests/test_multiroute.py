@@ -221,7 +221,7 @@ class RouterRoutePlanTests(unittest.TestCase):
                 self.assertEqual(result["output_type"], "text")
                 self.assertEqual(result["intent"], "text")
                 self.assertEqual(result["provider"], "google_gemini")
-                self.assertEqual(result["model"], "gemini-3.7-flash")
+                self.assertEqual(result["model"], "gemini-3.5-flash")
                 self.assertEqual(result["url_citations"], [])
                 router.close()
             finally:
