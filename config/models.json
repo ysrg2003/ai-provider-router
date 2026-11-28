@@ -227,17 +227,12 @@
     "default": [
       {
         "provider": "google_gemini",
-        "model": "gemini-3.7-flash",
+        "model": "gemini-3.5-flash",
         "enabled": true
       },
       {
         "provider": "google_gemini",
         "model": "gemini-3.6-flash",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.5-flash",
         "enabled": true
       },
       {
@@ -248,11 +243,6 @@
       {
         "provider": "google_gemini",
         "model": "gemini-3.1-flash-lite",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3-flash",
         "enabled": true
       },
       {
@@ -425,20 +415,6 @@
       },
       {
         "provider": "openrouter",
-        "model": "nvidia/nemotron-3-super-120b-a12b:free",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": true,
-        "enabled": true,
-        "invocation_profile": "openai_json"
-      },
-      {
-        "provider": "openrouter",
         "model": "cohere/north-mini-code:free",
         "method": "json",
         "input_types": [
@@ -543,20 +519,6 @@
       },
       {
         "provider": "openrouter",
-        "model": "openai/gpt-oss-20b:free",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": true,
-        "enabled": true,
-        "invocation_profile": "openai_json"
-      },
-      {
-        "provider": "openrouter",
         "model": "nvidia/nemotron-nano-12b-v2-vl:free",
         "method": "json",
         "input_types": [
@@ -647,34 +609,6 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-super-120b-a12b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
         "method": "json",
         "input_types": [
@@ -745,20 +679,6 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/nemotron-nano-12b-v2-vl",
         "method": "json",
         "input_types": [
@@ -803,17 +723,12 @@
     "creative": [
       {
         "provider": "google_gemini",
-        "model": "gemini-3.7-flash",
+        "model": "gemini-3.5-flash",
         "enabled": true
       },
       {
         "provider": "google_gemini",
         "model": "gemini-3.6-flash",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.5-flash",
         "enabled": true
       },
       {
@@ -824,11 +739,6 @@
       {
         "provider": "google_gemini",
         "model": "gemini-3.1-flash-lite",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3-flash",
         "enabled": true
       },
       {
@@ -965,20 +875,6 @@
       },
       {
         "provider": "openrouter",
-        "model": "nvidia/nemotron-3-super-120b-a12b:free",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": true,
-        "enabled": true,
-        "invocation_profile": "openai_json"
-      },
-      {
-        "provider": "openrouter",
         "model": "cohere/north-mini-code:free",
         "method": "json",
         "input_types": [
@@ -1083,20 +979,6 @@
       },
       {
         "provider": "openrouter",
-        "model": "openai/gpt-oss-20b:free",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": true,
-        "enabled": true,
-        "invocation_profile": "openai_json"
-      },
-      {
-        "provider": "openrouter",
         "model": "nvidia/nemotron-nano-12b-v2-vl:free",
         "method": "json",
         "input_types": [
@@ -1187,34 +1069,6 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-super-120b-a12b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
         "method": "json",
         "input_types": [
@@ -1285,20 +1139,6 @@
       },
       {
         "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/nemotron-nano-12b-v2-vl",
         "method": "json",
         "input_types": [
@@ -1349,11 +1189,6 @@
       {
         "provider": "google_gemini",
         "model": "gemini-3.1-flash-lite",
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3-flash",
         "enabled": true
       },
       {
@@ -1485,20 +1320,6 @@
       },
       {
         "provider": "openrouter",
-        "model": "nvidia/nemotron-3-super-120b-a12b:free",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": true,
-        "enabled": true,
-        "invocation_profile": "openai_json"
-      },
-      {
-        "provider": "openrouter",
         "model": "cohere/north-mini-code:free",
         "method": "json",
         "input_types": [
@@ -1603,20 +1424,6 @@
       },
       {
         "provider": "openrouter",
-        "model": "openai/gpt-oss-20b:free",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": true,
-        "enabled": true,
-        "invocation_profile": "openai_json"
-      },
-      {
-        "provider": "openrouter",
         "model": "nvidia/nemotron-nano-12b-v2-vl:free",
         "method": "json",
         "input_types": [
@@ -1707,34 +1514,6 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-super-120b-a12b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
         "method": "json",
         "input_types": [
@@ -1792,20 +1571,6 @@
       {
         "provider": "nvidia",
         "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
         "method": "json",
         "input_types": [
           "text"
@@ -2102,7 +1867,7 @@
     "text": [
       {
         "provider": "google_gemini",
-        "model": "gemini-3.7-flash",
+        "model": "gemini-3.5-flash",
         "method": "json",
         "input_types": [
           "text",
@@ -2119,22 +1884,6 @@
       {
         "provider": "google_gemini",
         "model": "gemini-3.6-flash",
-        "method": "json",
-        "input_types": [
-          "text",
-          "image",
-          "video",
-          "audio",
-          "pdf"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3.5-flash",
         "method": "json",
         "input_types": [
           "text",
@@ -2167,22 +1916,6 @@
       {
         "provider": "google_gemini",
         "model": "gemini-3.1-flash-lite",
-        "method": "json",
-        "input_types": [
-          "text",
-          "image",
-          "video",
-          "audio",
-          "pdf"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "enabled": true
-      },
-      {
-        "provider": "google_gemini",
-        "model": "gemini-3-flash",
         "method": "json",
         "input_types": [
           "text",
@@ -2380,20 +2113,6 @@
       },
       {
         "provider": "openrouter",
-        "model": "nvidia/nemotron-3-super-120b-a12b:free",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": true,
-        "enabled": true,
-        "invocation_profile": "openai_json"
-      },
-      {
-        "provider": "openrouter",
         "model": "cohere/north-mini-code:free",
         "method": "json",
         "input_types": [
@@ -2498,20 +2217,6 @@
       },
       {
         "provider": "openrouter",
-        "model": "openai/gpt-oss-20b:free",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": true,
-        "enabled": true,
-        "invocation_profile": "openai_json"
-      },
-      {
-        "provider": "openrouter",
         "model": "nvidia/nemotron-nano-12b-v2-vl:free",
         "method": "json",
         "input_types": [
@@ -2587,34 +2292,6 @@
       },
       {
         "provider": "nvidia",
-        "model": "nvidia/nemotron-3-super-120b-a12b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
-        "model": "z-ai/glm-5.2",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
         "model": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
         "method": "json",
         "input_types": [
@@ -2672,20 +2349,6 @@
       {
         "provider": "nvidia",
         "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
-        "method": "json",
-        "input_types": [
-          "text"
-        ],
-        "output_types": [
-          "text"
-        ],
-        "supports_response_format": false,
-        "enabled": true,
-        "invocation_profile": "nvidia_flexible"
-      },
-      {
-        "provider": "nvidia",
-        "model": "meta/llama-3.1-70b-instruct",
         "method": "json",
         "input_types": [
           "text"

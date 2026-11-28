@@ -109,16 +109,14 @@ class ModelCatalogTests(unittest.TestCase):
         self.assertTrue(all(item["method"] == "grounded_text" for item in self.models["output_routes"]["text_grounded_search"]))
         self.assertTrue(all(item["tools"] == ["search"] for item in self.models["output_routes"]["text_grounded_search"]))
 
-    def test_text_out_route_matches_eight_attached_gemini_rows(self):
+    def test_text_out_route_gemini_rows_exclude_dead_models(self):
         self.assertEqual(
             [item["model"] for item in self.models["output_routes"]["text"] if item["provider"] == "google_gemini"],
             [
-                "gemini-3.7-flash",
-                "gemini-3.6-flash",
                 "gemini-3.5-flash",
+                "gemini-3.6-flash",
                 "gemini-3.5-flash-lite",
                 "gemini-3.1-flash-lite",
-                "gemini-3-flash",
                 "gemini-2.5-flash",
                 "gemini-2.5-flash-lite",
             ],

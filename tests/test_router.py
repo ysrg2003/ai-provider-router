@@ -25,7 +25,7 @@ class RouterTests(unittest.TestCase):
             os.environ["AI_ROUTER_GEMINI_KEYS_JSON"] = json.dumps([{"id": "first", "key": "SECRET_VALUE", "project": "p1"}])
             router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
             summary = router.summary()
-            self.assertEqual(summary["config"]["chains"]["default"][0]["model"], "gemini-3.7-flash")
+            self.assertEqual(summary["config"]["chains"]["default"][0]["model"], "gemini-3.5-flash")
             self.assertNotIn("SECRET_VALUE", json.dumps(summary))
             router.close()
 
@@ -34,12 +34,10 @@ class RouterTests(unittest.TestCase):
             router = AIRouter(config_dir=Path(__file__).parents[1] / "config", state_db=Path(temp) / "router.db")
             models = [item.model for item in router.config.model_chain("default") if item.provider_id == "google_gemini"]
             self.assertEqual(models, [
-                "gemini-3.7-flash",
-                "gemini-3.6-flash",
                 "gemini-3.5-flash",
+                "gemini-3.6-flash",
                 "gemini-3.5-flash-lite",
                 "gemini-3.1-flash-lite",
-                "gemini-3-flash",
                 "gemini-2.5-flash",
                 "gemini-2.5-flash-lite",
             ])
